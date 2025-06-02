@@ -9,6 +9,7 @@ import PropertyAnalysis from "./pages/PropertyAnalysis";
 import OfferStage from "./pages/OfferStage";
 import UnderContract from "./pages/UnderContract";
 import RenovationManagement from "./pages/RenovationManagement";
+import Listed from "./pages/Listed";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/offer" element={<OfferStage />} />
           <Route path="/under-contract" element={<UnderContract />} />
           <Route path="/renovation" element={<RenovationManagement />} />
+          <Route path="/listed" element={<Listed />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
