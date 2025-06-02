@@ -3,19 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/AuthProvider';
+import type { Database } from '@/integrations/supabase/types';
 
-interface Profile {
-  id: string;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-  phone: string | null;
-  avatar_url: string | null;
-  role: string;
-  team_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 export const useProfile = () => {
   const { toast } = useToast();
@@ -46,7 +36,7 @@ export const useProfile = () => {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (updates: Partial<Profile>) => {
+    mutationFn: async (updates: Partial<Pick<Profile, 'first_name' | 'last_name' | 'phone'>>) => {
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
