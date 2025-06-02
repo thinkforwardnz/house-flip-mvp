@@ -6,19 +6,33 @@ import { useToast } from '@/hooks/use-toast';
 interface Task {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   assigned_to: string | null;
   due_date: string | null;
+  start_date: string | null;
   priority: number;
   status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
   type: string;
   deal_id: string;
   created_at: string;
   updated_at: string;
+  attachments: any[] | null;
+}
+
+interface TaskTemplate {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  estimated_duration_days: number | null;
+  priority: number | null;
+  task_type: string | null;
+  sort_order: number | null;
 }
 
 export const useTasks = (dealId: string) => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [templates, setTemplates] = useState<TaskTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -44,6 +58,54 @@ export const useTasks = (dealId: string) => {
     }
   };
 
+  const fetchTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('task_templates')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      if (error) throw error;
+      setTemplates(data || []);
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+    }
+  };
+
+  const createTask = async (taskData: Partial<Task>) => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert({
+          ...taskData,
+          deal_id: dealId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setTasks(prev => [data, ...prev]);
+      toast({
+        title: 'Success',
+        description: 'Task created successfully',
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error creating task:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create task',
+        variant: 'destructive'
+      });
+      throw error;
+    }
+  };
+
   const updateTaskStatus = async (taskId: string, newStatus: Task['status']) => {
     try {
       const { error } = await supabase
@@ -53,7 +115,6 @@ export const useTasks = (dealId: string) => {
 
       if (error) throw error;
 
-      // Optimistically update local state
       setTasks(prev => prev.map(task => 
         task.id === taskId ? { ...task, status: newStatus } : task
       ));
@@ -69,16 +130,38 @@ export const useTasks = (dealId: string) => {
         description: 'Failed to update task status',
         variant: 'destructive'
       });
-      // Revert optimistic update by refetching
       fetchTasks();
+    }
+  };
+
+  const generateTemplateTasks = async () => {
+    try {
+      const { error } = await supabase.rpc('create_template_tasks_for_deal', {
+        deal_uuid: dealId
+      });
+
+      if (error) throw error;
+
+      await fetchTasks();
+      toast({
+        title: 'Success',
+        description: 'Template tasks generated successfully',
+      });
+    } catch (error) {
+      console.error('Error generating template tasks:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate template tasks',
+        variant: 'destructive'
+      });
     }
   };
 
   useEffect(() => {
     if (dealId) {
       fetchTasks();
+      fetchTemplates();
 
-      // Set up real-time subscription
       const channel = supabase
         .channel('tasks-changes')
         .on(
@@ -103,8 +186,11 @@ export const useTasks = (dealId: string) => {
 
   return {
     tasks,
+    templates,
     isLoading,
+    createTask,
     updateTaskStatus,
+    generateTemplateTasks,
     refetch: fetchTasks
   };
 };

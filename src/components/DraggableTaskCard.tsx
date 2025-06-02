@@ -4,7 +4,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, User, GripVertical } from 'lucide-react';
+import { Calendar, User, GripVertical, Paperclip } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -12,9 +12,11 @@ interface Task {
   description: string | null;
   assigned_to: string | null;
   due_date: string | null;
+  start_date: string | null;
   priority: number;
   status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
   type: string;
+  attachments: any[] | null;
 }
 
 interface DraggableTaskCardProps {
@@ -38,16 +40,18 @@ const DraggableTaskCard = ({ task }: DraggableTaskCardProps) => {
   };
 
   const getPriorityColor = (priority: number) => {
-    if (priority <= 2) return 'bg-[#D32F2F]/10 text-[#D32F2F] border-[#D32F2F]/20';
-    if (priority <= 4) return 'bg-[#FF9800]/10 text-[#FF9800] border-[#FF9800]/20';
+    if (priority <= 1) return 'bg-[#D32F2F]/10 text-[#D32F2F] border-[#D32F2F]/20';
+    if (priority <= 2) return 'bg-[#FF9800]/10 text-[#FF9800] border-[#FF9800]/20';
     return 'bg-[#388E3C]/10 text-[#388E3C] border-[#388E3C]/20';
   };
 
   const getPriorityLabel = (priority: number) => {
-    if (priority <= 2) return 'high';
-    if (priority <= 4) return 'medium';
+    if (priority <= 1) return 'high';
+    if (priority <= 2) return 'medium';
     return 'low';
   };
+
+  const hasAttachments = task.attachments && task.attachments.length > 0;
 
   return (
     <Card
@@ -79,9 +83,16 @@ const DraggableTaskCard = ({ task }: DraggableTaskCardProps) => {
             <Badge className={`text-xs px-2 py-1 ${getPriorityColor(task.priority)}`}>
               {getPriorityLabel(task.priority)}
             </Badge>
-            <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
-              {task.type}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                {task.type}
+              </span>
+              {hasAttachments && (
+                <div className="flex items-center text-gray-400">
+                  <Paperclip className="h-3 w-3" />
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="space-y-2">
@@ -91,10 +102,16 @@ const DraggableTaskCard = ({ task }: DraggableTaskCardProps) => {
                 <span>{task.assigned_to}</span>
               </div>
             )}
+            {task.start_date && (
+              <div className="flex items-center gap-2 text-xs text-gray-600">
+                <Calendar className="h-3 w-3" />
+                <span>Start: {new Date(task.start_date).toLocaleDateString()}</span>
+              </div>
+            )}
             {task.due_date && (
               <div className="flex items-center gap-2 text-xs text-gray-600">
                 <Calendar className="h-3 w-3" />
-                <span>{new Date(task.due_date).toLocaleDateString()}</span>
+                <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
               </div>
             )}
           </div>

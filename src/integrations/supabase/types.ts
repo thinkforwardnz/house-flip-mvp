@@ -520,15 +520,59 @@ export type Database = {
         }
         Relationships: []
       }
+      task_templates: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          estimated_duration_days: number | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          sort_order: number | null
+          task_type: Database["public"]["Enums"]["task_type"] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          estimated_duration_days?: number | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          sort_order?: number | null
+          task_type?: Database["public"]["Enums"]["task_type"] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          estimated_duration_days?: number | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          sort_order?: number | null
+          task_type?: Database["public"]["Enums"]["task_type"] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to: string | null
+          attachments: Json | null
           created_at: string | null
           deal_id: string
           description: string | null
           due_date: string | null
           id: string
           priority: number | null
+          start_date: string | null
           status: Database["public"]["Enums"]["task_status"] | null
           title: string
           type: Database["public"]["Enums"]["task_type"] | null
@@ -536,12 +580,14 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          attachments?: Json | null
           created_at?: string | null
           deal_id: string
           description?: string | null
           due_date?: string | null
           id?: string
           priority?: number | null
+          start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"] | null
           title: string
           type?: Database["public"]["Enums"]["task_type"] | null
@@ -549,12 +595,14 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          attachments?: Json | null
           created_at?: string | null
           deal_id?: string
           description?: string | null
           due_date?: string | null
           id?: string
           priority?: number | null
+          start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"] | null
           title?: string
           type?: Database["public"]["Enums"]["task_type"] | null
@@ -662,6 +710,10 @@ export type Database = {
       can_access_deal: {
         Args: { deal_uuid: string }
         Returns: boolean
+      }
+      create_template_tasks_for_deal: {
+        Args: { deal_uuid: string }
+        Returns: undefined
       }
       get_current_user_team_id: {
         Args: Record<PropertyKey, never>
