@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw } from 'lucide-react';
 import { useScrapedListings } from '@/hooks/useScrapedListings';
+import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
+import ScrapingProgress from '@/components/ScrapingProgress';
+import ScrapingHistoryPanel from '@/components/ScrapingHistoryPanel';
 
 interface SearchFilters {
   suburb: string;
@@ -34,6 +37,14 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
     isImporting
   } = useScrapedListings(filters);
 
+  const {
+    isScrapingActive,
+    sourceProgress,
+    totalProgress,
+    startScraping,
+    cancelScraping,
+  } = useEnhancedScraping();
+
   const handleImportAsDeal = (listing: any) => {
     importAsDeal(listing);
   };
@@ -47,7 +58,17 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
   };
 
   const handleRefresh = () => {
-    window.location.reload();
+    if (isScrapingActive) return;
+    
+    const scrapingFilters = {
+      suburb: filters.suburb,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      minBeds: filters.minBeds,
+      keywords: filters.keywords
+    };
+    
+    startScraping(scrapingFilters);
   };
 
   if (error) {
@@ -64,7 +85,19 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
   );
 
   return (
-    <div>
+    <div className="space-y-6">
+      {/* Scraping Progress */}
+      <ScrapingProgress
+        isActive={isScrapingActive}
+        sources={sourceProgress}
+        totalProgress={totalProgress}
+        onCancel={cancelScraping}
+      />
+
+      {/* Scraping History */}
+      <ScrapingHistoryPanel />
+
+      {/* Property Listings */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
@@ -77,10 +110,18 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
         </div>
       ) : (
         <>
-          <div className="mb-4">
+          <div className="flex items-center justify-between mb-4">
             <p className="text-gray-600">
               Found {visibleListings.length} properties matching your criteria
             </p>
+            <Button 
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={isScrapingActive}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isScrapingActive ? 'animate-spin' : ''}`} />
+              {isScrapingActive ? 'Scraping...' : 'Refresh Feed'}
+            </Button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -124,24 +165,16 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
             })}
           </div>
           
-          {visibleListings.length > 0 && (
-            <div className="text-center mt-8">
-              <Button 
-                variant="outline"
-                onClick={handleRefresh}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh Feed
-              </Button>
-            </div>
-          )}
-          
           {visibleListings.length === 0 && !isLoading && (
             <div className="text-center py-12">
               <p className="text-gray-500 mb-4">No properties found matching your criteria.</p>
-              <Button variant="outline" onClick={handleRefresh}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh Feed
+              <Button 
+                variant="outline" 
+                onClick={handleRefresh}
+                disabled={isScrapingActive}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isScrapingActive ? 'animate-spin' : ''}`} />
+                {isScrapingActive ? 'Scraping...' : 'Refresh Feed'}
               </Button>
             </div>
           )}

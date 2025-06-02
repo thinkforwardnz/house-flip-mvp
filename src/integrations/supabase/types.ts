@@ -520,6 +520,51 @@ export type Database = {
         }
         Relationships: []
       }
+      scraping_history: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          errors: string[] | null
+          filters: Json | null
+          id: string
+          results: Json | null
+          sources_requested: string[]
+          started_at: string
+          status: string
+          total_scraped: number | null
+          total_skipped: number | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          errors?: string[] | null
+          filters?: Json | null
+          id?: string
+          results?: Json | null
+          sources_requested?: string[]
+          started_at?: string
+          status?: string
+          total_scraped?: number | null
+          total_skipped?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          errors?: string[] | null
+          filters?: Json | null
+          id?: string
+          results?: Json | null
+          sources_requested?: string[]
+          started_at?: string
+          status?: string
+          total_scraped?: number | null
+          total_skipped?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       task_templates: {
         Row: {
           category: string
