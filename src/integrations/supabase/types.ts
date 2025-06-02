@@ -439,6 +439,87 @@ export type Database = {
           },
         ]
       }
+      scraped_listings: {
+        Row: {
+          address: string
+          ai_arv: number | null
+          ai_confidence: number | null
+          ai_est_profit: number | null
+          ai_reno_cost: number | null
+          ai_score: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          city: string | null
+          created_at: string
+          date_scraped: string
+          flip_potential: Database["public"]["Enums"]["flip_potential"] | null
+          floor_area: number | null
+          id: string
+          land_area: number | null
+          listing_date: string | null
+          photos: string[] | null
+          price: number
+          source_site: string | null
+          source_url: string
+          status: Database["public"]["Enums"]["scraped_listing_status"]
+          suburb: string | null
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          ai_arv?: number | null
+          ai_confidence?: number | null
+          ai_est_profit?: number | null
+          ai_reno_cost?: number | null
+          ai_score?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          city?: string | null
+          created_at?: string
+          date_scraped?: string
+          flip_potential?: Database["public"]["Enums"]["flip_potential"] | null
+          floor_area?: number | null
+          id?: string
+          land_area?: number | null
+          listing_date?: string | null
+          photos?: string[] | null
+          price: number
+          source_site?: string | null
+          source_url: string
+          status?: Database["public"]["Enums"]["scraped_listing_status"]
+          suburb?: string | null
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          ai_arv?: number | null
+          ai_confidence?: number | null
+          ai_est_profit?: number | null
+          ai_reno_cost?: number | null
+          ai_score?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          city?: string | null
+          created_at?: string
+          date_scraped?: string
+          flip_potential?: Database["public"]["Enums"]["flip_potential"] | null
+          floor_area?: number | null
+          id?: string
+          land_area?: number | null
+          listing_date?: string | null
+          photos?: string[] | null
+          price?: number
+          source_site?: string | null
+          source_url?: string
+          status?: Database["public"]["Enums"]["scraped_listing_status"]
+          suburb?: string | null
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to: string | null
@@ -531,6 +612,48 @@ export type Database = {
           },
         ]
       }
+      user_scraped_listing_actions: {
+        Row: {
+          action: Database["public"]["Enums"]["scraped_listing_status"]
+          created_at: string
+          deal_id: string | null
+          id: string
+          scraped_listing_id: string
+          user_id: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["scraped_listing_status"]
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          scraped_listing_id: string
+          user_id: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["scraped_listing_status"]
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          scraped_listing_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_scraped_listing_actions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_scraped_listing_actions_scraped_listing_id_fkey"
+            columns: ["scraped_listing_id"]
+            isOneToOne: false
+            referencedRelation: "scraped_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -540,9 +663,14 @@ export type Database = {
         Args: { deal_uuid: string }
         Returns: boolean
       }
+      get_user_listing_status: {
+        Args: { listing_id: string; user_uuid: string }
+        Returns: Database["public"]["Enums"]["scraped_listing_status"]
+      }
     }
     Enums: {
       file_type: "photo" | "PDF" | "report" | "contract" | "invoice" | "other"
+      flip_potential: "High" | "Medium" | "Low"
       offer_status: "pending" | "accepted" | "rejected" | "counter"
       pipeline_stage:
         | "Analysis"
@@ -553,6 +681,7 @@ export type Database = {
         | "Sold"
       renovation_status: "planned" | "in_progress" | "completed" | "cancelled"
       risk_level: "low" | "medium" | "high"
+      scraped_listing_status: "new" | "saved" | "dismissed" | "imported"
       task_status: "pending" | "in_progress" | "done"
       task_type:
         | "DD"
@@ -679,6 +808,7 @@ export const Constants = {
   public: {
     Enums: {
       file_type: ["photo", "PDF", "report", "contract", "invoice", "other"],
+      flip_potential: ["High", "Medium", "Low"],
       offer_status: ["pending", "accepted", "rejected", "counter"],
       pipeline_stage: [
         "Analysis",
@@ -690,6 +820,7 @@ export const Constants = {
       ],
       renovation_status: ["planned", "in_progress", "completed", "cancelled"],
       risk_level: ["low", "medium", "high"],
+      scraped_listing_status: ["new", "saved", "dismissed", "imported"],
       task_status: ["pending", "in_progress", "done"],
       task_type: [
         "DD",

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, Plus, X, ExternalLink, Bed, Bath, Home, MapPin } from 'lucide-react';
+import { Heart, Plus, X, ExternalLink, Bed, Bath, Home, MapPin, CheckCircle } from 'lucide-react';
 
 interface PropertyListingCardProps {
   property: {
@@ -32,9 +32,18 @@ interface PropertyListingCardProps {
   onImportAsDeal: () => void;
   onSaveForLater: () => void;
   onDismiss: () => void;
+  isLoading?: boolean;
+  userAction?: 'new' | 'saved' | 'dismissed' | 'imported';
 }
 
-const PropertyListingCard = ({ property, onImportAsDeal, onSaveForLater, onDismiss }: PropertyListingCardProps) => {
+const PropertyListingCard = ({ 
+  property, 
+  onImportAsDeal, 
+  onSaveForLater, 
+  onDismiss, 
+  isLoading = false,
+  userAction = 'new'
+}: PropertyListingCardProps) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NZ', {
       style: 'currency',
@@ -50,6 +59,17 @@ const PropertyListingCard = ({ property, onImportAsDeal, onSaveForLater, onDismi
       case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'Low': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getActionIcon = () => {
+    switch (userAction) {
+      case 'saved':
+        return <Heart className="h-3 w-3 fill-current text-red-500" />;
+      case 'imported':
+        return <CheckCircle className="h-3 w-3 text-green-500" />;
+      default:
+        return <Heart className="h-3 w-3" />;
     }
   };
 
@@ -71,6 +91,20 @@ const PropertyListingCard = ({ property, onImportAsDeal, onSaveForLater, onDismi
             {property.source}
           </Badge>
         </div>
+        {userAction === 'saved' && (
+          <div className="absolute top-12 right-3">
+            <Badge className="bg-red-100 text-red-800 text-xs">
+              Saved
+            </Badge>
+          </div>
+        )}
+        {userAction === 'imported' && (
+          <div className="absolute top-12 right-3">
+            <Badge className="bg-green-100 text-green-800 text-xs">
+              Imported
+            </Badge>
+          </div>
+        )}
       </div>
       
       <CardContent className="p-4">
@@ -138,18 +172,20 @@ const PropertyListingCard = ({ property, onImportAsDeal, onSaveForLater, onDismi
           <div className="flex gap-2">
             <Button 
               onClick={onImportAsDeal}
+              disabled={isLoading || userAction === 'imported'}
               className="flex-1 bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-xs h-8"
             >
               <Plus className="h-3 w-3 mr-1" />
-              Import as Deal
+              {userAction === 'imported' ? 'Imported' : 'Import as Deal'}
             </Button>
             <Button 
               onClick={onSaveForLater}
+              disabled={isLoading || userAction === 'imported'}
               variant="outline" 
               size="sm"
               className="text-xs h-8 px-2"
             >
-              <Heart className="h-3 w-3" />
+              {getActionIcon()}
             </Button>
           </div>
           <div className="flex gap-2">
@@ -166,6 +202,7 @@ const PropertyListingCard = ({ property, onImportAsDeal, onSaveForLater, onDismi
               variant="ghost" 
               size="sm"
               onClick={onDismiss}
+              disabled={isLoading || userAction === 'dismissed' || userAction === 'imported'}
               className="text-xs h-8 px-2 text-gray-500 hover:text-red-600"
             >
               <X className="h-3 w-3" />
