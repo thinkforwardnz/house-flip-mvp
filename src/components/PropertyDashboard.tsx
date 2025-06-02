@@ -1,187 +1,226 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useAuth } from '@/components/AuthProvider';
+import { useDeals } from '@/hooks/useDeals';
+import AuthForm from '@/components/AuthForm';
+import CreateDealDialog from '@/components/CreateDealDialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import KanbanColumn from './KanbanColumn';
-import AlertsPanel from './AlertsPanel';
-
-interface Property {
-  id: string;
-  address: string;
-  status: string;
-  profit: number;
-  risk: 'Low' | 'Medium' | 'High';
-  stage: string;
-  hasAlert: boolean;
-  purchasePrice?: number;
-  estimatedValue?: number;
-  daysInStage?: number;
-}
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { 
+  Home, 
+  TrendingUp, 
+  DollarSign, 
+  AlertTriangle, 
+  Settings,
+  LogOut,
+  User
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const PropertyDashboard = () => {
-  const [properties] = useState<Property[]>([
-    {
-      id: '1',
-      address: '123 Oak Street, Downtown',
-      status: 'Active',
-      profit: 45000,
-      risk: 'Low',
-      stage: 'Analysis',
-      hasAlert: false,
-      purchasePrice: 150000,
-      estimatedValue: 220000,
-      daysInStage: 5
-    },
-    {
-      id: '2',
-      address: '456 Pine Avenue, Suburbs',
-      status: 'Active',
-      profit: 32000,
-      risk: 'Medium',
-      stage: 'Offer',
-      hasAlert: true,
-      purchasePrice: 180000,
-      estimatedValue: 235000,
-      daysInStage: 12
-    },
-    {
-      id: '3',
-      address: '789 Elm Drive, Midtown',
-      status: 'Active',
-      profit: 58000,
-      risk: 'Low',
-      stage: 'Under Contract',
-      hasAlert: false,
-      purchasePrice: 165000,
-      estimatedValue: 250000,
-      daysInStage: 8
-    },
-    {
-      id: '4',
-      address: '321 Maple Court, Eastside',
-      status: 'Active',
-      profit: 28000,
-      risk: 'High',
-      stage: 'Reno',
-      hasAlert: true,
-      purchasePrice: 140000,
-      estimatedValue: 195000,
-      daysInStage: 45
-    },
-    {
-      id: '5',
-      address: '654 Birch Lane, Westend',
-      status: 'Active',
-      profit: 67000,
-      risk: 'Low',
-      stage: 'Listed',
-      hasAlert: false,
-      purchasePrice: 175000,
-      estimatedValue: 275000,
-      daysInStage: 23
-    },
-    {
-      id: '6',
-      address: '987 Cedar Road, Northside',
-      status: 'Completed',
-      profit: 42000,
-      risk: 'Low',
-      stage: 'Sold',
-      hasAlert: false,
-      purchasePrice: 160000,
-      estimatedValue: 230000,
-      daysInStage: 120
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { deals, isLoading: dealsLoading } = useDeals();
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B5E20] mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthForm />;
+  }
+
+  const getStageColor = (stage: string) => {
+    switch (stage) {
+      case 'Analysis': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'Offer': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'Under Contract': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'Reno': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'Listed': return 'bg-green-100 text-green-800 border-green-200';
+      case 'Sold': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-  ]);
-
-  const stages = [
-    { name: 'Analysis', color: 'bg-blue-100 text-blue-800' },
-    { name: 'Offer', color: 'bg-yellow-100 text-yellow-800' },
-    { name: 'Under Contract', color: 'bg-purple-100 text-purple-800' },
-    { name: 'Reno', color: 'bg-orange-100 text-orange-800' },
-    { name: 'Listed', color: 'bg-indigo-100 text-indigo-800' },
-    { name: 'Sold', color: 'bg-green-100 text-green-800' }
-  ];
-
-  const getPropertiesByStage = (stageName: string) => {
-    return properties.filter(property => property.stage === stageName);
   };
 
-  const handleAddProperty = () => {
-    console.log('Add new property clicked');
-    // Implementation for adding new property would go here
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NZ', {
+      style: 'currency',
+      currency: 'NZD',
+      minimumFractionDigits: 0
+    }).format(amount);
   };
+
+  const totalValue = deals.reduce((sum, deal) => sum + (deal.target_sale_price || 0), 0);
+  const totalProfit = deals.reduce((sum, deal) => sum + (deal.current_profit || 0), 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 lg:p-6">
-      <div className="max-w-full mx-auto">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
-          <div className="flex items-center justify-between lg:justify-start">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Property Pipeline</h1>
-              <p className="text-gray-600 mt-1">Manage your property flipping projects</p>
-            </div>
-            <div className="lg:hidden">
-              <AlertsPanel />
+    <div className="min-h-screen bg-[#F8F9FA]">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Home className="h-6 w-6 text-[#1B5E20]" />
+              <h1 className="text-xl font-bold text-gray-900">NZ House Flipping</h1>
             </div>
           </div>
           
           <div className="flex items-center gap-4">
-            <Button 
-              onClick={handleAddProperty}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm"
-            >
-              <Plus className="h-4 w-4" />
-              Add New Property
+            <CreateDealDialog />
+            <Link to="/settings">
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+            </Link>
+            <Button variant="outline" size="sm" onClick={signOut}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
             </Button>
-            <div className="hidden lg:block">
-              <AlertsPanel />
-            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Welcome Section */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Welcome back!
+          </h2>
+          <p className="text-gray-600">
+            Here's an overview of your property portfolio
+          </p>
         </div>
 
-        {/* Dashboard Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <div className="text-2xl font-bold text-gray-900">{properties.length}</div>
-            <div className="text-sm text-gray-500">Total Properties</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <div className="text-2xl font-bold text-green-600">
-              ${properties.reduce((sum, p) => sum + p.profit, 0).toLocaleString()}
-            </div>
-            <div className="text-sm text-gray-500">Total Profit</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <div className="text-2xl font-bold text-blue-600">
-              {properties.filter(p => p.stage !== 'Sold').length}
-            </div>
-            <div className="text-sm text-gray-500">Active Projects</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <div className="text-2xl font-bold text-amber-600">
-              {properties.filter(p => p.hasAlert).length}
-            </div>
-            <div className="text-sm text-gray-500">Alerts</div>
-          </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Home className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">Total Deals</p>
+                  <p className="text-2xl font-bold text-gray-900">{deals.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">Total Value</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalValue)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#FF9800]/10 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-[#FF9800]" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">Total Profit</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalProfit)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">High Risk</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {deals.filter(deal => deal.current_risk === 'high').length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Kanban Board */}
-        <div className="flex flex-col lg:flex-row gap-4 overflow-x-auto lg:overflow-x-visible">
-          {stages.map((stage) => {
-            const stageProperties = getPropertiesByStage(stage.name);
-            return (
-              <KanbanColumn
-                key={stage.name}
-                title={stage.name}
-                properties={stageProperties}
-                count={stageProperties.length}
-                color={stage.color}
-              />
-            );
-          })}
-        </div>
+        {/* Deals List */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Your Property Deals</span>
+              <CreateDealDialog />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dealsLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-48 mb-2" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                ))}
+              </div>
+            ) : deals.length === 0 ? (
+              <div className="text-center py-8">
+                <Home className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 mb-4">No deals yet. Create your first property deal to get started!</p>
+                <CreateDealDialog />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {deals.map((deal) => (
+                  <div key={deal.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium text-gray-900">{deal.address}</h3>
+                        <Badge className={getStageColor(deal.pipeline_stage)}>
+                          {deal.pipeline_stage}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <span>{deal.suburb}, {deal.city}</span>
+                        {deal.purchase_price && (
+                          <span>Purchase: {formatCurrency(deal.purchase_price)}</span>
+                        )}
+                        {deal.target_sale_price && (
+                          <span>Target: {formatCurrency(deal.target_sale_price)}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500">
+                        Created {new Date(deal.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
