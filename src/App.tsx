@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import PropertyAnalysis from "./pages/PropertyAnalysis";
 import OfferStage from "./pages/OfferStage";
+import UnderContract from "./pages/UnderContract";
 import RenovationManagement from "./pages/RenovationManagement";
 import NotFound from "./pages/NotFound";
 
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/analysis" element={<PropertyAnalysis />} />
           <Route path="/offer" element={<OfferStage />} />
+          <Route path="/under-contract" element={<UnderContract />} />
           <Route path="/renovation" element={<RenovationManagement />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
