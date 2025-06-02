@@ -1,7 +1,11 @@
 
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import DraggableTaskCard from './DraggableTaskCard';
 import type { Database } from '@/integrations/supabase/types';
@@ -12,40 +16,41 @@ interface DroppableColumnProps {
   id: string;
   title: string;
   tasks: Task[];
+  onTaskClick?: (task: Task) => void;
 }
 
-const DroppableColumn = ({ id, title, tasks }: DroppableColumnProps) => {
-  const { setNodeRef, isOver } = useDroppable({
+const DroppableColumn = ({ id, title, tasks, onTaskClick }: DroppableColumnProps) => {
+  const { setNodeRef } = useDroppable({
     id,
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900">{title}</h3>
-        <Badge className="bg-gray-100 text-gray-700 border-gray-200">
-          {tasks.length}
-        </Badge>
-      </div>
-      
-      <div
-        ref={setNodeRef}
-        className={`space-y-3 min-h-[200px] p-2 rounded-lg transition-colors ${
-          isOver ? 'bg-blue-50 border-2 border-dashed border-blue-300' : 'bg-transparent'
-        }`}
-      >
-        <SortableContext items={tasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
-          {tasks.map((task) => (
-            <DraggableTaskCard key={task.id} task={task} />
-          ))}
-          {tasks.length === 0 && (
-            <div className="text-center py-8 text-gray-500 text-sm">
-              No tasks in this stage
-            </div>
-          )}
-        </SortableContext>
-      </div>
-    </div>
+    <Card className="bg-gray-50 border-gray-200">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium text-gray-700 flex items-center justify-between">
+          {title}
+          <Badge variant="secondary" className="text-xs">
+            {tasks.length}
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div
+          ref={setNodeRef}
+          className="min-h-[200px] space-y-3"
+        >
+          <SortableContext items={tasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
+            {tasks.map((task) => (
+              <DraggableTaskCard 
+                key={task.id} 
+                task={task} 
+                onTaskClick={onTaskClick}
+              />
+            ))}
+          </SortableContext>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

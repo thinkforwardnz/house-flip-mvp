@@ -13,9 +13,10 @@ type Task = Database['public']['Tables']['tasks']['Row'];
 interface TaskListViewProps {
   tasks: Task[];
   onUpdateStatus: (taskId: string, status: Task['status']) => void;
+  onTaskClick?: (task: Task) => void;
 }
 
-const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
+const TaskListView = ({ tasks, onUpdateStatus, onTaskClick }: TaskListViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -160,7 +161,11 @@ const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
           </Card>
         ) : (
           filteredTasks.map((task) => (
-            <Card key={task.id} className="hover:shadow-md transition-shadow">
+            <Card 
+              key={task.id} 
+              className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => onTaskClick?.(task)}
+            >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -203,11 +208,14 @@ const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
                     </div>
                   </div>
                   
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onUpdateStatus(task.id, 'to_do')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUpdateStatus(task.id, 'to_do');
+                      }}
                       className={task.status === 'to_do' ? 'bg-gray-100' : ''}
                     >
                       To Do
@@ -215,7 +223,10 @@ const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onUpdateStatus(task.id, 'in_progress')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUpdateStatus(task.id, 'in_progress');
+                      }}
                       className={task.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : ''}
                     >
                       In Progress
@@ -223,7 +234,10 @@ const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onUpdateStatus(task.id, 'review')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUpdateStatus(task.id, 'review');
+                      }}
                       className={task.status === 'review' ? 'bg-orange-100 text-orange-700' : ''}
                     >
                       Review
@@ -231,7 +245,10 @@ const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onUpdateStatus(task.id, 'done')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUpdateStatus(task.id, 'done');
+                      }}
                       className={task.status === 'done' ? 'bg-green-100 text-green-700' : ''}
                     >
                       Done

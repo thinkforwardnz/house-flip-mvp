@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   DndContext,
@@ -15,6 +16,7 @@ import { useSelectedDeal } from '@/hooks/useSelectedDeal';
 import { useTasks } from '@/hooks/useTasks';
 import DroppableColumn from './DroppableColumn';
 import TaskCreateDialog from './TaskCreateDialog';
+import TaskEditDialog from './TaskEditDialog';
 import TaskListView from './TaskListView';
 import TaskCalendarView from './TaskCalendarView';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,8 +30,9 @@ type ViewType = 'kanban' | 'list' | 'calendar';
 
 const TaskKanban = () => {
   const { selectedDeal } = useSelectedDeal('Reno');
-  const { tasks, templates, isLoading, createTask, updateTaskStatus, generateTemplateTasks } = useTasks(selectedDeal?.id || '');
+  const { tasks, templates, isLoading, createTask, updateTask, deleteTask, updateTaskStatus, generateTemplateTasks } = useTasks(selectedDeal?.id || '');
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -61,6 +64,10 @@ const TaskKanban = () => {
     if (!task || task.status === newStatus) return;
 
     updateTaskStatus(taskId, newStatus);
+  };
+
+  const handleTaskClick = (task: Task) => {
+    setEditingTask(task);
   };
 
   if (isLoading) {
@@ -162,6 +169,7 @@ const TaskKanban = () => {
                 id={column.id}
                 title={column.title}
                 tasks={getTasksByStatus(column.status)}
+                onTaskClick={handleTaskClick}
               />
             ))}
           </div>
@@ -169,12 +177,29 @@ const TaskKanban = () => {
       )}
 
       {currentView === 'list' && (
-        <TaskListView tasks={tasks} onUpdateStatus={updateTaskStatus} />
+        <TaskListView 
+          tasks={tasks} 
+          onUpdateStatus={updateTaskStatus}
+          onTaskClick={handleTaskClick}
+        />
       )}
 
       {currentView === 'calendar' && (
-        <TaskCalendarView tasks={tasks} onUpdateStatus={updateTaskStatus} />
+        <TaskCalendarView 
+          tasks={tasks} 
+          onUpdateStatus={updateTaskStatus}
+          onTaskClick={handleTaskClick}
+        />
       )}
+
+      {/* Task Edit Dialog */}
+      <TaskEditDialog
+        task={editingTask}
+        open={!!editingTask}
+        onOpenChange={(open) => !open && setEditingTask(null)}
+        onUpdateTask={updateTask}
+        onDeleteTask={deleteTask}
+      />
     </div>
   );
 };

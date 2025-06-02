@@ -7,6 +7,7 @@ import type { Database } from '@/integrations/supabase/types';
 type Task = Database['public']['Tables']['tasks']['Row'];
 type TaskTemplate = Database['public']['Tables']['task_templates']['Row'];
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
+type TaskUpdate = Database['public']['Tables']['tasks']['Update'];
 
 export const useTasks = (dealId: string) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -83,6 +84,65 @@ export const useTasks = (dealId: string) => {
       toast({
         title: 'Error',
         description: 'Failed to create task',
+        variant: 'destructive'
+      });
+      throw error;
+    }
+  };
+
+  const updateTask = async (taskId: string, updates: Partial<TaskUpdate>): Promise<void> => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', taskId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setTasks(prev => prev.map(task => 
+        task.id === taskId ? data : task
+      ));
+
+      toast({
+        title: 'Success',
+        description: 'Task updated successfully',
+      });
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update task',
+        variant: 'destructive'
+      });
+      throw error;
+    }
+  };
+
+  const deleteTask = async (taskId: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setTasks(prev => prev.filter(task => task.id !== taskId));
+
+      toast({
+        title: 'Success',
+        description: 'Task deleted successfully',
+      });
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete task',
         variant: 'destructive'
       });
       throw error;
@@ -172,6 +232,8 @@ export const useTasks = (dealId: string) => {
     templates,
     isLoading,
     createTask,
+    updateTask,
+    deleteTask,
     updateTaskStatus,
     generateTemplateTasks,
     refetch: fetchTasks

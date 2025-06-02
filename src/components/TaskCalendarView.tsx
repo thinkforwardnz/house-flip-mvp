@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,9 +10,10 @@ type Task = Database['public']['Tables']['tasks']['Row'];
 interface TaskCalendarViewProps {
   tasks: Task[];
   onUpdateStatus: (taskId: string, status: Task['status']) => void;
+  onTaskClick?: (task: Task) => void;
 }
 
-const TaskCalendarView = ({ tasks, onUpdateStatus }: TaskCalendarViewProps) => {
+const TaskCalendarView = ({ tasks, onUpdateStatus, onTaskClick }: TaskCalendarViewProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const getDaysInMonth = (date: Date) => {
@@ -137,10 +137,7 @@ const TaskCalendarView = ({ tasks, onUpdateStatus }: TaskCalendarViewProps) => {
                             key={task.id}
                             className="text-xs p-1 rounded cursor-pointer hover:opacity-80"
                             style={{ backgroundColor: getStatusColor(task.status!) + '20' }}
-                            onClick={() => {
-                              // Could open task details modal here
-                              console.log('Task clicked:', task);
-                            }}
+                            onClick={() => onTaskClick?.(task)}
                           >
                             <div className="flex items-center gap-1">
                               <div

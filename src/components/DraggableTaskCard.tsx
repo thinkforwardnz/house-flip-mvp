@@ -11,9 +11,10 @@ type Task = Database['public']['Tables']['tasks']['Row'];
 
 interface DraggableTaskCardProps {
   task: Task;
+  onTaskClick?: (task: Task) => void;
 }
 
-const DraggableTaskCard = ({ task }: DraggableTaskCardProps) => {
+const DraggableTaskCard = ({ task, onTaskClick }: DraggableTaskCardProps) => {
   const {
     attributes,
     listeners,
@@ -43,6 +44,12 @@ const DraggableTaskCard = ({ task }: DraggableTaskCardProps) => {
 
   const hasAttachments = task.attachments && Array.isArray(task.attachments) && task.attachments.length > 0;
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't trigger click if dragging or clicking the drag handle
+    if (isDragging || e.target === e.currentTarget) return;
+    onTaskClick?.(task);
+  };
+
   return (
     <Card
       ref={setNodeRef}
@@ -50,6 +57,7 @@ const DraggableTaskCard = ({ task }: DraggableTaskCardProps) => {
       className={`bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer ${
         isDragging ? 'ring-2 ring-blue-primary' : ''
       }`}
+      onClick={handleCardClick}
     >
       <CardContent className="p-4">
         <div className="space-y-3">
@@ -64,14 +72,15 @@ const DraggableTaskCard = ({ task }: DraggableTaskCardProps) => {
               {...attributes}
               {...listeners}
               className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing p-1"
+              onClick={(e) => e.stopPropagation()}
             >
               <GripVertical className="h-4 w-4" />
             </div>
           </div>
           
           <div className="flex items-center justify-between">
-            <Badge className={`text-xs px-2 py-1 ${getPriorityColor(task.priority)}`}>
-              {getPriorityLabel(task.priority)}
+            <Badge className={`text-xs px-2 py-1 ${getPriorityColor(task.priority!)}`}>
+              {getPriorityLabel(task.priority!)}
             </Badge>
             <div className="flex items-center gap-1">
               <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
