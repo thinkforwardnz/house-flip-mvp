@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Bell, Mail, MessageSquare, Phone, Save } from 'lucide-react';
+import { Bell, Mail, MessageSquare, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const NotificationSettings = () => {
@@ -30,13 +30,16 @@ const NotificationSettings = () => {
   });
 
   const handleToggle = (category: string, setting: string) => {
-    setSettings(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category as keyof typeof prev],
-        [setting]: !prev[category as keyof typeof prev][setting as keyof typeof prev[category as keyof typeof prev]]
-      }
-    }));
+    setSettings(prev => {
+      const categorySettings = prev[category as keyof typeof prev] as Record<string, boolean>;
+      return {
+        ...prev,
+        [category]: {
+          ...categorySettings,
+          [setting]: !categorySettings[setting]
+        }
+      };
+    });
   };
 
   const handleSave = () => {
