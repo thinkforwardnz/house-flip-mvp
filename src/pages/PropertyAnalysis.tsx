@@ -1,12 +1,14 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import PropertySelector from '@/components/PropertySelector';
 import { useSelectedDeal } from '@/hooks/useSelectedDeal';
 import AnalysisForm from '@/components/AnalysisForm';
-import { Calculator, TrendingUp, AlertTriangle, MapPin } from 'lucide-react';
+import AnalysisOverviewCards from '@/components/AnalysisOverviewCards';
+import FinancialAnalysisCard from '@/components/FinancialAnalysisCard';
+import PropertyNotesCard from '@/components/PropertyNotesCard';
+import { MapPin } from 'lucide-react';
 
 const PropertyAnalysis = () => {
   const { selectedDeal, selectedDealId, selectDeal, isLoading } = useSelectedDeal('Analysis');
@@ -88,14 +90,6 @@ const PropertyAnalysis = () => {
     );
   }
 
-  const estimatedRenovationCost = selectedDeal.target_sale_price && selectedDeal.purchase_price 
-    ? Math.max(0, (selectedDeal.target_sale_price - selectedDeal.purchase_price) * 0.15) 
-    : 50000;
-
-  const estimatedProfit = selectedDeal.target_sale_price && selectedDeal.purchase_price
-    ? selectedDeal.target_sale_price - selectedDeal.purchase_price - estimatedRenovationCost
-    : 0;
-
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Property Selector */}
@@ -112,103 +106,20 @@ const PropertyAnalysis = () => {
       </div>
 
       {/* Analysis Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="bg-white shadow-lg rounded-2xl border-0">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-                <Calculator className="h-6 w-6 text-blue-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-navy font-medium">Purchase Price</p>
-                <p className="text-2xl font-bold text-navy-dark">
-                  {selectedDeal.purchase_price ? formatCurrency(selectedDeal.purchase_price) : 'TBD'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white shadow-lg rounded-2xl border-0">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-green-success" />
-              </div>
-              <div>
-                <p className="text-sm text-navy font-medium">Target Sale Price</p>
-                <p className="text-2xl font-bold text-navy-dark">
-                  {selectedDeal.target_sale_price ? formatCurrency(selectedDeal.target_sale_price) : 'TBD'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white shadow-lg rounded-2xl border-0">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${getRiskColor(selectedDeal.current_risk)}`}>
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-sm text-navy font-medium">Risk Level</p>
-                <Badge className={`${getRiskColor(selectedDeal.current_risk)} border-0 text-sm font-semibold`}>
-                  {selectedDeal.current_risk?.toUpperCase()}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <AnalysisOverviewCards 
+        selectedDeal={selectedDeal}
+        formatCurrency={formatCurrency}
+        getRiskColor={getRiskColor}
+      />
 
       {/* Financial Analysis */}
-      <Card className="bg-white shadow-lg rounded-2xl border-0">
-        <CardHeader className="p-6">
-          <CardTitle className="text-navy-dark">Financial Analysis</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 pt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-gray-50 p-4 rounded-xl">
-              <p className="text-sm text-navy font-medium mb-1">Est. Renovation Cost</p>
-              <p className="text-xl font-bold text-navy-dark">{formatCurrency(estimatedRenovationCost)}</p>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-xl">
-              <p className="text-sm text-navy font-medium mb-1">Est. Total Investment</p>
-              <p className="text-xl font-bold text-navy-dark">
-                {selectedDeal.purchase_price ? formatCurrency(selectedDeal.purchase_price + estimatedRenovationCost) : 'TBD'}
-              </p>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-xl">
-              <p className="text-sm text-navy font-medium mb-1">Est. Profit</p>
-              <p className={`text-xl font-bold ${estimatedProfit > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(estimatedProfit)}
-              </p>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-xl">
-              <p className="text-sm text-navy font-medium mb-1">ROI</p>
-              <p className="text-xl font-bold text-navy-dark">
-                {selectedDeal.purchase_price && estimatedProfit > 0 
-                  ? `${((estimatedProfit / (selectedDeal.purchase_price + estimatedRenovationCost)) * 100).toFixed(1)}%`
-                  : 'TBD'
-                }
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <FinancialAnalysisCard 
+        selectedDeal={selectedDeal}
+        formatCurrency={formatCurrency}
+      />
 
       {/* Property Notes */}
-      {selectedDeal.notes && (
-        <Card className="bg-white shadow-lg rounded-2xl border-0">
-          <CardHeader className="p-6">
-            <CardTitle className="text-navy-dark">Analysis Notes</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 pt-0">
-            <p className="text-navy">{selectedDeal.notes}</p>
-          </CardContent>
-        </Card>
-      )}
+      <PropertyNotesCard selectedDeal={selectedDeal} />
 
       {/* Analysis Form */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">
