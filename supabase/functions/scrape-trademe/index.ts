@@ -13,6 +13,24 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
+const firecrawlApiKey = Deno.env.get('FIRECRAWL_KEY');
+
+// Wellington region suburbs for targeting
+const wellingtonSuburbs = [
+  'Wellington Central', 'Kelburn', 'Mount Victoria', 'Thorndon', 'Te Aro', 'Newtown', 'Island Bay',
+  'Petone', 'Lower Hutt', 'Wainuiomata', 'Eastbourne', 'Stokes Valley',
+  'Upper Hutt', 'Totara Park', 'Heretaunga', 'Trentham',
+  'Porirua', 'Whitby', 'Paremata', 'Plimmerton',
+  'Paraparaumu', 'Waikanae', 'Otaki'
+];
+
+// Keywords that indicate flip potential
+const flipKeywords = [
+  'renovate', 'renovation', 'fixer upper', 'deceased estate', 'needs work',
+  'potential', 'original condition', 'handyman', 'do up', 'restore',
+  'character', 'solid bones', 'investment opportunity', 'as is where is'
+];
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -20,22 +38,104 @@ serve(async (req) => {
 
   try {
     const { filters = {} } = await req.json();
-    console.log('Starting TradeMe scraping with filters:', filters);
+    console.log('Starting TradeMe scraping with Firecrawl for Wellington region');
 
-    // For demo purposes, we'll simulate scraping with mock data
-    // In production, this would use actual web scraping
-    const mockListings = generateMockListings(filters);
+    if (!firecrawlApiKey) {
+      throw new Error('Firecrawl API key not configured');
+    }
+
+    // Build TradeMe search URL for Wellington region
+    const baseUrl = 'https://www.trademe.co.nz/a/property/residential/sale/wellington';
+    const searchUrl = buildTradeeMeSearchUrl(baseUrl, filters);
+
+    console.log('Scraping TradeMe URL:', searchUrl);
+
+    // Use Firecrawl to scrape TradeMe
+    const firecrawlResponse = await fetch('https://api.firecrawl.dev/v0/crawl', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${firecrawlApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: searchUrl,
+        crawlerOptions: {
+          includes: ['**/property/residential/**'],
+          excludes: ['**/sold/**', '**/withdrawn/**'],
+          maxDepth: 2,
+          limit: 50
+        },
+        pageOptions: {
+          extractorOptions: {
+            mode: 'llm-extraction',
+            extractionPrompt: `Extract property listing data including:
+              - address
+              - price (convert to number)
+              - bedrooms (number)
+              - bathrooms (number)
+              - floor area in sqm
+              - land area in sqm
+              - description/summary
+              - listing URL
+              - photos (array of URLs)
+              Return as JSON array of properties.`
+          }
+        }
+      }),
+    });
+
+    if (!firecrawlResponse.ok) {
+      throw new Error(`Firecrawl API error: ${firecrawlResponse.status}`);
+    }
+
+    const crawlData = await firecrawlResponse.json();
+    console.log('Firecrawl crawl initiated:', crawlData.jobId);
+
+    // Poll for crawl completion
+    let crawlComplete = false;
+    let attempts = 0;
+    const maxAttempts = 30; // 5 minutes max wait
+    let crawlResults = null;
+
+    while (!crawlComplete && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
+      
+      const statusResponse = await fetch(`https://api.firecrawl.dev/v0/crawl/status/${crawlData.jobId}`, {
+        headers: {
+          'Authorization': `Bearer ${firecrawlApiKey}`,
+        },
+      });
+
+      const statusData = await statusResponse.json();
+      console.log(`Crawl attempt ${attempts + 1}, status:`, statusData.status);
+
+      if (statusData.status === 'completed') {
+        crawlComplete = true;
+        crawlResults = statusData.data;
+      } else if (statusData.status === 'failed') {
+        throw new Error('Firecrawl job failed');
+      }
+      
+      attempts++;
+    }
+
+    if (!crawlComplete) {
+      throw new Error('Crawl timeout - taking longer than expected');
+    }
+
+    // Process the scraped data
+    const properties = await processTradeeMeData(crawlResults);
     
     let savedCount = 0;
     let skippedCount = 0;
 
-    for (const listing of mockListings) {
+    for (const property of properties) {
       try {
-        // Check if listing already exists (by URL)
+        // Check if listing already exists
         const { data: existing } = await supabase
           .from('scraped_listings')
           .select('id')
-          .eq('source_url', listing.source_url)
+          .eq('source_url', property.source_url)
           .single();
 
         if (existing) {
@@ -43,24 +143,28 @@ serve(async (req) => {
           continue;
         }
 
+        // Calculate flip potential score
+        const flipScore = calculateFlipPotential(property);
+
         // Insert new listing
         const { data: newListing, error: insertError } = await supabase
           .from('scraped_listings')
           .insert({
             source_site: 'TradeMe',
-            source_url: listing.source_url,
-            address: listing.address,
-            suburb: listing.suburb,
-            city: listing.city,
-            price: listing.price,
-            bedrooms: listing.bedrooms,
-            bathrooms: listing.bathrooms,
-            floor_area: listing.floor_area,
-            land_area: listing.land_area,
-            summary: listing.summary,
-            photos: listing.photos,
-            listing_date: listing.listing_date,
-            status: 'new'
+            source_url: property.source_url,
+            address: property.address,
+            suburb: property.suburb,
+            city: property.city,
+            price: property.price,
+            bedrooms: property.bedrooms,
+            bathrooms: property.bathrooms,
+            floor_area: property.floor_area,
+            land_area: property.land_area,
+            summary: property.summary,
+            photos: property.photos,
+            listing_date: property.listing_date,
+            status: 'new',
+            ai_score: flipScore
           })
           .select()
           .single();
@@ -70,14 +174,15 @@ serve(async (req) => {
           continue;
         }
 
-        // Trigger AI analysis for new listing
-        if (newListing) {
+        // Trigger AI analysis for high-potential properties
+        if (newListing && flipScore >= 60) {
           EdgeRuntime.waitUntil(analyzeListingInBackground(newListing));
-          savedCount++;
         }
+        
+        savedCount++;
 
       } catch (error) {
-        console.error('Error processing listing:', error);
+        console.error('Error processing property:', error);
       }
     }
 
@@ -85,7 +190,8 @@ serve(async (req) => {
       success: true,
       scraped: savedCount,
       skipped: skippedCount,
-      total: mockListings.length
+      total: properties.length,
+      source: 'TradeMe'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -102,33 +208,86 @@ serve(async (req) => {
   }
 });
 
-function generateMockListings(filters: any) {
-  const suburbs = ['Ponsonby', 'Mt Eden', 'Newmarket', 'Parnell', 'Grey Lynn', 'Kingsland', 'Sandringham'];
-  const listings = [];
+function buildTradeeMeSearchUrl(baseUrl: string, filters: any): string {
+  const params = new URLSearchParams();
+  
+  if (filters.minPrice) params.append('price_min', filters.minPrice);
+  if (filters.maxPrice) params.append('price_max', filters.maxPrice);
+  if (filters.minBeds) params.append('bedrooms_min', filters.minBeds);
+  if (filters.maxBeds) params.append('bedrooms_max', filters.maxBeds);
+  
+  return `${baseUrl}?${params.toString()}`;
+}
 
-  for (let i = 0; i < 10; i++) {
-    const suburb = suburbs[Math.floor(Math.random() * suburbs.length)];
-    const bedrooms = Math.floor(Math.random() * 4) + 2;
-    const bathrooms = Math.floor(Math.random() * 3) + 1;
-    const price = Math.floor(Math.random() * 800000) + 400000;
-    
-    listings.push({
-      source_url: `https://trademe.co.nz/property/residential-property-for-sale/auction-${Date.now()}-${i}`,
-      address: `${Math.floor(Math.random() * 100) + 1} ${['Queen', 'King', 'Victoria', 'Albert', 'George'][Math.floor(Math.random() * 5)]} Street`,
-      suburb: suburb,
-      city: 'Auckland',
-      price: price,
-      bedrooms: bedrooms,
-      bathrooms: bathrooms,
-      floor_area: Math.floor(Math.random() * 100) + 80,
-      land_area: Math.floor(Math.random() * 400) + 200,
-      summary: `Well-presented ${bedrooms} bedroom home in desirable ${suburb}. Great potential for renovation and value add. Close to amenities and transport.`,
-      photos: [`https://picsum.photos/400/300?random=${i}`],
-      listing_date: new Date().toISOString().split('T')[0]
-    });
+function processTradeeMeData(crawlResults: any[]): any[] {
+  const properties = [];
+  
+  for (const result of crawlResults) {
+    try {
+      // Extract property data from Firecrawl result
+      const extractedData = result.extract || {};
+      
+      if (extractedData.address && extractedData.price) {
+        const property = {
+          source_url: result.metadata?.sourceURL || result.url,
+          address: extractedData.address,
+          suburb: extractSuburb(extractedData.address),
+          city: 'Wellington',
+          price: parsePrice(extractedData.price),
+          bedrooms: parseInt(extractedData.bedrooms) || null,
+          bathrooms: parseFloat(extractedData.bathrooms) || null,
+          floor_area: parseFloat(extractedData.floor_area) || null,
+          land_area: parseFloat(extractedData.land_area) || null,
+          summary: extractedData.description || extractedData.summary || '',
+          photos: extractedData.photos || [],
+          listing_date: new Date().toISOString().split('T')[0]
+        };
+        
+        properties.push(property);
+      }
+    } catch (error) {
+      console.error('Error processing crawl result:', error);
+    }
   }
+  
+  return properties;
+}
 
-  return listings;
+function extractSuburb(address: string): string {
+  for (const suburb of wellingtonSuburbs) {
+    if (address.toLowerCase().includes(suburb.toLowerCase())) {
+      return suburb;
+    }
+  }
+  return 'Wellington';
+}
+
+function parsePrice(priceStr: string): number {
+  const cleaned = priceStr.replace(/[^0-9]/g, '');
+  return parseInt(cleaned) || 0;
+}
+
+function calculateFlipPotential(property: any): number {
+  let score = 50; // Base score
+  
+  const description = (property.summary || '').toLowerCase();
+  
+  // Check for flip keywords
+  for (const keyword of flipKeywords) {
+    if (description.includes(keyword.toLowerCase())) {
+      score += 15;
+    }
+  }
+  
+  // Bonus for older properties with land
+  if (property.land_area > 600) score += 10;
+  if (property.bedrooms <= 2 && property.land_area > 400) score += 15; // Addition potential
+  
+  // Price-based scoring (lower price = higher potential in Wellington)
+  if (property.price < 700000) score += 20;
+  else if (property.price < 900000) score += 10;
+  
+  return Math.min(score, 100);
 }
 
 async function analyzeListingInBackground(listing: any) {

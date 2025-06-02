@@ -19,21 +19,51 @@ serve(async (req) => {
   }
 
   try {
-    const { filters = {} } = await req.json();
+    const { filters = {}, sources = ['trademe', 'realestate', 'oneroof'] } = await req.json();
 
-    console.log('Manual refresh triggered with filters:', filters);
+    console.log('Manual refresh triggered with filters:', filters, 'sources:', sources);
 
-    // Trigger scraping from multiple sources
-    const scrapingPromises = [
-      fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/scrape-trademe`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ filters }),
-      })
-    ];
+    // Trigger scraping from multiple sources in parallel
+    const scrapingPromises = [];
+
+    if (sources.includes('trademe')) {
+      scrapingPromises.push(
+        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/scrape-trademe`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ filters }),
+        })
+      );
+    }
+
+    if (sources.includes('realestate')) {
+      scrapingPromises.push(
+        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/scrape-realestate`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ filters }),
+        })
+      );
+    }
+
+    if (sources.includes('oneroof')) {
+      scrapingPromises.push(
+        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/scrape-oneroof`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ filters }),
+        })
+      );
+    }
 
     // Wait for all scraping jobs to complete
     const results = await Promise.allSettled(scrapingPromises);
@@ -41,6 +71,7 @@ serve(async (req) => {
     let totalScraped = 0;
     let totalSkipped = 0;
     const errors = [];
+    const sourceResults = [];
 
     for (const result of results) {
       if (result.status === 'fulfilled') {
@@ -49,6 +80,12 @@ serve(async (req) => {
           if (data.success) {
             totalScraped += data.scraped;
             totalSkipped += data.skipped;
+            sourceResults.push({
+              source: data.source,
+              scraped: data.scraped,
+              skipped: data.skipped,
+              total: data.total
+            });
           } else {
             errors.push(data.error);
           }
@@ -65,7 +102,8 @@ serve(async (req) => {
       results: {
         scraped: totalScraped,
         skipped: totalSkipped,
-        errors: errors
+        errors: errors,
+        sources: sourceResults
       },
       timestamp: new Date().toISOString()
     }), {

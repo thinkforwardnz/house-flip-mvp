@@ -27,9 +27,9 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    // Construct analysis prompt with property details
+    // Enhanced analysis prompt focused on Wellington market and flip potential
     const analysisPrompt = `
-You are a property investment AI analyzing a New Zealand property for flip potential.
+You are a property investment AI analyzing a Wellington, New Zealand property for flip potential.
 
 Property Details:
 - Address: ${listingData.address}
@@ -41,14 +41,27 @@ Property Details:
 - Land Area: ${listingData.land_area || 'Unknown'} sqm
 - Description: ${listingData.summary || 'No description available'}
 
-Based on current NZ property market conditions and typical renovation costs, provide:
+Analysis Focus for Wellington Market:
+1. Wellington property market conditions (2024 pricing trends)
+2. Typical renovation costs for Wellington properties
+3. Potential for bedroom additions (based on floor plan and land size)
+4. Flip keywords detected: renovation opportunities mentioned
+5. Market comparable values in the Wellington region
 
-1. Estimated renovation cost (NZD) - Consider typical NZ renovation costs for flipping
-2. After Repair Value (ARV) estimate (NZD) - Based on comparable sales in the area
-3. Projected profit (ARV - Purchase Price - Renovation Cost - Holding Costs ~10%)
+Key Assessment Areas:
+- Bedroom Addition Potential: Can extra bedrooms be added internally or via extension?
+- Renovation Scope: Based on description keywords (renovate, fixer upper, deceased estate, needs work)
+- Wellington Market Value: Expected sale price after improvements
+- Holding Costs: Rates, insurance, financing for 6-12 month flip timeline
+
+Provide conservative estimates based on current Wellington market conditions:
+
+1. Estimated renovation cost (NZD) - Include kitchen, bathroom, flooring, paint, potential bedroom addition
+2. After Repair Value (ARV) estimate (NZD) - Based on comparable Wellington sales
+3. Projected profit (ARV - Purchase Price - Renovation Cost - Holding Costs ~15%)
 4. Flip potential rating (High/Medium/Low)
 5. Confidence level (1-100%)
-6. Key insights and risks
+6. Key insights including bedroom addition potential and specific renovation recommendations
 
 Respond in JSON format:
 {
@@ -57,11 +70,11 @@ Respond in JSON format:
   "projected_profit": number,
   "flip_potential": "High" | "Medium" | "Low",
   "confidence": number,
-  "insights": "string with key insights and risks"
+  "insights": "string with key insights, bedroom addition potential, and Wellington-specific recommendations"
 }
 `;
 
-    console.log(`Analyzing property: ${listingData.address}`);
+    console.log(`Analyzing Wellington property: ${listingData.address}`);
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -75,7 +88,7 @@ Respond in JSON format:
         messages: [
           {
             role: 'system',
-            content: 'You are an expert property investment analyst specializing in the New Zealand real estate market. Provide accurate, data-driven analysis for property flipping opportunities.'
+            content: 'You are an expert property investment analyst specializing in the Wellington, New Zealand real estate market. Focus on flip potential, bedroom addition opportunities, and current market conditions. Provide realistic, conservative estimates.'
           },
           {
             role: 'user',
@@ -122,7 +135,7 @@ Respond in JSON format:
       throw updateError;
     }
 
-    console.log(`Successfully analyzed property ${listingData.address}: ${analysis.flip_potential} potential`);
+    console.log(`Successfully analyzed Wellington property ${listingData.address}: ${analysis.flip_potential} potential`);
 
     return new Response(JSON.stringify({
       success: true,

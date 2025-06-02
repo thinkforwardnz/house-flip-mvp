@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Search, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +28,16 @@ interface PropertySearchFiltersProps {
 
 const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFiltersProps) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedSources, setSelectedSources] = useState(['trademe', 'realestate', 'oneroof']);
   const { toast } = useToast();
+
+  const wellingtonSuburbs = [
+    'Wellington Central', 'Kelburn', 'Mount Victoria', 'Thorndon', 'Te Aro', 'Newtown', 'Island Bay',
+    'Petone', 'Lower Hutt', 'Wainuiomata', 'Eastbourne', 'Stokes Valley',
+    'Upper Hutt', 'Totara Park', 'Heretaunga', 'Trentham',
+    'Porirua', 'Whitby', 'Paremata', 'Plimmerton',
+    'Paraparaumu', 'Waikanae', 'Otaki'
+  ];
 
   const handleFilterChange = (key: keyof SearchFilters, value: string) => {
     onFiltersChange({
@@ -45,24 +55,51 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
       maxBeds: '',
       minBaths: '',
       maxBaths: '',
-      keywords: '',
+      keywords: 'renovate, fixer upper, deceased estate, needs work',
     });
   };
 
+  const handleSourceChange = (source: string, checked: boolean) => {
+    if (checked) {
+      setSelectedSources([...selectedSources, source]);
+    } else {
+      setSelectedSources(selectedSources.filter(s => s !== source));
+    }
+  };
+
   const handleRefreshListings = async () => {
+    if (selectedSources.length === 0) {
+      toast({
+        title: "No Sources Selected",
+        description: "Please select at least one property source to scrape.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsRefreshing(true);
     
     try {
       const { data, error } = await supabase.functions.invoke('refresh-listings', {
-        body: { filters }
+        body: { 
+          filters: {
+            ...filters,
+            keywords: filters.keywords || 'renovate, fixer upper, deceased estate, needs work'
+          },
+          sources: selectedSources 
+        }
       });
 
       if (error) throw error;
 
       if (data.success) {
+        const sourceDetails = data.results.sources.map((s: any) => 
+          `${s.source}: ${s.scraped} new, ${s.skipped} skipped`
+        ).join(', ');
+        
         toast({
           title: "Listings Refreshed",
-          description: `Found ${data.results.scraped} new listings, skipped ${data.results.skipped} duplicates.`,
+          description: `Found ${data.results.scraped} new Wellington listings. ${sourceDetails}`,
         });
         
         // Trigger a page refresh to show new listings
@@ -87,20 +124,26 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
       <CardContent className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div>
-            <Label htmlFor="suburb">Suburb</Label>
-            <Input
-              id="suburb"
-              placeholder="e.g., Ponsonby"
-              value={filters.suburb}
-              onChange={(e) => handleFilterChange('suburb', e.target.value)}
-            />
+            <Label htmlFor="suburb">Wellington Suburb</Label>
+            <Select value={filters.suburb} onValueChange={(value) => handleFilterChange('suburb', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select suburb" />
+              </SelectTrigger>
+              <SelectContent>
+                {wellingtonSuburbs.map((suburb) => (
+                  <SelectItem key={suburb} value={suburb}>
+                    {suburb}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div>
-            <Label htmlFor="keywords">Keywords</Label>
+            <Label htmlFor="keywords">Flip Keywords</Label>
             <Input
               id="keywords"
-              placeholder="renovation, fixer upper"
+              placeholder="renovation, fixer upper, deceased estate"
               value={filters.keywords}
               onChange={(e) => handleFilterChange('keywords', e.target.value)}
             />
@@ -152,6 +195,36 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
             </div>
           </div>
         </div>
+
+        <div className="mb-4">
+          <Label className="text-sm font-medium mb-2 block">Property Sources</Label>
+          <div className="flex gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="trademe"
+                checked={selectedSources.includes('trademe')}
+                onCheckedChange={(checked) => handleSourceChange('trademe', checked as boolean)}
+              />
+              <Label htmlFor="trademe" className="text-sm">TradeMe</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="realestate"
+                checked={selectedSources.includes('realestate')}
+                onCheckedChange={(checked) => handleSourceChange('realestate', checked as boolean)}
+              />
+              <Label htmlFor="realestate" className="text-sm">Realestate.co.nz</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="oneroof"
+                checked={selectedSources.includes('oneroof')}
+                onCheckedChange={(checked) => handleSourceChange('oneroof', checked as boolean)}
+              />
+              <Label htmlFor="oneroof" className="text-sm">OneRoof</Label>
+            </div>
+          </div>
+        </div>
         
         <div className="flex justify-between items-center">
           <div className="flex gap-2">
@@ -170,7 +243,7 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
             disabled={isRefreshing}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh Feed'}
+            {isRefreshing ? 'Scraping Wellington...' : 'Refresh Feed'}
           </Button>
         </div>
       </CardContent>

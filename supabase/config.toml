@@ -156,5 +156,11 @@ verify_jwt = false
 [functions.scrape-trademe]
 verify_jwt = false
 
+[functions.scrape-realestate]
+verify_jwt = false
+
+[functions.scrape-oneroof]
+verify_jwt = false
+
 [functions.refresh-listings]
 verify_jwt = false
