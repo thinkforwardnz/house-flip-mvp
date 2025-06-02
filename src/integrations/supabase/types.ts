@@ -738,7 +738,7 @@ export type Database = {
       renovation_status: "planned" | "in_progress" | "completed" | "cancelled"
       risk_level: "low" | "medium" | "high"
       scraped_listing_status: "new" | "saved" | "dismissed" | "imported"
-      task_status: "pending" | "in_progress" | "done"
+      task_status: "to_do" | "in_progress" | "review" | "done"
       task_type:
         | "DD"
         | "Reno"
@@ -877,7 +877,7 @@ export const Constants = {
       renovation_status: ["planned", "in_progress", "completed", "cancelled"],
       risk_level: ["low", "medium", "high"],
       scraped_listing_status: ["new", "saved", "dismissed", "imported"],
-      task_status: ["pending", "in_progress", "done"],
+      task_status: ["to_do", "in_progress", "review", "done"],
       task_type: [
         "DD",
         "Reno",

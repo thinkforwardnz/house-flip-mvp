@@ -20,14 +20,23 @@ interface TaskCreateDialogProps {
 const TaskCreateDialog = ({ onCreateTask, templates }: TaskCreateDialogProps) => {
   const [open, setOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    start_date: string;
+    due_date: string;
+    assigned_to: string;
+    priority: number;
+    type: Database['public']['Enums']['task_type'];
+    attachments: any[];
+  }>({
     title: '',
     description: '',
     start_date: '',
     due_date: '',
     assigned_to: '',
     priority: 3,
-    type: 'Reno' as const,
+    type: 'Reno',
     attachments: []
   });
 
@@ -54,7 +63,7 @@ const TaskCreateDialog = ({ onCreateTask, templates }: TaskCreateDialogProps) =>
         start_date: formData.start_date || null,
         due_date: formData.due_date || null,
         assigned_to: formData.assigned_to || null,
-        status: 'pending'
+        status: 'to_do'
       });
       
       // Reset form
@@ -75,7 +84,7 @@ const TaskCreateDialog = ({ onCreateTask, templates }: TaskCreateDialogProps) =>
     }
   };
 
-  const taskTypes = ['DD', 'Reno', 'Marketing', 'Legal', 'Finance', 'Inspection', 'Other'];
+  const taskTypes: Database['public']['Enums']['task_type'][] = ['DD', 'Reno', 'Marketing', 'Legal', 'Finance', 'Inspection', 'Other'];
   const priorities = [
     { value: 1, label: 'High' },
     { value: 2, label: 'Medium' },
@@ -172,7 +181,7 @@ const TaskCreateDialog = ({ onCreateTask, templates }: TaskCreateDialogProps) =>
 
             <div>
               <Label htmlFor="type">Task Type</Label>
-              <Select value={formData.type} onValueChange={(value: any) => setFormData(prev => ({ ...prev, type: value }))}>
+              <Select value={formData.type} onValueChange={(value: Database['public']['Enums']['task_type']) => setFormData(prev => ({ ...prev, type: value }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

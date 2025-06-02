@@ -4,18 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import type { Database } from '@/integrations/supabase/types';
 
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  assigned_to: string | null;
-  due_date: string | null;
-  start_date: string | null;
-  priority: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
-  type: string;
-}
+type Task = Database['public']['Tables']['tasks']['Row'];
 
 interface TaskCalendarViewProps {
   tasks: Task[];
@@ -78,11 +69,11 @@ const TaskCalendarView = ({ tasks, onUpdateStatus }: TaskCalendarViewProps) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'done':
         return 'bg-green-500';
       case 'in_progress':
         return 'bg-blue-500';
-      case 'on_hold':
+      case 'review':
         return 'bg-orange-500';
       default:
         return 'bg-gray-400';
@@ -145,7 +136,7 @@ const TaskCalendarView = ({ tasks, onUpdateStatus }: TaskCalendarViewProps) => {
                           <div
                             key={task.id}
                             className="text-xs p-1 rounded cursor-pointer hover:opacity-80"
-                            style={{ backgroundColor: getStatusColor(task.status) + '20' }}
+                            style={{ backgroundColor: getStatusColor(task.status!) + '20' }}
                             onClick={() => {
                               // Could open task details modal here
                               console.log('Task clicked:', task);
@@ -153,7 +144,7 @@ const TaskCalendarView = ({ tasks, onUpdateStatus }: TaskCalendarViewProps) => {
                           >
                             <div className="flex items-center gap-1">
                               <div
-                                className={`w-2 h-2 rounded-full ${getStatusColor(task.status)}`}
+                                className={`w-2 h-2 rounded-full ${getStatusColor(task.status!)}`}
                               />
                               <span className="truncate text-gray-900">
                                 {task.title}
@@ -179,7 +170,7 @@ const TaskCalendarView = ({ tasks, onUpdateStatus }: TaskCalendarViewProps) => {
           <div className="mt-4 flex flex-wrap gap-4 text-xs">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-              <span>Pending</span>
+              <span>To Do</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -187,11 +178,11 @@ const TaskCalendarView = ({ tasks, onUpdateStatus }: TaskCalendarViewProps) => {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-              <span>On Hold</span>
+              <span>Review</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span>Completed</span>
+              <span>Done</span>
             </div>
           </div>
         </CardContent>

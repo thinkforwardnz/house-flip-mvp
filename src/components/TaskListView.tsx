@@ -6,19 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, User, Search, Filter } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
 
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  assigned_to: string | null;
-  due_date: string | null;
-  start_date: string | null;
-  priority: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
-  type: string;
-  created_at: string;
-}
+type Task = Database['public']['Tables']['tasks']['Row'];
 
 interface TaskListViewProps {
   tasks: Task[];
@@ -47,7 +37,7 @@ const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
           if (!b.due_date) return -1;
           return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
         case 'priority':
-          return a.priority - b.priority;
+          return a.priority! - b.priority!;
         case 'title':
           return a.title.localeCompare(b.title);
         default:
@@ -69,14 +59,29 @@ const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'done':
         return 'bg-green-100 text-green-700 border-green-200';
       case 'in_progress':
         return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'on_hold':
+      case 'review':
         return 'bg-orange-100 text-orange-700 border-orange-200';
       default:
         return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'to_do':
+        return 'To Do';
+      case 'in_progress':
+        return 'In Progress';
+      case 'review':
+        return 'Review';
+      case 'done':
+        return 'Done';
+      default:
+        return status;
     }
   };
 
@@ -109,10 +114,10 @@ const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="to_do">To Do</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="on_hold">On Hold</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="review">Review</SelectItem>
+                  <SelectItem value="done">Done</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -124,7 +129,7 @@ const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
                   {uniqueTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                    <SelectItem key={type} value={type!}>{type}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -161,11 +166,11 @@ const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h4 className="font-semibold text-gray-900">{task.title}</h4>
-                      <Badge className={`text-xs ${getPriorityColor(task.priority)}`}>
-                        {getPriorityLabel(task.priority)}
+                      <Badge className={`text-xs ${getPriorityColor(task.priority!)}`}>
+                        {getPriorityLabel(task.priority!)}
                       </Badge>
-                      <Badge className={`text-xs ${getStatusColor(task.status)}`}>
-                        {task.status.replace('_', ' ')}
+                      <Badge className={`text-xs ${getStatusColor(task.status!)}`}>
+                        {getStatusLabel(task.status!)}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
                         {task.type}
@@ -202,10 +207,10 @@ const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onUpdateStatus(task.id, 'pending')}
-                      className={task.status === 'pending' ? 'bg-gray-100' : ''}
+                      onClick={() => onUpdateStatus(task.id, 'to_do')}
+                      className={task.status === 'to_do' ? 'bg-gray-100' : ''}
                     >
-                      Pending
+                      To Do
                     </Button>
                     <Button
                       variant="outline"
@@ -218,10 +223,18 @@ const TaskListView = ({ tasks, onUpdateStatus }: TaskListViewProps) => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onUpdateStatus(task.id, 'completed')}
-                      className={task.status === 'completed' ? 'bg-green-100 text-green-700' : ''}
+                      onClick={() => onUpdateStatus(task.id, 'review')}
+                      className={task.status === 'review' ? 'bg-orange-100 text-orange-700' : ''}
                     >
-                      Complete
+                      Review
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onUpdateStatus(task.id, 'done')}
+                      className={task.status === 'done' ? 'bg-green-100 text-green-700' : ''}
+                    >
+                      Done
                     </Button>
                   </div>
                 </div>

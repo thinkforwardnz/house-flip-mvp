@@ -56,8 +56,15 @@ export const useTasks = (dealId: string) => {
       const { data, error } = await supabase
         .from('tasks')
         .insert({
-          ...taskData,
+          title: taskData.title!,
           deal_id: dealId,
+          description: taskData.description || null,
+          assigned_to: taskData.assigned_to || null,
+          due_date: taskData.due_date || null,
+          start_date: taskData.start_date || null,
+          priority: taskData.priority || 3,
+          type: taskData.type || 'Other',
+          status: 'to_do',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })

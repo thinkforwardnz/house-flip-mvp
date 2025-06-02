@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   DndContext,
@@ -40,10 +39,10 @@ const TaskKanban = () => {
   );
 
   const columns = [
-    { id: 'pending', title: 'To Do', status: 'pending' as const },
+    { id: 'to_do', title: 'To Do', status: 'to_do' as const },
     { id: 'in_progress', title: 'In Progress', status: 'in_progress' as const },
-    { id: 'on_hold', title: 'Review', status: 'on_hold' as const },
-    { id: 'completed', title: 'Done', status: 'completed' as const },
+    { id: 'review', title: 'Review', status: 'review' as const },
+    { id: 'done', title: 'Done', status: 'done' as const },
   ];
 
   const getTasksByStatus = (status: string) => {
