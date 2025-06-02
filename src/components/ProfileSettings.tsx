@@ -1,228 +1,172 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Save, Key } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/components/AuthProvider';
+import { User, Mail, Phone } from 'lucide-react';
 
 const ProfileSettings = () => {
-  const { toast } = useToast();
+  const { profile, isLoading, updateProfile, isUpdating } = useProfile();
+  const { user } = useAuth();
+  
   const [formData, setFormData] = useState({
-    firstName: 'John',
-    lastName: 'Smith',
-    email: 'john.smith@example.com',
-    phone: '+64 21 123 4567',
-    company: 'Smith Property Investments',
-    bio: 'Experienced property investor focusing on Auckland residential market.',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
   });
 
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  // Update form data when profile loads
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+      });
+    }
+  }, [profile]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateProfile(formData);
+  };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveProfile = () => {
-    // Validate and save profile
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been successfully updated.",
-    });
-  };
-
-  const handleChangePassword = () => {
-    if (formData.newPassword !== formData.confirmPassword) {
-      toast({
-        title: "Password Mismatch",
-        description: "New passwords do not match. Please try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Change password logic
-    toast({
-      title: "Password Changed",
-      description: "Your password has been successfully updated.",
-    });
-    
     setFormData(prev => ({
       ...prev,
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
+      [field]: value
     }));
-    setShowPasswordForm(false);
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Profile Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Profile Information
-          </CardTitle>
+  if (isLoading) {
+    return (
+      <Card className="bg-white shadow-lg rounded-2xl border-0">
+        <CardHeader className="p-6">
+          <CardTitle className="text-navy-dark">Profile Settings</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Avatar Section */}
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src="/placeholder.svg" alt="Profile" />
-              <AvatarFallback className="text-lg">JS</AvatarFallback>
-            </Avatar>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Camera className="h-4 w-4" />
-              Change Photo
-            </Button>
-          </div>
-
-          {/* Form Fields */}
+        <CardContent className="p-6 pt-0 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                placeholder="Enter your first name"
-              />
+            <div>
+              <Skeleton className="h-4 w-20 mb-2" />
+              <Skeleton className="h-10 w-full" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
+            <div>
+              <Skeleton className="h-4 w-20 mb-2" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+          <div>
+            <Skeleton className="h-4 w-16 mb-2" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div>
+            <Skeleton className="h-4 w-20 mb-2" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="bg-white shadow-lg rounded-2xl border-0">
+      <CardHeader className="p-6">
+        <CardTitle className="text-navy-dark">Profile Settings</CardTitle>
+        <p className="text-navy text-sm">Update your personal information</p>
+      </CardHeader>
+      <CardContent className="p-6 pt-0">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="first_name" className="text-navy-dark">First Name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="first_name"
+                  type="text"
+                  placeholder="Enter your first name"
+                  className="pl-10 rounded-xl"
+                  value={formData.first_name}
+                  onChange={(e) => handleInputChange('first_name', e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="last_name" className="text-navy-dark">Last Name</Label>
               <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
+                id="last_name"
+                type="text"
                 placeholder="Enter your last name"
+                className="rounded-xl"
+                value={formData.last_name}
+                onChange={(e) => handleInputChange('last_name', e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+          </div>
+          
+          <div>
+            <Label htmlFor="email" className="text-navy-dark">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="email"
                 type="email"
+                placeholder="Enter your email"
+                className="pl-10 rounded-xl"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="Enter your email"
+                disabled
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+            <p className="text-xs text-gray-500 mt-1">
+              Email cannot be changed here. Use authentication settings to update your email.
+            </p>
+          </div>
+          
+          <div>
+            <Label htmlFor="phone" className="text-navy-dark">Phone Number</Label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="phone"
+                type="tel"
+                placeholder="Enter your phone number"
+                className="pl-10 rounded-xl"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="Enter your phone number"
               />
             </div>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="company">Company (Optional)</Label>
-            <Input
-              id="company"
-              value={formData.company}
-              onChange={(e) => handleInputChange('company', e.target.value)}
-              placeholder="Enter your company name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              value={formData.bio}
-              onChange={(e) => handleInputChange('bio', e.target.value)}
-              placeholder="Tell us about your property investment experience"
-              rows={3}
-            />
-          </div>
-
-          <Button onClick={handleSaveProfile} className="bg-[#1B5E20] hover:bg-[#1B5E20]/90">
-            <Save className="h-4 w-4 mr-2" />
-            Save Profile
+          
+          <Button
+            type="submit"
+            className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl"
+            disabled={isUpdating}
+          >
+            {isUpdating ? "Updating..." : "Update Profile"}
           </Button>
-        </CardContent>
-      </Card>
+        </form>
 
-      {/* Password Change */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            Password & Security
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {!showPasswordForm ? (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Password</p>
-                <p className="text-sm text-gray-600">Last changed 3 months ago</p>
-              </div>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowPasswordForm(true)}
-              >
-                Change Password
-              </Button>
+        {profile && (
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <h3 className="font-semibold text-navy-dark mb-2">Account Information</h3>
+            <div className="text-sm text-navy space-y-1">
+              <p>User ID: {user?.id}</p>
+              <p>Account created: {new Date(profile.created_at).toLocaleDateString()}</p>
+              <p>Last updated: {new Date(profile.updated_at).toLocaleDateString()}</p>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  value={formData.currentPassword}
-                  onChange={(e) => handleInputChange('currentPassword', e.target.value)}
-                  placeholder="Enter current password"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={formData.newPassword}
-                  onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                  placeholder="Enter new password"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                  placeholder="Confirm new password"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleChangePassword} className="bg-[#1B5E20] hover:bg-[#1B5E20]/90">
-                  Update Password
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowPasswordForm(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
