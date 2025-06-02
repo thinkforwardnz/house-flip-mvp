@@ -1,161 +1,197 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
-import PropertyPhotos from '@/components/PropertyPhotos';
-import AISummary from '@/components/AISummary';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import PropertySelector from '@/components/PropertySelector';
+import { useSelectedDeal } from '@/hooks/useSelectedDeal';
 import AnalysisForm from '@/components/AnalysisForm';
-import ProfitCalculator from '@/components/ProfitCalculator';
+import { Calculator, TrendingUp, AlertTriangle, MapPin } from 'lucide-react';
 
 const PropertyAnalysis = () => {
-  const navigate = useNavigate();
-  
-  // Mock property data - in real app this would come from props/params
-  const propertyData = {
-    photos: [
-      'photo-1487958449943-2429e8be8625',
-      'photo-1460574283810-2aab119d8511',
-      'photo-1721322800607-8c38375eef04',
-      'photo-1649972904349-6e44c42644a7'
-    ],
-    address: '1234 Elm Street, Auckland, 1010',
-    listingDetails: {
-      price: 850000,
-      bedrooms: 3,
-      bathrooms: 2,
-      sqft: 1850,
-      yearBuilt: 1995,
-      lotSize: '0.25 acres'
+  const { selectedDeal, selectedDealId, selectDeal, isLoading } = useSelectedDeal('Analysis');
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NZ', {
+      style: 'currency',
+      currency: 'NZD',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const getRiskColor = (risk: string) => {
+    switch (risk) {
+      case 'low': return 'text-green-600 bg-green-50';
+      case 'medium': return 'text-yellow-600 bg-yellow-50';
+      case 'high': return 'text-red-600 bg-red-50';
+      default: return 'text-gray-600 bg-gray-50';
     }
   };
 
-  const [analysisData, setAnalysisData] = useState({
-    offerPrice: 720000,
-    renoEstimate: 85000,
-    timeline: 6,
-    holdingCosts: 3500,
-    sellingCosts: 45000,
-    addBedroom: false,
-    bedroomCost: 25000,
-    notes: ''
-  });
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="h-32 bg-gray-200 rounded mb-6"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const aiSummary = {
-    summary: 'Potential Flip',
-    confidence: 'High' as const,
-    keyInsights: [
-      'Property is in desirable neighbourhood with strong comps',
-      'Kitchen and bathrooms need significant updates',
-      'Adding a bedroom could increase value by $150k+',
-      'Market conditions favour quick turnaround'
-    ]
-  };
+  if (!selectedDeal) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <PropertySelector 
+          currentDealId={selectedDealId}
+          onDealSelect={selectDeal}
+          currentStage="Analysis"
+        />
+        <Card className="bg-white shadow-lg rounded-2xl border-0">
+          <CardContent className="p-12 text-center">
+            <MapPin className="h-16 w-16 text-gray-300 mx-auto mb-6" />
+            <h3 className="text-lg font-semibold text-navy-dark mb-2">No Properties in Analysis</h3>
+            <p className="text-navy mb-6">There are no properties currently in the analysis stage.</p>
+            <Button onClick={() => window.location.href = '/find'} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
+              Find Properties
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  const handleSave = () => {
-    console.log('Saving analysis:', analysisData);
-  };
+  const estimatedRenovationCost = selectedDeal.target_sale_price && selectedDeal.purchase_price 
+    ? Math.max(0, (selectedDeal.target_sale_price - selectedDeal.purchase_price) * 0.15) 
+    : 50000;
 
-  const handleMoveToOffer = () => {
-    console.log('Moving to offer stage');
-    navigate('/offer');
-  };
-
-  const handleDismiss = () => {
-    navigate('/find');
-  };
+  const estimatedProfit = selectedDeal.target_sale_price && selectedDeal.purchase_price
+    ? selectedDeal.target_sale_price - selectedDeal.purchase_price - estimatedRenovationCost
+    : 0;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {/* Property Selector */}
+      <PropertySelector 
+        currentDealId={selectedDealId}
+        onDealSelect={selectDeal}
+        currentStage="Analysis"
+      />
+
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Property Analysis</h1>
-        <p className="text-blue-100 text-lg">{propertyData.address}</p>
+        <p className="text-blue-100 text-lg">AI-powered analysis and financial modeling</p>
       </div>
 
-      {/* AI Summary */}
-      <Card className="bg-white shadow-lg rounded-2xl border-0">
-        <CardContent className="p-6">
-          <AISummary 
-            summary={aiSummary.summary}
-            confidence={aiSummary.confidence}
-            keyInsights={aiSummary.keyInsights}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column - Property Photos & Details */}
+      {/* Analysis Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card className="bg-white shadow-lg rounded-2xl border-0">
           <CardContent className="p-6">
-            <PropertyPhotos 
-              photos={propertyData.photos}
-              address={propertyData.address}
-              listingDetails={propertyData.listingDetails}
-            />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
+                <Calculator className="h-6 w-6 text-blue-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-navy font-medium">Purchase Price</p>
+                <p className="text-2xl font-bold text-navy-dark">
+                  {selectedDeal.purchase_price ? formatCurrency(selectedDeal.purchase_price) : 'TBD'}
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Right Column - Analysis Form & Calculator */}
-        <div className="space-y-6">
-          <Card className="bg-white shadow-lg rounded-2xl border-0">
-            <CardHeader className="p-6">
-              <CardTitle className="text-navy-dark">Analysis Details</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 pt-0">
-              <AnalysisForm 
-                data={analysisData}
-                onChange={setAnalysisData}
-              />
-            </CardContent>
-          </Card>
+        <Card className="bg-white shadow-lg rounded-2xl border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-green-success" />
+              </div>
+              <div>
+                <p className="text-sm text-navy font-medium">Target Sale Price</p>
+                <p className="text-2xl font-bold text-navy-dark">
+                  {selectedDeal.target_sale_price ? formatCurrency(selectedDeal.target_sale_price) : 'TBD'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="bg-white shadow-lg rounded-2xl border-0">
-            <CardHeader className="p-6">
-              <CardTitle className="text-navy-dark">Profit Calculator</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 pt-0">
-              <ProfitCalculator 
-                listPrice={propertyData.listingDetails.price}
-                offerPrice={analysisData.offerPrice}
-                renoEstimate={analysisData.renoEstimate}
-                timeline={analysisData.timeline}
-                holdingCosts={analysisData.holdingCosts}
-                sellingCosts={analysisData.sellingCosts}
-                addBedroom={analysisData.addBedroom}
-                bedroomCost={analysisData.bedroomCost}
-              />
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="bg-white shadow-lg rounded-2xl border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${getRiskColor(selectedDeal.current_risk)}`}>
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm text-navy font-medium">Risk Level</p>
+                <Badge className={`${getRiskColor(selectedDeal.current_risk)} border-0 text-sm font-semibold`}>
+                  {selectedDeal.current_risk?.toUpperCase()}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Action Buttons */}
+      {/* Financial Analysis */}
+      <Card className="bg-white shadow-lg rounded-2xl border-0">
+        <CardHeader className="p-6">
+          <CardTitle className="text-navy-dark">Financial Analysis</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 pt-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <p className="text-sm text-navy font-medium mb-1">Est. Renovation Cost</p>
+              <p className="text-xl font-bold text-navy-dark">{formatCurrency(estimatedRenovationCost)}</p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <p className="text-sm text-navy font-medium mb-1">Est. Total Investment</p>
+              <p className="text-xl font-bold text-navy-dark">
+                {selectedDeal.purchase_price ? formatCurrency(selectedDeal.purchase_price + estimatedRenovationCost) : 'TBD'}
+              </p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <p className="text-sm text-navy font-medium mb-1">Est. Profit</p>
+              <p className={`text-xl font-bold ${estimatedProfit > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(estimatedProfit)}
+              </p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <p className="text-sm text-navy font-medium mb-1">ROI</p>
+              <p className="text-xl font-bold text-navy-dark">
+                {selectedDeal.purchase_price && estimatedProfit > 0 
+                  ? `${((estimatedProfit / (selectedDeal.purchase_price + estimatedRenovationCost)) * 100).toFixed(1)}%`
+                  : 'TBD'
+                }
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Property Notes */}
+      {selectedDeal.notes && (
+        <Card className="bg-white shadow-lg rounded-2xl border-0">
+          <CardHeader className="p-6">
+            <CardTitle className="text-navy-dark">Analysis Notes</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 pt-0">
+            <p className="text-navy">{selectedDeal.notes}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Analysis Form */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">
         <CardContent className="p-6">
-          <div className="flex flex-wrap gap-4 justify-center lg:justify-end">
-            <Button 
-              variant="outline" 
-              onClick={handleDismiss}
-              className="min-w-24 rounded-xl"
-            >
-              Dismiss
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleSave}
-              className="min-w-24 rounded-xl"
-            >
-              Save Analysis
-            </Button>
-            <Button 
-              onClick={handleMoveToOffer}
-              className="min-w-32 bg-blue-primary hover:bg-blue-secondary text-white font-medium rounded-xl"
-            >
-              Move to Offer
-            </Button>
-          </div>
+          <AnalysisForm />
         </CardContent>
       </Card>
     </div>

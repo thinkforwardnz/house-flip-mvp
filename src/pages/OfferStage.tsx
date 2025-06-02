@@ -1,106 +1,150 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
-import PropertySummary from '@/components/PropertySummary';
+import { Button } from '@/components/ui/button';
+import PropertySelector from '@/components/PropertySelector';
+import { useSelectedDeal } from '@/hooks/useSelectedDeal';
 import OfferBuilder from '@/components/OfferBuilder';
 import OfferLog from '@/components/OfferLog';
 import NegotiationNotes from '@/components/NegotiationNotes';
-import NegotiationScripts from '@/components/NegotiationScripts';
 import OfferReminders from '@/components/OfferReminders';
-import DocumentUpload from '@/components/DocumentUpload';
+import { MapPin, Handshake } from 'lucide-react';
 
 const OfferStage = () => {
-  const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('offer');
+  const { selectedDeal, selectedDealId, selectDeal, isLoading } = useSelectedDeal('Offer');
 
-  const propertyData = {
-    address: '1234 Elm Street, Auckland, 1010',
-    listPrice: 650000,
-    bedrooms: 3,
-    bathrooms: 2,
-    sqft: 1200,
-    aiRiskLevel: 'Medium' as const,
-    estimatedProfit: 85000,
-    roi: 18.5
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NZ', {
+      style: 'currency',
+      currency: 'NZD',
+      minimumFractionDigits: 0
+    }).format(amount);
   };
 
-  const sections = [
-    { id: 'offer', label: 'Make Offer' },
-    { id: 'documents', label: 'Documents' },
-    { id: 'history', label: 'Offer History' },
-    { id: 'notes', label: 'Notes & Scripts' }
-  ];
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="h-32 bg-gray-200 rounded mb-6"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!selectedDeal) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <PropertySelector 
+          currentDealId={selectedDealId}
+          onDealSelect={selectDeal}
+          currentStage="Offer"
+        />
+        <Card className="bg-white shadow-lg rounded-2xl border-0">
+          <CardContent className="p-12 text-center">
+            <Handshake className="h-16 w-16 text-gray-300 mx-auto mb-6" />
+            <h3 className="text-lg font-semibold text-navy-dark mb-2">No Properties in Offer Stage</h3>
+            <p className="text-navy mb-6">There are no properties currently in the offer stage.</p>
+            <Button onClick={() => window.location.href = '/analysis'} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
+              Go to Analysis
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {/* Property Selector */}
+      <PropertySelector 
+        currentDealId={selectedDealId}
+        onDealSelect={selectDeal}
+        currentStage="Offer"
+      />
+
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Make Offer</h1>
-        <p className="text-blue-100 text-lg">{propertyData.address}</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Offer Stage</h1>
+        <p className="text-blue-100 text-lg">Manage offers and negotiations for {selectedDeal.address}</p>
       </div>
 
-      {/* Property Summary */}
-      <Card className="bg-white shadow-lg rounded-2xl border-0">
-        <CardContent className="p-6">
-          <PropertySummary property={propertyData} />
-        </CardContent>
-      </Card>
-
-      {/* Reminders */}
-      <Card className="bg-white shadow-lg rounded-2xl border-0">
-        <CardContent className="p-6">
-          <OfferReminders />
-        </CardContent>
-      </Card>
-
-      {/* Tab Navigation and Content */}
+      {/* Property Overview */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">
         <CardHeader className="p-6">
-          <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`px-6 py-3 rounded-xl font-medium text-sm transition-colors ${
-                  activeSection === section.id
-                    ? 'bg-blue-primary text-white'
-                    : 'text-navy hover:text-navy-dark'
-                }`}
-              >
-                {section.label}
-              </button>
-            ))}
-          </div>
+          <CardTitle className="text-navy-dark flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Property Overview
+          </CardTitle>
         </CardHeader>
-        
         <CardContent className="p-6 pt-0">
-          {activeSection === 'offer' && <OfferBuilder />}
-          {activeSection === 'documents' && <DocumentUpload />}
-          {activeSection === 'history' && <OfferLog />}
-          {activeSection === 'notes' && (
-            <div className="space-y-6">
-              <NegotiationNotes />
-              <NegotiationScripts />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <p className="text-sm text-navy font-medium mb-1">Target Purchase Price</p>
+              <p className="text-xl font-bold text-navy-dark">
+                {selectedDeal.purchase_price ? formatCurrency(selectedDeal.purchase_price) : 'TBD'}
+              </p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <p className="text-sm text-navy font-medium mb-1">Target Sale Price</p>
+              <p className="text-xl font-bold text-navy-dark">
+                {selectedDeal.target_sale_price ? formatCurrency(selectedDeal.target_sale_price) : 'TBD'}
+              </p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <p className="text-sm text-navy font-medium mb-1">Risk Level</p>
+              <p className={`text-xl font-bold ${
+                selectedDeal.current_risk === 'low' ? 'text-green-600' :
+                selectedDeal.current_risk === 'medium' ? 'text-yellow-600' : 'text-red-600'
+              }`}>
+                {selectedDeal.current_risk?.toUpperCase()}
+              </p>
+            </div>
+          </div>
+          {selectedDeal.notes && (
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <h4 className="font-medium text-navy-dark mb-2">Property Notes</h4>
+              <p className="text-navy">{selectedDeal.notes}</p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Action Button */}
-      <Card className="bg-white shadow-lg rounded-2xl border-0">
-        <CardContent className="p-6">
-          <div className="flex justify-end">
-            <Button 
-              className="bg-blue-primary hover:bg-blue-secondary text-white font-medium rounded-xl px-8"
-              onClick={() => navigate('/under-contract')}
-            >
-              Move to Under Contract →
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Offer Builder */}
+        <Card className="bg-white shadow-lg rounded-2xl border-0">
+          <CardContent className="p-6">
+            <OfferBuilder />
+          </CardContent>
+        </Card>
+
+        {/* Offer Reminders */}
+        <Card className="bg-white shadow-lg rounded-2xl border-0">
+          <CardContent className="p-6">
+            <OfferReminders />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Offer Log */}
+        <Card className="bg-white shadow-lg rounded-2xl border-0">
+          <CardContent className="p-6">
+            <OfferLog />
+          </CardContent>
+        </Card>
+
+        {/* Negotiation Notes */}
+        <Card className="bg-white shadow-lg rounded-2xl border-0">
+          <CardContent className="p-6">
+            <NegotiationNotes />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

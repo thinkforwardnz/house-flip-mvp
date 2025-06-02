@@ -5,16 +5,20 @@ import { useDeals } from '@/hooks/useDeals';
 import CreateDealDialog from '@/components/CreateDealDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useNavigate } from 'react-router-dom';
 import { 
   Home, 
   TrendingUp, 
   DollarSign, 
-  AlertTriangle
+  AlertTriangle,
+  ChevronRight
 } from 'lucide-react';
 
 const PropertyDashboard = () => {
   const { deals, isLoading: dealsLoading } = useDeals();
+  const navigate = useNavigate();
 
   const getStageColor = (stage: string) => {
     switch (stage) {
@@ -28,12 +32,29 @@ const PropertyDashboard = () => {
     }
   };
 
+  const getStageRoute = (stage: string) => {
+    switch (stage) {
+      case 'Analysis': return '/analysis';
+      case 'Offer': return '/offer';
+      case 'Under Contract': return '/under-contract';
+      case 'Reno': return '/renovation';
+      case 'Listed': return '/listed';
+      case 'Sold': return '/sold';
+      default: return '/analysis';
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NZ', {
       style: 'currency',
       currency: 'NZD',
       minimumFractionDigits: 0
     }).format(amount);
+  };
+
+  const handleDealClick = (deal: any) => {
+    const route = getStageRoute(deal.pipeline_stage);
+    navigate(`${route}?dealId=${deal.id}`);
   };
 
   const totalValue = deals.reduce((sum, deal) => sum + (deal.target_sale_price || 0), 0);
@@ -143,7 +164,11 @@ const PropertyDashboard = () => {
           ) : (
             <div className="space-y-4">
               {deals.map((deal) => (
-                <div key={deal.id} className="flex items-center justify-between p-6 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors">
+                <div 
+                  key={deal.id} 
+                  className="flex items-center justify-between p-6 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer group"
+                  onClick={() => handleDealClick(deal)}
+                >
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold text-navy-dark">{deal.address}</h3>
@@ -159,12 +184,20 @@ const PropertyDashboard = () => {
                       {deal.target_sale_price && (
                         <span>Target: {formatCurrency(deal.target_sale_price)}</span>
                       )}
+                      {deal.current_profit > 0 && (
+                        <span className="text-green-600 font-medium">
+                          Profit: {formatCurrency(deal.current_profit)}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-navy">
-                      Created {new Date(deal.created_at).toLocaleDateString()}
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="text-sm text-navy">
+                        Created {new Date(deal.created_at).toLocaleDateString()}
+                      </div>
                     </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-primary transition-colors" />
                   </div>
                 </div>
               ))}
