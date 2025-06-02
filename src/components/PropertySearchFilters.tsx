@@ -1,11 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface SearchFilters {
   suburb: string;
@@ -24,6 +26,9 @@ interface PropertySearchFiltersProps {
 }
 
 const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFiltersProps) => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { toast } = useToast();
+
   const handleFilterChange = (key: keyof SearchFilters, value: string) => {
     onFiltersChange({
       ...filters,
@@ -42,6 +47,39 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
       maxBaths: '',
       keywords: '',
     });
+  };
+
+  const handleRefreshListings = async () => {
+    setIsRefreshing(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('refresh-listings', {
+        body: { filters }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Listings Refreshed",
+          description: `Found ${data.results.scraped} new listings, skipped ${data.results.skipped} duplicates.`,
+        });
+        
+        // Trigger a page refresh to show new listings
+        window.location.reload();
+      } else {
+        throw new Error('Refresh failed');
+      }
+    } catch (error: any) {
+      console.error('Error refreshing listings:', error);
+      toast({
+        title: "Refresh Failed",
+        description: "Unable to refresh listings. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   return (
@@ -125,9 +163,14 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
               Search Properties
             </Button>
           </div>
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Feed
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefreshListings}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Feed'}
           </Button>
         </div>
       </CardContent>
