@@ -663,6 +663,10 @@ export type Database = {
         Args: { deal_uuid: string }
         Returns: boolean
       }
+      get_current_user_team_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_listing_status: {
         Args: { listing_id: string; user_uuid: string }
         Returns: Database["public"]["Enums"]["scraped_listing_status"]
