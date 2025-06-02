@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import PropertyListingCard from '@/components/PropertyListingCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SearchFilters {
