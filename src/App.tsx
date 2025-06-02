@@ -12,6 +12,7 @@ import RenovationManagement from "./pages/RenovationManagement";
 import Listed from "./pages/Listed";
 import Sold from "./pages/Sold";
 import NotFound from "./pages/NotFound";
+import AIChatWidget from "./components/AIChatWidget";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <AIChatWidget />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
