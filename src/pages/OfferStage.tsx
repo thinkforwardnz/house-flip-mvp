@@ -21,7 +21,7 @@ const OfferStage = () => {
     bedrooms: 3,
     bathrooms: 2,
     sqft: 1200,
-    aiRiskLevel: 'Medium',
+    aiRiskLevel: 'Medium' as const,
     estimatedProfit: 85000,
     roi: 18.5
   };
