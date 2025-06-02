@@ -11,6 +11,7 @@ import UnderContract from "./pages/UnderContract";
 import RenovationManagement from "./pages/RenovationManagement";
 import Listed from "./pages/Listed";
 import Sold from "./pages/Sold";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import AIChatWidget from "./components/AIChatWidget";
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/renovation" element={<RenovationManagement />} />
           <Route path="/listed" element={<Listed />} />
           <Route path="/sold" element={<Sold />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
