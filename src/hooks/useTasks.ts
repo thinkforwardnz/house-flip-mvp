@@ -2,33 +2,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { Database } from '@/integrations/supabase/types';
 
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  assigned_to: string | null;
-  due_date: string | null;
-  start_date: string | null;
-  priority: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
-  type: string;
-  deal_id: string;
-  created_at: string;
-  updated_at: string;
-  attachments: any[] | null;
-}
-
-interface TaskTemplate {
-  id: string;
-  title: string;
-  description: string | null;
-  category: string;
-  estimated_duration_days: number | null;
-  priority: number | null;
-  task_type: string | null;
-  sort_order: number | null;
-}
+type Task = Database['public']['Tables']['tasks']['Row'];
+type TaskTemplate = Database['public']['Tables']['task_templates']['Row'];
+type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
 
 export const useTasks = (dealId: string) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -73,7 +51,7 @@ export const useTasks = (dealId: string) => {
     }
   };
 
-  const createTask = async (taskData: Partial<Task>): Promise<void> => {
+  const createTask = async (taskData: Partial<TaskInsert>): Promise<void> => {
     try {
       const { data, error } = await supabase
         .from('tasks')

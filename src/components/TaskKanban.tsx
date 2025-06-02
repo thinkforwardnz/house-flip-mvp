@@ -22,7 +22,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LayoutGrid, List, Calendar, Zap } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
 
+type Task = Database['public']['Tables']['tasks']['Row'];
 type ViewType = 'kanban' | 'list' | 'calendar';
 
 const TaskKanban = () => {
@@ -54,7 +56,7 @@ const TaskKanban = () => {
     if (!over) return;
 
     const taskId = active.id as string;
-    const newStatus = over.id as 'pending' | 'in_progress' | 'completed' | 'on_hold';
+    const newStatus = over.id as Task['status'];
 
     const task = tasks.find(t => t.id === taskId);
     if (!task || task.status === newStatus) return;

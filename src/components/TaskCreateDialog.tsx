@@ -7,26 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Upload } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
 
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  assigned_to: string | null;
-  due_date: string | null;
-  start_date: string | null;
-  priority: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
-  type: string;
-  deal_id: string;
-  created_at: string;
-  updated_at: string;
-  attachments: any[] | null;
-}
+type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
+type TaskTemplate = Database['public']['Tables']['task_templates']['Row'];
 
 interface TaskCreateDialogProps {
-  onCreateTask: (taskData: Partial<Task>) => Promise<void>;
-  templates: any[];
+  onCreateTask: (taskData: Partial<TaskInsert>) => Promise<void>;
+  templates: TaskTemplate[];
 }
 
 const TaskCreateDialog = ({ onCreateTask, templates }: TaskCreateDialogProps) => {
@@ -39,7 +27,7 @@ const TaskCreateDialog = ({ onCreateTask, templates }: TaskCreateDialogProps) =>
     due_date: '',
     assigned_to: '',
     priority: 3,
-    type: 'Reno',
+    type: 'Reno' as const,
     attachments: []
   });
 
@@ -184,7 +172,7 @@ const TaskCreateDialog = ({ onCreateTask, templates }: TaskCreateDialogProps) =>
 
             <div>
               <Label htmlFor="type">Task Type</Label>
-              <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
+              <Select value={formData.type} onValueChange={(value: any) => setFormData(prev => ({ ...prev, type: value }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

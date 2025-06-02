@@ -4,19 +4,9 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Badge } from '@/components/ui/badge';
 import DraggableTaskCard from './DraggableTaskCard';
+import type { Database } from '@/integrations/supabase/types';
 
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  assigned_to: string | null;
-  due_date: string | null;
-  start_date: string | null;
-  priority: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
-  type: string;
-  attachments: any[] | null;
-}
+type Task = Database['public']['Tables']['tasks']['Row'];
 
 interface DroppableColumnProps {
   id: string;

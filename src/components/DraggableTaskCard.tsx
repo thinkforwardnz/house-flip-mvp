@@ -5,19 +5,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, User, GripVertical, Paperclip } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
 
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  assigned_to: string | null;
-  due_date: string | null;
-  start_date: string | null;
-  priority: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
-  type: string;
-  attachments: any[] | null;
-}
+type Task = Database['public']['Tables']['tasks']['Row'];
 
 interface DraggableTaskCardProps {
   task: Task;
@@ -51,7 +41,7 @@ const DraggableTaskCard = ({ task }: DraggableTaskCardProps) => {
     return 'low';
   };
 
-  const hasAttachments = task.attachments && task.attachments.length > 0;
+  const hasAttachments = task.attachments && Array.isArray(task.attachments) && task.attachments.length > 0;
 
   return (
     <Card
