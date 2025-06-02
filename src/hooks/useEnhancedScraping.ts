@@ -2,7 +2,6 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useScrapingHistory } from '@/hooks/useScrapingHistory';
-import { supabase } from '@/integrations/supabase/client';
 
 interface SourceProgress {
   name: string;
@@ -48,11 +47,14 @@ export const useEnhancedScraping = () => {
               description: `Scraping properties from ${sources.length} sources...`,
             });
 
-            // Call the refresh-listings function
-            const response = await fetch(`${supabase.supabaseUrl}/functions/v1/refresh-listings`, {
+            // Call the refresh-listings function using the correct URL and key
+            const SUPABASE_URL = "https://fblzswyxvhlfkbosxfsy.supabase.co";
+            const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZibHpzd3l4dmhsZmtib3N4ZnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4MzYyNzIsImV4cCI6MjA2NDQxMjI3Mn0.82dnSvUMaVW3FkmveZD771_cptrbBEratSwbnDw6zvo";
+
+            const response = await fetch(`${SUPABASE_URL}/functions/v1/refresh-listings`, {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${supabase.supabaseKey}`,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({ filters, sources }),
