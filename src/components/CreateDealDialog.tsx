@@ -17,19 +17,17 @@ const CreateDealDialog = () => {
     suburb: '',
     city: 'Auckland',
     pipeline_stage: 'Analysis' as const,
-    purchase_price: '',
-    target_sale_price: '',
+    purchase_price: 0,
+    target_sale_price: 0,
+    current_profit: 0,
+    current_risk: 'medium' as const,
     notes: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    createDeal({
-      ...formData,
-      purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : 0,
-      target_sale_price: formData.target_sale_price ? parseFloat(formData.target_sale_price) : 0,
-    });
+    createDeal(formData);
     
     setOpen(false);
     setFormData({
@@ -37,8 +35,10 @@ const CreateDealDialog = () => {
       suburb: '',
       city: 'Auckland',
       pipeline_stage: 'Analysis',
-      purchase_price: '',
-      target_sale_price: '',
+      purchase_price: 0,
+      target_sale_price: 0,
+      current_profit: 0,
+      current_risk: 'medium',
       notes: '',
     });
   };
@@ -123,8 +123,8 @@ const CreateDealDialog = () => {
                 id="purchase_price"
                 type="number"
                 placeholder="850000"
-                value={formData.purchase_price}
-                onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
+                value={formData.purchase_price || ''}
+                onChange={(e) => setFormData({ ...formData, purchase_price: parseFloat(e.target.value) || 0 })}
               />
             </div>
             
@@ -134,8 +134,8 @@ const CreateDealDialog = () => {
                 id="target_sale_price"
                 type="number"
                 placeholder="1200000"
-                value={formData.target_sale_price}
-                onChange={(e) => setFormData({ ...formData, target_sale_price: e.target.value })}
+                value={formData.target_sale_price || ''}
+                onChange={(e) => setFormData({ ...formData, target_sale_price: parseFloat(e.target.value) || 0 })}
               />
             </div>
           </div>

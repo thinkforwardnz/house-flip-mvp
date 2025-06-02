@@ -36,13 +36,19 @@ export const useDeals = () => {
   });
 
   const createDealMutation = useMutation({
-    mutationFn: async (dealData: Partial<Deal>) => {
+    mutationFn: async (dealData: Omit<Deal, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('deals')
-        .insert([{
+        .insert({
           ...dealData,
-          user_id: (await supabase.auth.getUser()).data.user?.id
-        }])
+          user_id: user.id
+        })
         .select()
         .single();
       
