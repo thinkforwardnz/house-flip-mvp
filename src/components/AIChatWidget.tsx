@@ -211,7 +211,7 @@ const AIChatWidget = () => {
         className={`fixed bottom-4 right-4 z-40 rounded-full w-14 h-14 shadow-lg transition-all duration-200 ${
           isOpen 
             ? 'bg-gray-600 hover:bg-gray-700' 
-            : 'bg-[#1B5E20] hover:bg-[#1B5E20]/90 animate-pulse'
+            : 'bg-[#1B5E20] hover:bg-[#1B5E20]/90'
         }`}
       >
         {isOpen ? (
@@ -229,7 +229,7 @@ const AIChatWidget = () => {
       {/* Mobile: Hint Badge */}
       {!isOpen && (
         <div className="fixed bottom-20 right-4 z-30 sm:hidden">
-          <Badge className="bg-[#FF9800] text-white text-xs whitespace-nowrap animate-bounce">
+          <Badge className="bg-[#FF9800] text-white text-xs whitespace-nowrap">
             Get help →
           </Badge>
         </div>
