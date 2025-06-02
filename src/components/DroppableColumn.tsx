@@ -11,9 +11,11 @@ interface Task {
   description: string | null;
   assigned_to: string | null;
   due_date: string | null;
+  start_date: string | null;
   priority: number;
   status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
   type: string;
+  attachments: any[] | null;
 }
 
 interface DroppableColumnProps {

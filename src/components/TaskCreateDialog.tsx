@@ -8,8 +8,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Upload } from 'lucide-react';
 
+interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  assigned_to: string | null;
+  due_date: string | null;
+  start_date: string | null;
+  priority: number;
+  status: 'pending' | 'in_progress' | 'completed' | 'on_hold';
+  type: string;
+  deal_id: string;
+  created_at: string;
+  updated_at: string;
+  attachments: any[] | null;
+}
+
 interface TaskCreateDialogProps {
-  onCreateTask: (taskData: any) => Promise<void>;
+  onCreateTask: (taskData: Partial<Task>) => Promise<void>;
   templates: any[];
 }
 

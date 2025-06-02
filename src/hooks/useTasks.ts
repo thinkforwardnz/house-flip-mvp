@@ -73,7 +73,7 @@ export const useTasks = (dealId: string) => {
     }
   };
 
-  const createTask = async (taskData: Partial<Task>) => {
+  const createTask = async (taskData: Partial<Task>): Promise<void> => {
     try {
       const { data, error } = await supabase
         .from('tasks')
@@ -93,8 +93,6 @@ export const useTasks = (dealId: string) => {
         title: 'Success',
         description: 'Task created successfully',
       });
-
-      return data;
     } catch (error) {
       console.error('Error creating task:', error);
       toast({
