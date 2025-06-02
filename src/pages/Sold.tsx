@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import FinancialSummary from '@/components/FinancialSummary';
 import SettlementChecklist from '@/components/SettlementChecklist';
@@ -12,65 +13,67 @@ const Sold = () => {
 
   const handleExportReport = () => {
     console.log('Exporting deal report...');
-    // Implementation for PDF export would go here
   };
 
   const handleArchiveDeal = () => {
     console.log('Archiving deal...');
-    // Implementation for archiving would go here
     navigate('/');
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] font-[Inter]">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Deal Completed</h1>
+          <p className="text-blue-100 text-lg">1234 Elm Street, Auckland, 1010</p>
+        </div>
+        <div className="flex gap-3">
           <Button 
-            variant="outline" 
-            onClick={() => navigate('/listed')}
-            className="text-gray-600 hover:text-gray-900 border-gray-300"
+            variant="outline"
+            onClick={handleExportReport}
+            className="rounded-xl bg-white border-white text-navy-dark hover:bg-gray-50"
           >
-            ← Back to Listed
+            Export Report
           </Button>
-          <div className="text-center">
-            <h1 className="text-2xl font-semibold text-gray-900">Deal Completed</h1>
-            <p className="text-sm text-gray-500 mt-1">1234 Elm Street, Auckland, 1010</p>
-          </div>
-          <div className="flex gap-3">
-            <Button 
-              variant="outline"
-              onClick={handleExportReport}
-              className="border-[#1B5E20] text-[#1B5E20] hover:bg-[#1B5E20] hover:text-white"
-            >
-              Export Report
-            </Button>
-            <Button 
-              className="bg-[#FF9800] hover:bg-[#FF9800]/90 text-white"
-              onClick={handleArchiveDeal}
-            >
-              Archive Deal
-            </Button>
-          </div>
+          <Button 
+            className="bg-orange-accent hover:bg-orange-600 text-white rounded-xl"
+            onClick={handleArchiveDeal}
+          >
+            Archive Deal
+          </Button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Financial Summary */}
-        <FinancialSummary />
+      {/* Financial Summary */}
+      <Card className="bg-white shadow-lg rounded-2xl border-0">
+        <CardContent className="p-6">
+          <FinancialSummary />
+        </CardContent>
+      </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Settlement Checklist */}
-          <SettlementChecklist />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Settlement Checklist */}
+        <Card className="bg-white shadow-lg rounded-2xl border-0">
+          <CardContent className="p-6">
+            <SettlementChecklist />
+          </CardContent>
+        </Card>
 
-          {/* Lessons Learned */}
-          <LessonsLearned />
-        </div>
-
-        {/* Final Documents */}
-        <FinalDocuments />
+        {/* Lessons Learned */}
+        <Card className="bg-white shadow-lg rounded-2xl border-0">
+          <CardContent className="p-6">
+            <LessonsLearned />
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Final Documents */}
+      <Card className="bg-white shadow-lg rounded-2xl border-0">
+        <CardContent className="p-6">
+          <FinalDocuments />
+        </CardContent>
+      </Card>
     </div>
   );
 };

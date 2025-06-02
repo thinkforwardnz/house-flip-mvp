@@ -1,10 +1,8 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, Bell, Settings as SettingsIcon, Users, Activity } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { User, Bell, Settings as SettingsIcon, Users, Activity } from 'lucide-react';
 import ProfileSettings from '@/components/ProfileSettings';
 import NotificationSettings from '@/components/NotificationSettings';
 import PreferenceSettings from '@/components/PreferenceSettings';
@@ -13,72 +11,62 @@ import ActivityLog from '@/components/ActivityLog';
 
 const Settings = () => {
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/">
-              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-[#1B5E20]">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-              <p className="text-gray-600 text-sm">Manage your account and preferences</p>
-            </div>
-          </div>
-        </div>
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
+        <p className="text-blue-100 text-lg">Manage your account and preferences</p>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Profile</span>
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Notifications</span>
-            </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center gap-2">
-              <SettingsIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Preferences</span>
-            </TabsTrigger>
-            <TabsTrigger value="team" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Team</span>
-            </TabsTrigger>
-            <TabsTrigger value="activity" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              <span className="hidden sm:inline">Activity</span>
-            </TabsTrigger>
-          </TabsList>
+      {/* Settings Tabs */}
+      <Card className="bg-white shadow-lg rounded-2xl border-0">
+        <CardContent className="p-6">
+          <Tabs defaultValue="profile" className="w-full">
+            <TabsList className="grid w-full grid-cols-5 mb-6 bg-gray-100 rounded-xl p-1">
+              <TabsTrigger value="profile" className="flex items-center gap-2 rounded-xl">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Profile</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center gap-2 rounded-xl">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">Notifications</span>
+              </TabsTrigger>
+              <TabsTrigger value="preferences" className="flex items-center gap-2 rounded-xl">
+                <SettingsIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">Preferences</span>
+              </TabsTrigger>
+              <TabsTrigger value="team" className="flex items-center gap-2 rounded-xl">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Team</span>
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="flex items-center gap-2 rounded-xl">
+                <Activity className="h-4 w-4" />
+                <span className="hidden sm:inline">Activity</span>
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="profile">
-            <ProfileSettings />
-          </TabsContent>
+            <TabsContent value="profile">
+              <ProfileSettings />
+            </TabsContent>
 
-          <TabsContent value="notifications">
-            <NotificationSettings />
-          </TabsContent>
+            <TabsContent value="notifications">
+              <NotificationSettings />
+            </TabsContent>
 
-          <TabsContent value="preferences">
-            <PreferenceSettings />
-          </TabsContent>
+            <TabsContent value="preferences">
+              <PreferenceSettings />
+            </TabsContent>
 
-          <TabsContent value="team">
-            <TeamManagement />
-          </TabsContent>
+            <TabsContent value="team">
+              <TeamManagement />
+            </TabsContent>
 
-          <TabsContent value="activity">
-            <ActivityLog />
-          </TabsContent>
-        </Tabs>
-      </div>
+            <TabsContent value="activity">
+              <ActivityLog />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };

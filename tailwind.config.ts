@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,12 +62,24 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Design System Colors
+				'navy-dark': 'hsl(var(--navy-dark))',
+				'navy': 'hsl(var(--navy-text))',
+				'blue-primary': '#2563EB',
+				'blue-secondary': '#2979FF',
+				'orange-accent': '#FF9800',
+				'purple-accent': '#8B5CF6',
+				'green-success': '#22C55E',
+				'red-error': '#EF4444',
+				'input-bg': '#F4F4F5'
 			},
 			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				lg: '1rem',
+				md: 'calc(1rem - 2px)',
+				sm: 'calc(1rem - 4px)',
+				xl: '1.25rem',
+				'2xl': '1.5rem'
 			},
 			keyframes: {
 				'accordion-down': {
@@ -89,6 +102,13 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
+			},
+			fontFamily: {
+				'montserrat': ['Montserrat', 'sans-serif'],
+				'inter': ['Inter', 'sans-serif']
+			},
+			spacing: {
+				'6xl': '6rem'
 			}
 		}
 	},

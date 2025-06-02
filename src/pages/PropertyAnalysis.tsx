@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import PropertyPhotos from '@/components/PropertyPhotos';
 import AISummary from '@/components/AISummary';
@@ -52,103 +53,111 @@ const PropertyAnalysis = () => {
   };
 
   const handleSave = () => {
-    // In real app, save to database
     console.log('Saving analysis:', analysisData);
   };
 
   const handleMoveToOffer = () => {
-    // In real app, update property status and redirect
     console.log('Moving to offer stage');
-    navigate('/');
+    navigate('/offer');
   };
 
   const handleDismiss = () => {
-    navigate('/');
+    navigate('/find');
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] font-[Inter]">
-      {/* Consistent Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/')}
-            className="text-gray-600 hover:text-gray-900"
-          >
-            ← Back to Dashboard
-          </Button>
-          <h1 className="text-2xl font-semibold text-gray-900">Property Analysis</h1>
-          <div className="w-32" />
-        </div>
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Property Analysis</h1>
+        <p className="text-blue-100 text-lg">{propertyData.address}</p>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-6">
-        {/* AI Summary */}
-        <div className="mb-6">
+      {/* AI Summary */}
+      <Card className="bg-white shadow-lg rounded-2xl border-0">
+        <CardContent className="p-6">
           <AISummary 
             summary={aiSummary.summary}
             confidence={aiSummary.confidence}
             keyInsights={aiSummary.keyInsights}
           />
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Property Photos & Details */}
-          <div>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column - Property Photos & Details */}
+        <Card className="bg-white shadow-lg rounded-2xl border-0">
+          <CardContent className="p-6">
             <PropertyPhotos 
               photos={propertyData.photos}
               address={propertyData.address}
               listingDetails={propertyData.listingDetails}
             />
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Right Column - Analysis Form & Calculator */}
-          <div className="space-y-6">
-            <AnalysisForm 
-              data={analysisData}
-              onChange={setAnalysisData}
-            />
+        {/* Right Column - Analysis Form & Calculator */}
+        <div className="space-y-6">
+          <Card className="bg-white shadow-lg rounded-2xl border-0">
+            <CardHeader className="p-6">
+              <CardTitle className="text-navy-dark">Analysis Details</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <AnalysisForm 
+                data={analysisData}
+                onChange={setAnalysisData}
+              />
+            </CardContent>
+          </Card>
 
-            <ProfitCalculator 
-              listPrice={propertyData.listingDetails.price}
-              offerPrice={analysisData.offerPrice}
-              renoEstimate={analysisData.renoEstimate}
-              timeline={analysisData.timeline}
-              holdingCosts={analysisData.holdingCosts}
-              sellingCosts={analysisData.sellingCosts}
-              addBedroom={analysisData.addBedroom}
-              bedroomCost={analysisData.bedroomCost}
-            />
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="mt-8 flex flex-wrap gap-4 justify-center lg:justify-end">
-          <Button 
-            variant="outline" 
-            onClick={handleDismiss}
-            className="min-w-24 border-gray-300 text-gray-600 hover:bg-gray-50"
-          >
-            Dismiss
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={handleSave}
-            className="min-w-24 border-[#1B5E20] text-[#1B5E20] hover:bg-[#1B5E20]/5"
-          >
-            Save
-          </Button>
-          <Button 
-            onClick={handleMoveToOffer}
-            className="min-w-32 bg-[#FF9800] hover:bg-[#FF9800]/90 text-white font-medium"
-          >
-            Move to Offer
-          </Button>
+          <Card className="bg-white shadow-lg rounded-2xl border-0">
+            <CardHeader className="p-6">
+              <CardTitle className="text-navy-dark">Profit Calculator</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <ProfitCalculator 
+                listPrice={propertyData.listingDetails.price}
+                offerPrice={analysisData.offerPrice}
+                renoEstimate={analysisData.renoEstimate}
+                timeline={analysisData.timeline}
+                holdingCosts={analysisData.holdingCosts}
+                sellingCosts={analysisData.sellingCosts}
+                addBedroom={analysisData.addBedroom}
+                bedroomCost={analysisData.bedroomCost}
+              />
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Action Buttons */}
+      <Card className="bg-white shadow-lg rounded-2xl border-0">
+        <CardContent className="p-6">
+          <div className="flex flex-wrap gap-4 justify-center lg:justify-end">
+            <Button 
+              variant="outline" 
+              onClick={handleDismiss}
+              className="min-w-24 rounded-xl"
+            >
+              Dismiss
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleSave}
+              className="min-w-24 rounded-xl"
+            >
+              Save Analysis
+            </Button>
+            <Button 
+              onClick={handleMoveToOffer}
+              className="min-w-32 bg-blue-primary hover:bg-blue-secondary text-white font-medium rounded-xl"
+            >
+              Move to Offer
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
