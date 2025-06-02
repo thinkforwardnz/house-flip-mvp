@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./components/AuthProvider";
 import Index from "./pages/Index";
+import Find from "./pages/Find";
 import PropertyAnalysis from "./pages/PropertyAnalysis";
 import OfferStage from "./pages/OfferStage";
 import UnderContract from "./pages/UnderContract";
