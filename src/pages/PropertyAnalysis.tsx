@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,18 @@ import { Calculator, TrendingUp, AlertTriangle, MapPin } from 'lucide-react';
 
 const PropertyAnalysis = () => {
   const { selectedDeal, selectedDealId, selectDeal, isLoading } = useSelectedDeal('Analysis');
+
+  // Analysis form state
+  const [analysisData, setAnalysisData] = useState({
+    offerPrice: selectedDeal?.purchase_price || 0,
+    renoEstimate: 50000,
+    timeline: 6,
+    holdingCosts: 2500,
+    sellingCosts: 25000,
+    addBedroom: false,
+    bedroomCost: 15000,
+    notes: ''
+  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NZ', {
@@ -27,6 +39,16 @@ const PropertyAnalysis = () => {
       default: return 'text-gray-600 bg-gray-50';
     }
   };
+
+  // Update analysis data when selected deal changes
+  React.useEffect(() => {
+    if (selectedDeal) {
+      setAnalysisData(prev => ({
+        ...prev,
+        offerPrice: selectedDeal.purchase_price || 0
+      }));
+    }
+  }, [selectedDeal]);
 
   if (isLoading) {
     return (
@@ -191,7 +213,10 @@ const PropertyAnalysis = () => {
       {/* Analysis Form */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">
         <CardContent className="p-6">
-          <AnalysisForm />
+          <AnalysisForm 
+            data={analysisData}
+            onChange={setAnalysisData}
+          />
         </CardContent>
       </Card>
     </div>
