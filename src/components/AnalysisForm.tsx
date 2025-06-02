@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,13 +30,13 @@ const AnalysisForm = ({ data, onChange }: AnalysisFormProps) => {
   return (
     <div className="space-y-4">
       {/* Offer & Purchase */}
-      <Card>
+      <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Offer & Purchase</CardTitle>
+          <CardTitle className="text-lg font-semibold text-gray-900">Offer & Purchase</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="offerPrice">Offer Price</Label>
+            <Label htmlFor="offerPrice" className="text-sm font-medium text-gray-700">Offer Price</Label>
             <Input
               id="offerPrice"
               type="number"
@@ -53,13 +53,13 @@ const AnalysisForm = ({ data, onChange }: AnalysisFormProps) => {
       </Card>
 
       {/* Renovation */}
-      <Card>
+      <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Renovation</CardTitle>
+          <CardTitle className="text-lg font-semibold text-gray-900">Renovation</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="renoEstimate">Renovation Estimate</Label>
+            <Label htmlFor="renoEstimate" className="text-sm font-medium text-gray-700">Renovation Estimate</Label>
             <Input
               id="renoEstimate"
               type="number"
@@ -71,7 +71,7 @@ const AnalysisForm = ({ data, onChange }: AnalysisFormProps) => {
           </div>
 
           <div>
-            <Label htmlFor="timeline">Timeline (weeks)</Label>
+            <Label htmlFor="timeline" className="text-sm font-medium text-gray-700">Timeline (weeks)</Label>
             <Input
               id="timeline"
               type="number"
@@ -86,9 +86,9 @@ const AnalysisForm = ({ data, onChange }: AnalysisFormProps) => {
           </div>
 
           {/* Add Bedroom Toggle */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-[#F8F9FA] rounded-lg border border-gray-200">
             <div>
-              <Label htmlFor="addBedroom" className="font-medium">
+              <Label htmlFor="addBedroom" className="font-medium text-gray-900">
                 Add Bedroom Scenario
               </Label>
               <p className="text-sm text-gray-500">
@@ -104,7 +104,7 @@ const AnalysisForm = ({ data, onChange }: AnalysisFormProps) => {
 
           {data.addBedroom && (
             <div>
-              <Label htmlFor="bedroomCost">Additional Bedroom Cost</Label>
+              <Label htmlFor="bedroomCost" className="text-sm font-medium text-gray-700">Additional Bedroom Cost</Label>
               <Input
                 id="bedroomCost"
                 type="number"
@@ -119,13 +119,13 @@ const AnalysisForm = ({ data, onChange }: AnalysisFormProps) => {
       </Card>
 
       {/* Holding & Selling */}
-      <Card>
+      <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Holding & Selling</CardTitle>
+          <CardTitle className="text-lg font-semibold text-gray-900">Holding & Selling</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="holdingCosts">Holding Costs</Label>
+            <Label htmlFor="holdingCosts" className="text-sm font-medium text-gray-700">Holding Costs</Label>
             <Input
               id="holdingCosts"
               type="number"
@@ -140,7 +140,7 @@ const AnalysisForm = ({ data, onChange }: AnalysisFormProps) => {
           </div>
 
           <div>
-            <Label htmlFor="sellingCosts">Selling Costs</Label>
+            <Label htmlFor="sellingCosts" className="text-sm font-medium text-gray-700">Selling Costs</Label>
             <Input
               id="sellingCosts"
               type="number"
@@ -157,9 +157,9 @@ const AnalysisForm = ({ data, onChange }: AnalysisFormProps) => {
       </Card>
 
       {/* Notes */}
-      <Card>
+      <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Notes</CardTitle>
+          <CardTitle className="text-lg font-semibold text-gray-900">Notes</CardTitle>
         </CardHeader>
         <CardContent>
           <Textarea

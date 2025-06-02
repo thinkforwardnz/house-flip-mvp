@@ -68,21 +68,22 @@ const PropertyAnalysis = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-[Inter]">
-      {/* Header */}
+      {/* Consistent Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Button 
             variant="outline" 
             onClick={() => navigate('/')}
-            className="text-gray-600"
+            className="text-gray-600 hover:text-gray-900"
           >
             ← Back to Dashboard
           </Button>
-          <h1 className="text-xl font-semibold text-gray-900">Property Analysis</h1>
-          <div className="w-32" /> {/* Spacer for alignment */}
+          <h1 className="text-2xl font-semibold text-gray-900">Property Analysis</h1>
+          <div className="w-32" />
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
         {/* AI Summary */}
         <div className="mb-6">
@@ -93,7 +94,7 @@ const PropertyAnalysis = () => {
           />
         </div>
 
-        {/* Main Content */}
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Property Photos & Details */}
           <div>
@@ -129,20 +130,20 @@ const PropertyAnalysis = () => {
           <Button 
             variant="outline" 
             onClick={handleDismiss}
-            className="min-w-24"
+            className="min-w-24 border-gray-300 text-gray-600 hover:bg-gray-50"
           >
             Dismiss
           </Button>
           <Button 
-            variant="secondary" 
+            variant="outline" 
             onClick={handleSave}
-            className="min-w-24 bg-gray-100 hover:bg-gray-200"
+            className="min-w-24 border-[#1B5E20] text-[#1B5E20] hover:bg-[#1B5E20]/5"
           >
             Save
           </Button>
           <Button 
             onClick={handleMoveToOffer}
-            className="min-w-32 bg-[#FF9800] hover:bg-[#FF9800]/90 text-white"
+            className="min-w-32 bg-[#FF9800] hover:bg-[#FF9800]/90 text-white font-medium"
           >
             Move to Offer
           </Button>

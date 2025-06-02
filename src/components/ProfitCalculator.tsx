@@ -49,11 +49,11 @@ const ProfitCalculator = ({
   };
 
   return (
-    <Card className="bg-gradient-to-br from-[#1B5E20]/5 to-[#FF9800]/5">
+    <Card className="bg-white border border-gray-200 shadow-sm">
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg flex items-center justify-between">
+        <CardTitle className="text-lg font-semibold text-gray-900 flex items-center justify-between">
           Profit Calculator
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRiskColor(roi)}`}>
+          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getRiskColor(roi)}`}>
             {getRiskLabel(roi)}
           </span>
         </CardTitle>
@@ -64,10 +64,10 @@ const ProfitCalculator = ({
           <h4 className="font-medium text-gray-800">Revenue</h4>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Estimated ARV:</span>
-            <span className="font-medium">${estimatedARV.toLocaleString()}</span>
+            <span className="font-medium text-gray-900">${estimatedARV.toLocaleString()}</span>
           </div>
           {addBedroom && (
-            <div className="text-xs text-green-600 ml-4">
+            <div className="text-xs text-[#388E3C] ml-4 font-medium">
               +25% value boost from added bedroom
             </div>
           )}
@@ -79,42 +79,42 @@ const ProfitCalculator = ({
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600">Purchase Price:</span>
-              <span>${offerPrice.toLocaleString()}</span>
+              <span className="text-gray-900">${offerPrice.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Renovation:</span>
-              <span>${totalRenoCoast.toLocaleString()}</span>
+              <span className="text-gray-900">${totalRenoCoast.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Holding Costs:</span>
-              <span>${totalHoldingCosts.toLocaleString()}</span>
+              <span className="text-gray-900">${totalHoldingCosts.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Selling Costs:</span>
-              <span>${sellingCosts.toLocaleString()}</span>
+              <span className="text-gray-900">${sellingCosts.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between font-medium pt-2 border-t">
-              <span>Total Costs:</span>
-              <span>${totalCosts.toLocaleString()}</span>
+            <div className="flex justify-between font-medium pt-2 border-t border-gray-200">
+              <span className="text-gray-800">Total Costs:</span>
+              <span className="text-gray-900">${totalCosts.toLocaleString()}</span>
             </div>
           </div>
         </div>
 
         {/* Profit Summary */}
-        <div className="bg-white rounded-lg p-4 space-y-2">
+        <div className="bg-[#F8F9FA] rounded-lg p-4 space-y-2 border border-gray-200">
           <div className="flex justify-between items-center">
             <span className="font-medium text-gray-800">Estimated Profit:</span>
-            <span className={`text-xl font-bold ${grossProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <span className={`text-xl font-bold ${grossProfit >= 0 ? 'text-[#388E3C]' : 'text-[#D32F2F]'}`}>
               ${grossProfit.toLocaleString()}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="font-medium text-gray-800">ROI:</span>
-            <span className={`text-lg font-semibold ${roi >= 15 ? 'text-green-600' : roi >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
+            <span className={`text-lg font-semibold ${roi >= 15 ? 'text-[#388E3C]' : roi >= 10 ? 'text-[#FF9800]' : 'text-[#D32F2F]'}`}>
               {roi.toFixed(1)}%
             </span>
           </div>
-          <div className="text-xs text-gray-500 mt-2">
+          <div className="text-xs text-gray-500 mt-2 font-medium">
             Target ROI: 15-25% for profitable flips
           </div>
         </div>

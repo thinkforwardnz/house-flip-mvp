@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 
 interface PropertyPhotosProps {
   photos: string[];
@@ -22,7 +21,7 @@ const PropertyPhotos = ({ photos, address, listingDetails }: PropertyPhotosProps
   return (
     <div className="space-y-4">
       {/* Main Photo */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden bg-white border border-gray-200 shadow-sm">
         <CardContent className="p-0">
           <div className="relative h-80 bg-gray-100">
             <img
@@ -30,7 +29,7 @@ const PropertyPhotos = ({ photos, address, listingDetails }: PropertyPhotosProps
               alt={`Property photo ${selectedPhoto + 1}`}
               className="w-full h-full object-cover"
             />
-            <div className="absolute bottom-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
+            <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-md text-sm font-medium">
               {selectedPhoto + 1} / {photos.length}
             </div>
           </div>
@@ -43,8 +42,10 @@ const PropertyPhotos = ({ photos, address, listingDetails }: PropertyPhotosProps
           <button
             key={index}
             onClick={() => setSelectedPhoto(index)}
-            className={`relative h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-              selectedPhoto === index ? 'border-[#1B5E20]' : 'border-gray-200'
+            className={`relative h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+              selectedPhoto === index 
+                ? 'border-[#1B5E20] shadow-md' 
+                : 'border-gray-200 hover:border-gray-300'
             }`}
           >
             <img
@@ -57,36 +58,36 @@ const PropertyPhotos = ({ photos, address, listingDetails }: PropertyPhotosProps
       </div>
 
       {/* Property Details */}
-      <Card>
+      <Card className="bg-white border border-gray-200 shadow-sm">
         <CardContent className="p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">{address}</h2>
           
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-500">List Price:</span>
-              <p className="font-semibold text-lg text-[#1B5E20]">
+              <span className="text-gray-500 font-medium">List Price:</span>
+              <p className="font-semibold text-lg text-[#1B5E20] mt-1">
                 ${listingDetails.price.toLocaleString()}
               </p>
             </div>
             <div>
-              <span className="text-gray-500">Square Feet:</span>
-              <p className="font-medium">{listingDetails.sqft.toLocaleString()} sq ft</p>
+              <span className="text-gray-500 font-medium">Square Feet:</span>
+              <p className="font-medium text-gray-900 mt-1">{listingDetails.sqft.toLocaleString()} sq ft</p>
             </div>
             <div>
-              <span className="text-gray-500">Bedrooms:</span>
-              <p className="font-medium">{listingDetails.bedrooms} bed</p>
+              <span className="text-gray-500 font-medium">Bedrooms:</span>
+              <p className="font-medium text-gray-900 mt-1">{listingDetails.bedrooms} bed</p>
             </div>
             <div>
-              <span className="text-gray-500">Bathrooms:</span>
-              <p className="font-medium">{listingDetails.bathrooms} bath</p>
+              <span className="text-gray-500 font-medium">Bathrooms:</span>
+              <p className="font-medium text-gray-900 mt-1">{listingDetails.bathrooms} bath</p>
             </div>
             <div>
-              <span className="text-gray-500">Year Built:</span>
-              <p className="font-medium">{listingDetails.yearBuilt}</p>
+              <span className="text-gray-500 font-medium">Year Built:</span>
+              <p className="font-medium text-gray-900 mt-1">{listingDetails.yearBuilt}</p>
             </div>
             <div>
-              <span className="text-gray-500">Lot Size:</span>
-              <p className="font-medium">{listingDetails.lotSize}</p>
+              <span className="text-gray-500 font-medium">Lot Size:</span>
+              <p className="font-medium text-gray-900 mt-1">{listingDetails.lotSize}</p>
             </div>
           </div>
         </CardContent>
