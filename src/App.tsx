@@ -28,6 +28,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/find" element={<Find />} />
             <Route path="/analysis" element={<PropertyAnalysis />} />
             <Route path="/offer" element={<OfferStage />} />
             <Route path="/under-contract" element={<UnderContract />} />
