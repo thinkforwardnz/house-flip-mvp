@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,7 +44,7 @@ const FileUpload = () => {
       size: '856 KB',
       uploadDate: '2024-02-05'
     }
-  ];
+  ]);
 
   const getFileIcon = (type: string) => {
     switch (type) {
