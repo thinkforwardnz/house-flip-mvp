@@ -1,11 +1,13 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from './config.ts';
+import { buildTradeeMeSearchUrl } from './url-builder.ts';
+import { processTradeeMeData } from './data-processor.ts';
+import { calculateFlipPotential } from './scoring.ts';
+import { ScrapingFilters } from './types.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -14,29 +16,13 @@ const supabase = createClient(
 
 const firecrawlApiKey = Deno.env.get('FIRECRAWL_KEY');
 
-// Wellington region suburbs for targeting
-const wellingtonSuburbs = [
-  'Wellington Central', 'Kelburn', 'Mount Victoria', 'Thorndon', 'Te Aro', 'Newtown', 'Island Bay',
-  'Petone', 'Lower Hutt', 'Wainuiomata', 'Eastbourne', 'Stokes Valley',
-  'Upper Hutt', 'Totara Park', 'Heretaunga', 'Trentham',
-  'Porirua', 'Whitby', 'Paremata', 'Plimmerton',
-  'Paraparaumu', 'Waikanae', 'Otaki'
-];
-
-// Keywords that indicate flip potential
-const flipKeywords = [
-  'renovate', 'renovation', 'fixer upper', 'deceased estate', 'needs work',
-  'potential', 'original condition', 'handyman', 'do up', 'restore',
-  'character', 'solid bones', 'investment opportunity', 'as is where is'
-];
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { filters = {} } = await req.json();
+    const { filters = {} }: { filters: ScrapingFilters } = await req.json();
     console.log('Starting TradeMe scraping with Firecrawl for Wellington region');
 
     if (!firecrawlApiKey) {
@@ -123,7 +109,7 @@ serve(async (req) => {
     }
 
     // Process the scraped data
-    const properties = await processTradeeMeData(crawlResults);
+    const properties = processTradeeMeData(crawlResults);
     
     let savedCount = 0;
     let skippedCount = 0;
@@ -175,7 +161,8 @@ serve(async (req) => {
 
         // Trigger AI analysis for high-potential properties
         if (newListing && flipScore >= 60) {
-          EdgeRuntime.waitUntil(analyzeListingInBackground(newListing));
+          // Note: EdgeRuntime.waitUntil is not available in Deno, using direct call
+          analyzeListingInBackground(newListing);
         }
         
         savedCount++;
@@ -206,113 +193,6 @@ serve(async (req) => {
     });
   }
 });
-
-function buildTradeeMeSearchUrl(baseUrl: string, filters: any): string {
-  const params = new URLSearchParams();
-  
-  // Handle keywords/search string
-  if (filters.keywords) {
-    // Take the first keyword if multiple are provided (separated by comma)
-    const keywords = filters.keywords.split(',').map((k: string) => k.trim());
-    const searchTerm = keywords[0] || '';
-    if (searchTerm) {
-      params.append('search_string', searchTerm);
-    }
-  }
-  
-  // Handle price filters
-  if (filters.minPrice) params.append('price_min', filters.minPrice);
-  if (filters.maxPrice) params.append('price_max', filters.maxPrice);
-  
-  // Handle bedroom filters
-  if (filters.minBeds) params.append('bedrooms_min', filters.minBeds);
-  if (filters.maxBeds) params.append('bedrooms_max', filters.maxBeds);
-  
-  // Handle suburb filter
-  if (filters.suburb) {
-    // TradeMe might handle suburb filtering differently, but we'll try this approach
-    params.append('suburb', filters.suburb);
-  }
-  
-  // If we have search parameters, use the /search endpoint
-  if (params.toString()) {
-    return `${baseUrl}/search?${params.toString()}`;
-  }
-  
-  // Otherwise use the base URL
-  return baseUrl;
-}
-
-function processTradeeMeData(crawlResults: any[]): any[] {
-  const properties = [];
-  
-  for (const result of crawlResults) {
-    try {
-      // Extract property data from Firecrawl result
-      const extractedData = result.extract || {};
-      
-      if (extractedData.address && extractedData.price) {
-        const property = {
-          source_url: result.metadata?.sourceURL || result.url,
-          address: extractedData.address,
-          suburb: extractSuburb(extractedData.address),
-          city: 'Wellington',
-          price: parsePrice(extractedData.price),
-          bedrooms: parseInt(extractedData.bedrooms) || null,
-          bathrooms: parseFloat(extractedData.bathrooms) || null,
-          floor_area: parseFloat(extractedData.floor_area) || null,
-          land_area: parseFloat(extractedData.land_area) || null,
-          summary: extractedData.description || extractedData.summary || '',
-          photos: extractedData.photos || [],
-          listing_date: new Date().toISOString().split('T')[0]
-        };
-        
-        properties.push(property);
-      }
-    } catch (error) {
-      console.error('Error processing crawl result:', error);
-    }
-  }
-  
-  return properties;
-}
-
-function extractSuburb(address: string): string {
-  for (const suburb of wellingtonSuburbs) {
-    if (address.toLowerCase().includes(suburb.toLowerCase())) {
-      return suburb;
-    }
-  }
-  return 'Wellington';
-}
-
-function parsePrice(priceStr: string): number {
-  const cleaned = priceStr.replace(/[^0-9]/g, '');
-  return parseInt(cleaned) || 0;
-}
-
-function calculateFlipPotential(property: any): number {
-  let score = 50; // Base score
-  
-  const description = (property.summary || '').toLowerCase();
-  
-  // Check for flip keywords
-  for (const keyword of flipKeywords) {
-    if (description.includes(keyword.toLowerCase())) {
-      score += 15;
-    }
-  }
-  
-  // Bonus for older properties with land
-  if (property.land_area > 600) score += 10;
-  if (property.bedrooms <= 2 && property.land_area > 400) score += 15; // Addition potential
-  
-  // Price-based scoring (lower price = higher potential in Wellington)
-  if (property.price < 700000) score += 20;
-  else if (property.price < 900000) score += 10;
-  
-  return Math.min(score, 100);
-}
 
 async function analyzeListingInBackground(listing: any) {
   try {
