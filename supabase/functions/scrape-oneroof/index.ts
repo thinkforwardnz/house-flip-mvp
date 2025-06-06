@@ -3,6 +3,9 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
+import { ApifyClient } from '../shared/apify-client.ts';
+import { ONEROOF_ACTOR_ID, buildOneRoofApifyInput, processOneRoofResults } from './apify-config.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -13,7 +16,7 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-const firecrawlApiKey = Deno.env.get('FIRECRAWL_KEY');
+const apifyApiToken = Deno.env.get('APIFY_API_TOKEN');
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -22,62 +25,31 @@ serve(async (req) => {
 
   try {
     const { filters = {} } = await req.json();
-    console.log('Starting OneRoof scraping with Firecrawl');
+    console.log('Starting OneRoof scraping with Apify');
 
-    if (!firecrawlApiKey) {
-      throw new Error('Firecrawl API key not configured');
+    if (!apifyApiToken) {
+      throw new Error('Apify API token not configured');
     }
 
-    // Build search URL for Wellington region
-    const searchUrl = buildOneRoofSearchUrl(filters);
-    console.log('Scraping OneRoof URL:', searchUrl);
-
-    // Use Firecrawl to scrape
-    const firecrawlResponse = await fetch('https://api.firecrawl.dev/v0/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${firecrawlApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: searchUrl,
-        pageOptions: {
-          extractorOptions: {
-            mode: 'llm-extraction',
-            extractionPrompt: `Extract property listings from this OneRoof page. For each property, extract:
-              - address (full street address)
-              - price (as number, convert from text if needed)
-              - bedrooms (number)
-              - bathrooms (number)  
-              - floor_area (square meters)
-              - land_area (square meters)
-              - description (property description)
-              - listing_url (link to property details)
-              - photos (array of image URLs)
-              Return as JSON array with key "properties".`
-          }
-        }
-      }),
-    });
-
-    if (!firecrawlResponse.ok) {
-      throw new Error(`Firecrawl API error: ${firecrawlResponse.status}`);
-    }
-
-    const scrapeData = await firecrawlResponse.json();
-    const extractedData = scrapeData.data?.extract?.properties || [];
+    // Initialize Apify client
+    const apifyClient = new ApifyClient(apifyApiToken);
     
-    console.log(`Extracted ${extractedData.length} properties from OneRoof`);
+    // Build input for OneRoof actor
+    const actorInput = buildOneRoofApifyInput(filters);
+    console.log('OneRoof Apify input:', JSON.stringify(actorInput, null, 2));
+
+    // Run the actor and get results
+    const apifyResults = await apifyClient.runActorAndGetResults(ONEROOF_ACTOR_ID, actorInput);
+    console.log(`Received ${apifyResults.length} properties from Apify`);
+
+    // Process the results
+    const properties = processOneRoofResults(apifyResults);
 
     let savedCount = 0;
     let skippedCount = 0;
 
-    for (const propertyData of extractedData) {
+    for (const property of properties) {
       try {
-        const property = processOneRoofProperty(propertyData);
-        
-        if (!property) continue;
-
         // Check if listing already exists
         const { data: existing } = await supabase
           .from('scraped_listings')
@@ -106,7 +78,7 @@ serve(async (req) => {
             land_area: property.land_area,
             summary: property.summary,
             photos: property.photos,
-            listing_date: new Date().toISOString().split('T')[0],
+            listing_date: property.listing_date,
             status: 'new'
           })
           .select()
@@ -119,7 +91,7 @@ serve(async (req) => {
 
         // Trigger AI analysis for new listing
         if (newListing) {
-          EdgeRuntime.waitUntil(analyzeListingInBackground(newListing));
+          analyzeListingInBackground(newListing);
         }
         
         savedCount++;
@@ -133,7 +105,7 @@ serve(async (req) => {
       success: true,
       scraped: savedCount,
       skipped: skippedCount,
-      total: extractedData.length,
+      total: properties.length,
       source: 'OneRoof'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -150,62 +122,6 @@ serve(async (req) => {
     });
   }
 });
-
-function buildOneRoofSearchUrl(filters: any): string {
-  const baseUrl = 'https://www.oneroof.co.nz/for-sale/wellington';
-  const params = new URLSearchParams();
-  
-  if (filters.minPrice) params.append('price_min', filters.minPrice);
-  if (filters.maxPrice) params.append('price_max', filters.maxPrice);
-  if (filters.minBeds) params.append('bedrooms_min', filters.minBeds);
-  
-  return `${baseUrl}?${params.toString()}`;
-}
-
-function processOneRoofProperty(data: any) {
-  try {
-    if (!data.address || !data.price) return null;
-
-    return {
-      source_url: data.listing_url || `https://www.oneroof.co.nz/property/${Date.now()}`,
-      address: data.address,
-      suburb: extractSuburbFromAddress(data.address),
-      price: parsePrice(data.price),
-      bedrooms: parseInt(data.bedrooms) || null,
-      bathrooms: parseFloat(data.bathrooms) || null,
-      floor_area: parseFloat(data.floor_area) || null,
-      land_area: parseFloat(data.land_area) || null,
-      summary: data.description || '',
-      photos: Array.isArray(data.photos) ? data.photos : []
-    };
-  } catch (error) {
-    console.error('Error processing OneRoof property:', error);
-    return null;
-  }
-}
-
-function extractSuburbFromAddress(address: string): string {
-  const wellingtonSuburbs = [
-    'Wellington Central', 'Kelburn', 'Mount Victoria', 'Thorndon', 'Te Aro', 'Newtown', 'Island Bay',
-    'Petone', 'Lower Hutt', 'Wainuiomata', 'Eastbourne', 'Stokes Valley',
-    'Upper Hutt', 'Totara Park', 'Heretaunga', 'Trentham',
-    'Porirua', 'Whitby', 'Paremata', 'Plimmerton',
-    'Paraparaumu', 'Waikanae', 'Otaki'
-  ];
-
-  for (const suburb of wellingtonSuburbs) {
-    if (address.toLowerCase().includes(suburb.toLowerCase())) {
-      return suburb;
-    }
-  }
-  return 'Wellington';
-}
-
-function parsePrice(priceStr: string | number): number {
-  if (typeof priceStr === 'number') return priceStr;
-  const cleaned = String(priceStr).replace(/[^0-9]/g, '');
-  return parseInt(cleaned) || 0;
-}
 
 async function analyzeListingInBackground(listing: any) {
   try {
