@@ -1,3 +1,4 @@
+
 // deno-lint-ignore no-explicit-any
 // @ts-ignore: Deno global is available in Edge Functions
 declare const Deno: any;
@@ -7,16 +8,15 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
 import { corsHeaders } from './config.ts';
 import { calculateFlipPotential } from './scoring.ts';
-import { ScrapingFilters, PropertyData } from './types.ts';
+import { ScrapingFilters, PropertyData, AgentQLResponse } from './types.ts';
 import { AgentQLClient } from '../shared/agentql-client.ts';
+import { buildTradeeMeSearchUrl } from './url-builder.ts';
+import { processAgentQLResults } from './data-processor.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
-
-// Initialize AgentQL client (reads API key from secrets)
-const agentqlClient = new AgentQLClient();
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -26,57 +26,46 @@ serve(async (req) => {
   try {
     const { filters = {} }: { filters: ScrapingFilters } = await req.json();
     console.log('Starting TradeMe scraping with AgentQL for Wellington region');
+    console.log('Filters:', JSON.stringify(filters, null, 2));
+
+    // Check if AgentQL API key is configured
+    const agentqlKey = Deno.env.get('AGENTQL_API_KEY');
+    if (!agentqlKey) {
+      throw new Error('AGENTQL_API_KEY not configured in environment');
+    }
+
+    // Initialize AgentQL client
+    const agentqlClient = new AgentQLClient();
 
     // Build TradeMe search URL with filters
-    const baseUrl = 'https://www.trademe.co.nz/a/property/residential/sale/wellington';
-    const params = new URLSearchParams();
-    if (filters.keywords) {
-      const keywords = filters.keywords.split(',').map((k: string) => k.trim());
-      params.append('search_string', keywords[0] || '');
-    }
-    if (filters.minPrice) params.append('price_min', filters.minPrice);
-    if (filters.maxPrice) params.append('price_max', filters.maxPrice);
-    if (filters.minBeds) params.append('bedrooms_min', filters.minBeds);
-    if (filters.maxBeds) params.append('bedrooms_max', filters.maxBeds);
-    if (filters.suburb) params.append('suburb', filters.suburb);
-    const searchUrl = `${baseUrl}?${params.toString()}`;
+    const searchUrl = buildTradeeMeSearchUrl(filters);
+    console.log('Scraping URL:', searchUrl);
 
-    // Call AgentQL to extract property listings
-    const agentqlResults = await agentqlClient.extractProperties({ url: searchUrl });
-    console.log(`Received ${agentqlResults.length} properties from AgentQL`);
+    // Get the structured query for TradeMe properties
+    const propertyQuery = agentqlClient.getTradeeMePropertyQuery();
+    console.log('Using query:', propertyQuery);
 
-    // Process the results (map AgentQL fields to our schema)
-    // Type guard to filter out nulls
-    function isPropertyData(item: any): item is PropertyData {
-      return item !== null && typeof item === 'object' && 'city' in item;
+    let agentqlResponse: AgentQLResponse;
+    
+    try {
+      // Try main property extraction query first
+      agentqlResponse = await agentqlClient.queryPropertyData(searchUrl, propertyQuery);
+    } catch (error) {
+      console.warn('Main query failed, trying fallback query:', error);
+      
+      // Try fallback query if main query fails
+      const fallbackQuery = agentqlClient.getTradeeMeFallbackQuery();
+      agentqlResponse = await agentqlClient.queryPropertyData(searchUrl, fallbackQuery);
     }
-    const properties: PropertyData[] = agentqlResults.map((item: any) => {
-      try {
-        return {
-          source_url: item.url || '',
-          address: item.address || '',
-          suburb: item.suburb || '',
-          city: 'Wellington',
-          price: typeof item.price === 'number' ? item.price : parseInt(String(item.price).replace(/[^0-9]/g, '')) || 0,
-          bedrooms: item.bedrooms ? parseInt(item.bedrooms) : null,
-          bathrooms: item.bathrooms ? parseFloat(item.bathrooms) : null,
-          floor_area: item.floorArea ? parseFloat(item.floorArea) : null,
-          land_area: item.landArea ? parseFloat(item.landArea) : null,
-          summary: item.description || '',
-          photos: Array.isArray(item.photos) ? item.photos : [],
-          listing_date: item.listingDate || new Date().toISOString().split('T')[0]
-        };
-      } catch (error) {
-        console.error('Error processing AgentQL result:', error, item);
-        return null;
-      }
-    }).filter(isPropertyData);
+
+    // Process the AgentQL response
+    const properties: PropertyData[] = processAgentQLResults(agentqlResponse, searchUrl);
+    console.log(`Processed ${properties.length} valid properties from AgentQL response`);
 
     let savedCount = 0;
     let skippedCount = 0;
 
     for (const property of properties) {
-      if (!property) continue; // Type safety
       try {
         // Check if listing already exists
         const { data: existing } = await supabase
@@ -138,7 +127,8 @@ serve(async (req) => {
       scraped: savedCount,
       skipped: skippedCount,
       total: properties.length,
-      source: 'TradeMe'
+      source: 'TradeMe',
+      url: searchUrl
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

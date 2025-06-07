@@ -1,16 +1,15 @@
+
 // deno-lint-ignore no-explicit-any
 // @ts-ignore: Deno global is available in Edge Functions
 declare const Deno: any;
+
 /**
  * AgentQLClient for property data extraction via AgentQL API.
- *
- * Usage:
- *   const client = new AgentQLClient();
- *   const results = await client.extractProperties({ url, ...filters });
+ * Updated to use structured queries similar to the Python SDK approach.
  */
 export class AgentQLClient {
   private apiKey: string;
-  private baseUrl: string = 'https://api.agentql.com/v1/extract';
+  private baseUrl: string = 'https://api.agentql.com/v1/query';
 
   constructor() {
     // Safely access Deno.env.get for Supabase Edge Functions
@@ -29,23 +28,24 @@ export class AgentQLClient {
   }
 
   /**
-   * Extracts property listings from a given URL using AgentQL.
-   *
+   * Extracts TradeMe property listings using structured queries.
+   * 
    * Args:
-   *   params (object):
-   *     - url (string): The page URL to extract listings from.
-   *     - filters (object): Optional filters (keywords, price, beds, etc.)
-   *
+   *   url (string): The TradeMe search URL to extract listings from.
+   *   query (string): The AgentQL structured query for property extraction.
+   * 
    * Returns:
-   *   Promise<any[]>: Array of extracted property objects.
+   *   Promise<any>: The structured response from AgentQL.
    */
-  async extractProperties(params: { url: string; [key: string]: any }): Promise<any[]> {
-    // Avoid duplicate 'url' key
-    const { url, ...rest } = params;
+  async queryPropertyData(url: string, query: string): Promise<any> {
     const payload = {
       url,
-      ...rest,
+      query,
+      wait_for_selector: '.tm-property-search-card',
+      timeout: 30000
     };
+
+    console.log('AgentQL request payload:', JSON.stringify(payload, null, 2));
 
     const response = await fetch(this.baseUrl, {
       method: 'POST',
@@ -58,14 +58,57 @@ export class AgentQLClient {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('AgentQL API error:', response.status, response.statusText, errorText);
       throw new Error(`AgentQL API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
-    // Expecting data.properties or similar structure
-    if (!data || !Array.isArray(data.properties)) {
-      throw new Error('AgentQL API response missing properties array');
+    console.log('AgentQL raw response:', JSON.stringify(data, null, 2));
+
+    if (!data || typeof data !== 'object') {
+      throw new Error('AgentQL API response is not a valid object');
     }
-    return data.properties;
+
+    return data;
   }
-} 
+
+  /**
+   * Gets the TradeMe property extraction query.
+   * This structured query targets the specific elements on TradeMe property listings.
+   */
+  getTradeeMePropertyQuery(): string {
+    return `
+{
+  property_listings[] {
+    title
+    price
+    address
+    suburb
+    bedrooms
+    bathrooms
+    floor_area
+    land_area
+    description
+    listing_url
+    photos[]
+    listing_date
+  }
+}`;
+  }
+
+  /**
+   * Fallback query for TradeMe search results if main query fails.
+   */
+  getTradeeMeFallbackQuery(): string {
+    return `
+{
+  search_results[] {
+    property_title
+    property_price
+    property_address
+    property_link
+    property_image
+  }
+}`;
+  }
+}
