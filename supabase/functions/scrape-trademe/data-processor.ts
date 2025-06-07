@@ -1,38 +1,52 @@
-
 import { PropertyData } from './types.ts';
 import { extractSuburb } from './url-builder.ts';
 
 /**
- * Process search results to extract listing URLs from AgentQL response using TradeMe DOM structure
+ * Stage 1: Process search results to extract basic listing metadata from AgentQL response
+ * Extracts: Listing ID, Listing URL, Address only
  */
-export function processSearchResults(response: any): string[] {
-  const listingUrls: string[] = [];
+export function processSearchResults(response: any): Array<{id: string, url: string, address: string}> {
+  const listings: Array<{id: string, url: string, address: string}> = [];
   
-  console.log('Processing AgentQL search results:', JSON.stringify(response, null, 2));
+  console.log('Stage 1: Processing AgentQL search results:', JSON.stringify(response, null, 2));
   
   // Handle AgentQL /query-data response structure
-  const listings = response.data?.listings || response.listings || [];
+  const agentqlListings = response.data?.listings || response.listings || [];
   
-  if (Array.isArray(listings)) {
-    for (const listing of listings) {
+  if (Array.isArray(agentqlListings)) {
+    for (const listing of agentqlListings) {
       try {
         let url = listing.listing_url || listing.url || listing.href;
+        const address = listing.address || '';
+        let listingId = listing.listing_id || '';
         
-        if (url) {
+        if (url && address) {
           // Ensure URL is absolute
           if (url.startsWith('/')) {
             url = `https://www.trademe.co.nz${url}`;
           }
           
-          // Validate TradeMe URL and avoid duplicates
-          if (url.includes('trademe.co.nz') && !listingUrls.includes(url)) {
-            listingUrls.push(url);
-            console.log(`Found listing URL: ${url}`);
+          // Extract listing ID from URL if not found in data
+          if (!listingId) {
+            listingId = extractListingId(url) || '';
+          }
+          
+          // Validate TradeMe URL and required fields
+          if (url.includes('trademe.co.nz') && listingId && address) {
+            const listingData = {
+              id: listingId,
+              url: url,
+              address: address.trim()
+            };
             
-            // Extract listing ID for logging
-            const listingId = listing.listing_id || extractListingId(url);
-            if (listingId) {
-              console.log(`  Listing ID: ${listingId}`);
+            // Check for duplicates
+            const isDuplicate = listings.some(existing => 
+              existing.url === listingData.url || existing.id === listingData.id
+            );
+            
+            if (!isDuplicate) {
+              listings.push(listingData);
+              console.log(`Stage 1: Found listing - ID: ${listingId}, Address: ${address}`);
             }
           }
         }
@@ -44,8 +58,8 @@ export function processSearchResults(response: any): string[] {
     console.warn('No listings array found in AgentQL response');
   }
   
-  console.log(`Extracted ${listingUrls.length} listing URLs from AgentQL results`);
-  return listingUrls;
+  console.log(`Stage 1 complete: Extracted ${listings.length} listings with basic metadata`);
+  return listings;
 }
 
 /**

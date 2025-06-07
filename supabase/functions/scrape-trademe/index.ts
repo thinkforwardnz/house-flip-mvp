@@ -7,11 +7,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
 import { corsHeaders } from './config.ts';
-import { calculateFlipPotential } from './scoring.ts';
-import { ScrapingFilters, PropertyData } from './types.ts';
+import { ScrapingFilters } from './types.ts';
 import { AgentQLClient } from '../shared/agentql-client.ts';
-import { buildTradeeMeSearchUrl } from './url-builder.ts';
-import { processSearchResults, processPropertyDetails } from './data-processor.ts';
+import { buildTradeeMeSearchUrl, extractSuburb } from './url-builder.ts';
+import { processSearchResults } from './data-processor.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -25,7 +24,7 @@ serve(async (req) => {
 
   try {
     const { filters = {} }: { filters: ScrapingFilters } = await req.json();
-    console.log('Starting TradeMe scraping with corrected AgentQL /query-data integration');
+    console.log('Stage 1: TradeMe Search Results Scraping with AgentQL');
     console.log('Filters:', JSON.stringify(filters, null, 2));
 
     // Check if AgentQL API key is configured
@@ -35,10 +34,10 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'AgentQL API key not configured',
-        scraped: 0,
-        skipped: 0,
+        discovered: 0,
         total: 0,
-        source: 'TradeMe'
+        source: 'TradeMe',
+        stage: 'search-results'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -54,18 +53,18 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'Failed to initialize AgentQL client: ' + error.message,
-        scraped: 0,
-        skipped: 0,
+        discovered: 0,
         total: 0,
-        source: 'TradeMe'
+        source: 'TradeMe',
+        stage: 'search-results'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Test AgentQL connection with correct endpoint
+    // Test AgentQL connection
     try {
-      console.log('Testing AgentQL API connectivity with /query-data endpoint...');
+      console.log('Testing AgentQL API connectivity...');
       const testResult = await agentqlClient.testConnection();
       console.log('AgentQL test successful:', testResult);
     } catch (testError) {
@@ -73,20 +72,19 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'AgentQL API connectivity failed: ' + testError.message,
-        scraped: 0,
-        skipped: 0,
+        discovered: 0,
         total: 0,
         source: 'TradeMe',
-        details: 'Check API key and endpoint configuration',
-        endpoint: 'https://api.agentql.com/v1/query-data'
+        stage: 'search-results',
+        details: 'Check API key and endpoint configuration'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Step 1: Build TradeMe search URL and get listing URLs
+    // Stage 1: Build TradeMe search URL and get listing metadata
     const searchUrl = buildTradeeMeSearchUrl(filters);
-    console.log('Step 1: Scraping search results from:', searchUrl);
+    console.log('Stage 1: Scraping search results from:', searchUrl);
 
     let searchResults;
     try {
@@ -97,28 +95,28 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'AgentQL scraping failed: ' + error.message,
-        scraped: 0,
-        skipped: 0,
+        discovered: 0,
         total: 0,
         source: 'TradeMe',
+        stage: 'search-results',
         url: searchUrl,
-        details: 'Search query failed with new /query-data endpoint'
+        details: 'Search query failed with /query-data endpoint'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Process search results to get listing URLs
-    const listingUrls = processSearchResults(searchResults);
-    console.log(`Step 1 complete: Found ${listingUrls.length} listing URLs`);
+    // Process search results to get basic listing metadata
+    const listings = processSearchResults(searchResults);
+    console.log(`Stage 1: Found ${listings.length} listings with basic metadata`);
 
-    if (listingUrls.length === 0) {
+    if (listings.length === 0) {
       return new Response(JSON.stringify({
         success: true,
-        scraped: 0,
-        skipped: 0,
+        discovered: 0,
         total: 0,
         source: 'TradeMe',
+        stage: 'search-results',
         message: 'No listings found in search results',
         searchResponse: searchResults,
         searchUrl: searchUrl
@@ -127,154 +125,86 @@ serve(async (req) => {
       });
     }
 
-    // Step 2: Scrape individual property details with rate limiting
-    console.log('Step 2: Scraping individual property details with rate limiting...');
-    const properties: PropertyData[] = [];
-    let successCount = 0;
-    let errorCount = 0;
-
-    // Limit to first 3 properties for testing and to respect rate limits
-    const maxProperties = Math.min(listingUrls.length, 3);
-    
-    for (let i = 0; i < maxProperties; i++) {
-      const listingUrl = listingUrls[i];
-      try {
-        console.log(`Scraping property ${i + 1}/${maxProperties}: ${listingUrl}`);
-        
-        // Add rate limiting delay before each request (except the first)
-        if (i > 0) {
-          await agentqlClient.rateLimitDelay();
-        }
-        
-        const propertyDetails = await agentqlClient.scrapePropertyDetails(listingUrl);
-        const property = processPropertyDetails(propertyDetails, listingUrl, searchUrl);
-        
-        if (property) {
-          properties.push(property);
-          successCount++;
-          console.log(`Successfully processed property: ${property.address}`);
-        } else {
-          console.warn(`Failed to process property details for: ${listingUrl}`);
-          errorCount++;
-        }
-        
-      } catch (error) {
-        console.error(`Error scraping property ${listingUrl}:`, error);
-        errorCount++;
-        // Continue with next property
-      }
-    }
-
-    console.log(`Step 2 complete: Successfully scraped ${successCount} properties, ${errorCount} errors`);
-
-    // Step 3: Save properties to database
+    // Stage 1: Save discovered listings to database
     let savedCount = 0;
     let skippedCount = 0;
 
-    for (const property of properties) {
+    for (const listing of listings) {
       try {
         // Check if listing already exists
         const { data: existing } = await supabase
           .from('scraped_listings')
           .select('id')
-          .eq('source_url', property.source_url)
+          .eq('source_url', listing.url)
           .single();
 
         if (existing) {
           skippedCount++;
+          console.log(`Skipping existing listing: ${listing.address}`);
           continue;
         }
 
-        // Calculate flip potential score
-        const flipScore = calculateFlipPotential(property);
-
-        // Insert new listing
+        // Insert new discovered listing with basic metadata
         const { data: newListing, error: insertError } = await supabase
           .from('scraped_listings')
           .insert({
             source_site: 'TradeMe',
-            source_url: property.source_url,
-            address: property.address,
-            suburb: property.suburb,
-            city: property.city,
-            price: property.price,
-            bedrooms: property.bedrooms,
-            bathrooms: property.bathrooms,
-            floor_area: property.floor_area,
-            land_area: property.land_area,
-            summary: property.summary,
-            photos: property.photos,
-            listing_date: property.listing_date,
-            status: 'new',
-            ai_score: flipScore
+            source_url: listing.url,
+            address: listing.address,
+            suburb: extractSuburb(listing.address),
+            city: 'Wellington',
+            status: 'discovered', // Stage 1 status
+            // Leave detailed fields as NULL for Stage 2
+            price: null,
+            bedrooms: null,
+            bathrooms: null,
+            floor_area: null,
+            land_area: null,
+            summary: null,
+            photos: null,
+            listing_date: null,
+            ai_score: null
           })
           .select()
           .single();
 
         if (insertError) {
-          console.error('Error inserting listing:', insertError);
+          console.error('Error inserting discovered listing:', insertError);
           continue;
         }
 
-        // Trigger AI analysis for high-potential properties
-        if (newListing && flipScore >= 60) {
-          analyzeListingInBackground(newListing);
-        }
-        
         savedCount++;
+        console.log(`Saved discovered listing: ${listing.address} (ID: ${listing.id})`);
 
       } catch (error) {
-        console.error('Error processing property:', error);
+        console.error('Error processing listing:', error);
       }
     }
 
     return new Response(JSON.stringify({
       success: true,
-      scraped: savedCount,
+      discovered: savedCount,
       skipped: skippedCount,
-      total: properties.length,
+      total: listings.length,
       source: 'TradeMe',
+      stage: 'search-results',
       url: searchUrl,
-      listingUrlsFound: listingUrls.length,
-      processingErrors: errorCount,
+      message: `Stage 1 complete: Discovered ${savedCount} new listings for future detailed scraping`,
       agentqlConnected: true,
-      endpoint: 'https://api.agentql.com/v1/query-data'
+      nextStage: 'Stage 2: Individual property details scraping (future implementation)'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in scrape-trademe function:', error);
+    console.error('Error in Stage 1 scrape-trademe function:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      success: false 
+      success: false,
+      stage: 'search-results'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
-
-async function analyzeListingInBackground(listing: any) {
-  try {
-    const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/analyze-property`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        listingId: listing.id,
-        listingData: listing
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('Failed to analyze listing:', await response.text());
-    } else {
-      console.log(`Successfully queued analysis for listing: ${listing.address}`);
-    }
-  } catch (error) {
-    console.error('Error triggering AI analysis:', error);
-  }
-}

@@ -5,7 +5,7 @@ declare const Deno: any;
 
 /**
  * AgentQLClient for property data extraction via AgentQL API.
- * Updated with corrected TradeMe-specific DOM selectors.
+ * Stage 1: Simplified for search results only (ID, URL, Address).
  */
 export class AgentQLClient {
   private apiKey: string;
@@ -78,7 +78,8 @@ export class AgentQLClient {
   }
 
   /**
-   * Gets the TradeMe search results query using TradeMe-specific DOM selectors.
+   * Gets the TradeMe search results query - Stage 1: Basic listing metadata only.
+   * Extracts: Listing ID, Listing URL, Address
    */
   getTradeeMeSearchQuery(): string {
     return `{
@@ -86,52 +87,17 @@ export class AgentQLClient {
         listing_id(attr: "data-aria-id")
         listing_url(attr: "href")
         address
-        price
-        title
-        bedrooms
-        bathrooms
-        floor_area
       }
     }`;
   }
 
   /**
-   * Gets the TradeMe individual property page query using TradeMe-specific DOM selectors.
-   */
-  getTradeeMePropertyDetailQuery(): string {
-    return `{
-      title
-      price  
-      address
-      bedrooms
-      bathrooms
-      landSize
-      floorArea
-      features[]
-      description
-      agentName
-      agentContact
-      photos[] {
-        image_src(attr: "src")
-      }
-      listingDate
-    }`;
-  }
-
-  /**
-   * Scrapes TradeMe search results to get listing data with retry logic.
+   * Scrapes TradeMe search results to get basic listing metadata with retry logic.
+   * Stage 1: Search Results Only
    */
   async scrapeSearchResults(searchUrl: string): Promise<any> {
     const query = this.getTradeeMeSearchQuery();
     return await this.queryDataWithRetry(searchUrl, query, 5000);
-  }
-
-  /**
-   * Scrapes individual TradeMe property page for detailed information with retry logic.
-   */
-  async scrapePropertyDetails(propertyUrl: string): Promise<any> {
-    const query = this.getTradeeMePropertyDetailQuery();
-    return await this.queryDataWithRetry(propertyUrl, query, 5000);
   }
 
   /**
