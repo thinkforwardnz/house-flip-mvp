@@ -6,6 +6,7 @@ declare const Deno: any;
 /**
  * AgentQLClient for property data extraction via AgentQL API.
  * Stage 1: Simplified for search results only (ID, URL, Address, Featured Image).
+ * Extended: Individual property page scraping for data enrichment.
  */
 export class AgentQLClient {
   private apiKey: string;
@@ -93,12 +94,81 @@ export class AgentQLClient {
   }
 
   /**
+   * Gets the TradeMe individual property page query for data enrichment.
+   */
+  getTradeeMePropertyQuery(): string {
+    return `{
+      photos[] {
+        image_src
+      }
+      property_details {
+        bedrooms
+        bathrooms
+        floor_area
+        land_area
+        price
+      }
+    }`;
+  }
+
+  /**
    * Scrapes TradeMe search results to get basic listing metadata with retry logic.
    * Stage 1: Search Results Only
    */
   async scrapeSearchResults(searchUrl: string): Promise<any> {
     const query = this.getTradeeMeSearchQuery();
     return await this.queryDataWithRetry(searchUrl, query, 5000);
+  }
+
+  /**
+   * Scrapes individual TradeMe property page for data enrichment.
+   */
+  async scrapePropertyPage(propertyUrl: string): Promise<any> {
+    const query = this.getTradeeMePropertyQuery();
+    const result = await this.queryDataWithRetry(propertyUrl, query, 3000);
+    
+    // Process the result to extract photos
+    const processedData = this.processPropertyPageData(result);
+    return processedData;
+  }
+
+  /**
+   * Process individual property page data from AgentQL response.
+   */
+  private processPropertyPageData(response: any): any {
+    console.log('Processing property page data:', JSON.stringify(response, null, 2));
+    
+    try {
+      const data = response.data || response;
+      const photos: string[] = [];
+      
+      if (Array.isArray(data.photos)) {
+        for (const photo of data.photos) {
+          if (photo.image_src) {
+            let photoUrl = photo.image_src;
+            // Ensure photo URL is absolute
+            if (photoUrl.startsWith('/')) {
+              photoUrl = `https://www.trademe.co.nz${photoUrl}`;
+            }
+            photos.push(photoUrl);
+          }
+        }
+      }
+
+      console.log(`Extracted ${photos.length} photos from property page`);
+      
+      return {
+        photos: photos,
+        bedrooms: data.property_details?.bedrooms || null,
+        bathrooms: data.property_details?.bathrooms || null,
+        floor_area: data.property_details?.floor_area || null,
+        land_area: data.property_details?.land_area || null,
+        price: data.property_details?.price || null
+      };
+    } catch (error) {
+      console.error('Error processing property page data:', error);
+      return { photos: [] };
+    }
   }
 
   /**

@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw } from 'lucide-react';
 import { useScrapedListings } from '@/hooks/useScrapedListings';
 import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
+import { usePropertyEnrichment } from '@/hooks/usePropertyEnrichment';
 import ScrapingProgress from '@/components/ScrapingProgress';
 
 interface SearchFilters {
@@ -44,6 +45,13 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
     cancelScraping,
   } = useEnhancedScraping();
 
+  const {
+    isEnriching,
+    progress: enrichmentProgress,
+    startEnrichment,
+    cancelEnrichment,
+  } = usePropertyEnrichment();
+
   const handleImportAsDeal = (listing: any) => {
     importAsDeal(listing);
   };
@@ -56,8 +64,8 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
     dismissListing(listing.id);
   };
 
-  const handleRefresh = () => {
-    if (isScrapingActive) return;
+  const handleSearchProperties = () => {
+    if (isScrapingActive || isEnriching) return;
     
     const scrapingFilters = {
       suburb: filters.suburb,
@@ -68,6 +76,11 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
     };
     
     startScraping(scrapingFilters);
+  };
+
+  const handleRefreshFeed = () => {
+    if (isScrapingActive || isEnriching) return;
+    startEnrichment();
   };
 
   if (error) {
@@ -93,6 +106,38 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
         onCancel={cancelScraping}
       />
 
+      {/* Enrichment Progress */}
+      {isEnriching && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-blue-900">
+              Enriching Property Data...
+            </h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={cancelEnrichment}
+              className="text-blue-700 border-blue-300"
+            >
+              Cancel
+            </Button>
+          </div>
+          <p className="text-sm text-blue-700 mb-2">
+            Enriched: {enrichmentProgress.enriched} | Skipped: {enrichmentProgress.skipped} | Total: {enrichmentProgress.total}
+          </p>
+          <div className="w-full bg-blue-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{
+                width: enrichmentProgress.total > 0 
+                  ? `${((enrichmentProgress.enriched + enrichmentProgress.skipped) / enrichmentProgress.total) * 100}%`
+                  : '0%'
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Property Listings */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -112,11 +157,11 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
             </p>
             <Button 
               variant="outline"
-              onClick={handleRefresh}
-              disabled={isScrapingActive}
+              onClick={handleRefreshFeed}
+              disabled={isEnriching || isScrapingActive}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isScrapingActive ? 'animate-spin' : ''}`} />
-              {isScrapingActive ? 'Scraping...' : 'Refresh Feed'}
+              <RefreshCw className={`h-4 w-4 mr-2 ${isEnriching ? 'animate-spin' : ''}`} />
+              {isEnriching ? 'Enriching...' : 'Refresh Feed'}
             </Button>
           </div>
           
@@ -174,11 +219,11 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
               <p className="text-gray-500 mb-4">No properties found matching your criteria.</p>
               <Button 
                 variant="outline" 
-                onClick={handleRefresh}
-                disabled={isScrapingActive}
+                onClick={handleRefreshFeed}
+                disabled={isEnriching || isScrapingActive}
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isScrapingActive ? 'animate-spin' : ''}`} />
-                {isScrapingActive ? 'Scraping...' : 'Refresh Feed'}
+                <RefreshCw className={`h-4 w-4 mr-2 ${isEnriching ? 'animate-spin' : ''}`} />
+                {isEnriching ? 'Enriching...' : 'Refresh Feed'}
               </Button>
             </div>
           )}

@@ -16,31 +16,26 @@ interface SearchFilters {
 
 interface FilterActionsProps {
   onClearFilters: () => void;
-  onRefreshListings: () => void;
+  onSearchProperties: () => void;
   isScrapingActive: boolean;
 }
 
-const FilterActions = ({ onClearFilters, onRefreshListings, isScrapingActive }: FilterActionsProps) => {
+const FilterActions = ({ onClearFilters, onSearchProperties, isScrapingActive }: FilterActionsProps) => {
   return (
     <div className="flex justify-between items-center">
       <div className="flex gap-2">
         <Button variant="outline" onClick={onClearFilters}>
           Clear Filters
         </Button>
-        <Button className="bg-[#1B5E20] hover:bg-[#1B5E20]/90">
+        <Button 
+          className="bg-[#1B5E20] hover:bg-[#1B5E20]/90"
+          onClick={onSearchProperties}
+          disabled={isScrapingActive}
+        >
           <Search className="h-4 w-4 mr-2" />
-          Search Properties
+          {isScrapingActive ? 'Searching...' : 'Search Properties'}
         </Button>
       </div>
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={onRefreshListings}
-        disabled={isScrapingActive}
-      >
-        <RefreshCw className={`h-4 w-4 mr-2 ${isScrapingActive ? 'animate-spin' : ''}`} />
-        {isScrapingActive ? 'Scraping Wellington...' : 'Refresh Feed'}
-      </Button>
     </div>
   );
 };
