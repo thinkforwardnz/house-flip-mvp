@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -10,6 +10,9 @@ export interface EnrichmentProgress {
   currentProperty?: string;
 }
 
+const ENRICHMENT_STORAGE_KEY = 'property_enrichment_progress';
+const ENRICHMENT_STATUS_KEY = 'property_enrichment_active';
+
 export const usePropertyEnrichment = () => {
   const [isEnriching, setIsEnriching] = useState(false);
   const [progress, setProgress] = useState<EnrichmentProgress>({
@@ -18,6 +21,34 @@ export const usePropertyEnrichment = () => {
     total: 0
   });
   const { toast } = useToast();
+
+  // Load persistent state on mount
+  useEffect(() => {
+    const savedProgress = localStorage.getItem(ENRICHMENT_STORAGE_KEY);
+    const savedStatus = localStorage.getItem(ENRICHMENT_STATUS_KEY);
+    
+    if (savedProgress) {
+      try {
+        const parsedProgress = JSON.parse(savedProgress);
+        setProgress(parsedProgress);
+      } catch (error) {
+        console.error('Error parsing saved enrichment progress:', error);
+      }
+    }
+    
+    if (savedStatus === 'true') {
+      setIsEnriching(true);
+    }
+  }, []);
+
+  // Save state whenever it changes
+  useEffect(() => {
+    localStorage.setItem(ENRICHMENT_STORAGE_KEY, JSON.stringify(progress));
+  }, [progress]);
+
+  useEffect(() => {
+    localStorage.setItem(ENRICHMENT_STATUS_KEY, isEnriching.toString());
+  }, [isEnriching]);
 
   const startEnrichment = async () => {
     setIsEnriching(true);
@@ -67,12 +98,20 @@ export const usePropertyEnrichment = () => {
       throw error;
     } finally {
       setIsEnriching(false);
+      // Clear the persistent state when complete
+      localStorage.removeItem(ENRICHMENT_STORAGE_KEY);
+      localStorage.removeItem(ENRICHMENT_STATUS_KEY);
     }
   };
 
   const cancelEnrichment = () => {
     setIsEnriching(false);
     setProgress({ enriched: 0, skipped: 0, total: 0 });
+    
+    // Clear persistent state
+    localStorage.removeItem(ENRICHMENT_STORAGE_KEY);
+    localStorage.removeItem(ENRICHMENT_STATUS_KEY);
+    
     toast({
       title: "Enrichment Cancelled",
       description: "Property data enrichment has been cancelled",
