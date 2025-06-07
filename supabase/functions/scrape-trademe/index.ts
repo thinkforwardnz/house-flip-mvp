@@ -66,7 +66,7 @@ serve(async (req) => {
     let searchResults;
     try {
       searchResults = await agentqlClient.scrapeSearchResults(searchUrl);
-      console.log('AgentQL search results received:', !!searchResults);
+      console.log('AgentQL search results received:', JSON.stringify(searchResults, null, 2));
     } catch (error) {
       console.error('AgentQL search query failed:', error);
       return new Response(JSON.stringify({
@@ -83,7 +83,7 @@ serve(async (req) => {
 
     // Process search results to get basic listing metadata
     const listings = processSearchResults(searchResults);
-    console.log(`Discovered ${listings.length} listings`);
+    console.log(`Discovered ${listings.length} listings:`, listings);
 
     if (listings.length === 0) {
       return new Response(JSON.stringify({
@@ -105,12 +105,20 @@ serve(async (req) => {
 
     for (const listing of listings) {
       try {
+        console.log(`Processing listing: ${listing.address} (${listing.url})`);
+        
         // Check if listing already exists
-        const { data: existing } = await supabase
+        const { data: existing, error: checkError } = await supabase
           .from('scraped_listings')
           .select('id')
           .eq('source_url', listing.url)
-          .single();
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('Error checking existing listing:', checkError);
+          errors.push(`Failed to check existing listing ${listing.address}: ${checkError.message}`);
+          continue;
+        }
 
         if (existing) {
           skipped++;
@@ -118,26 +126,48 @@ serve(async (req) => {
           continue;
         }
 
-        // Insert new listing
-        const { error } = await supabase
-          .from('scraped_listings')
-          .insert({
-            source_url: listing.url,
-            address: listing.address,
-            suburb: extractSuburb(listing.address),
-            city: 'Wellington',
-            price: 0, // Default price since we don't have it in discovery stage
-            source_site: 'TradeMe',
-            summary: `Property listing from TradeMe: ${listing.address}`,
-            status: 'new'
-          });
+        // Extract suburb from address
+        const suburb = extractSuburb(listing.address);
+        console.log(`Extracted suburb "${suburb}" from address "${listing.address}"`);
 
-        if (error) {
-          console.error('Error saving listing:', error);
-          errors.push(`Failed to save ${listing.address}: ${error.message}`);
+        // Insert new listing with proper default values
+        const listingData = {
+          source_url: listing.url,
+          address: listing.address,
+          suburb: suburb,
+          city: 'Wellington',
+          price: 0, // Required field with default
+          source_site: 'TradeMe',
+          summary: `Property listing from TradeMe: ${listing.address}`,
+          status: 'new' as const,
+          bedrooms: null,
+          bathrooms: null,
+          floor_area: null,
+          land_area: null,
+          photos: null,
+          listing_date: null,
+          ai_score: null,
+          ai_est_profit: null,
+          ai_reno_cost: null,
+          ai_arv: null,
+          flip_potential: null,
+          ai_confidence: null
+        };
+
+        console.log('Inserting listing data:', listingData);
+
+        const { data: insertedListing, error: insertError } = await supabase
+          .from('scraped_listings')
+          .insert(listingData)
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Error inserting listing:', insertError);
+          errors.push(`Failed to save ${listing.address}: ${insertError.message}`);
         } else {
           scraped++;
-          console.log(`Saved listing: ${listing.address}`);
+          console.log(`Successfully saved listing: ${listing.address} with ID: ${insertedListing.id}`);
         }
       } catch (error) {
         console.error('Error processing listing:', error);
@@ -145,17 +175,23 @@ serve(async (req) => {
       }
     }
 
-    console.log(`TradeMe scraping complete: ${scraped} saved, ${skipped} skipped`);
+    console.log(`TradeMe scraping complete: ${scraped} saved, ${skipped} skipped, ${errors.length} errors`);
 
-    return new Response(JSON.stringify({
-      success: true,
+    // Log final results for debugging
+    const finalResults = {
+      success: scraped > 0 || (scraped === 0 && skipped > 0),
       scraped: scraped,
       skipped: skipped,
       source: 'TradeMe',
       url: searchUrl,
       message: `TradeMe scraping complete: ${scraped} new listings saved, ${skipped} duplicates skipped`,
-      errors: errors.length > 0 ? errors : undefined
-    }), {
+      errors: errors.length > 0 ? errors : undefined,
+      totalProcessed: listings.length
+    };
+
+    console.log('Final scraping results:', finalResults);
+
+    return new Response(JSON.stringify(finalResults), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

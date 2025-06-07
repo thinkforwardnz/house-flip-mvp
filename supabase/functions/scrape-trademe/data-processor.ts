@@ -1,3 +1,4 @@
+
 import { PropertyData } from './types.ts';
 import { extractSuburb } from './url-builder.ts';
 
@@ -14,11 +15,15 @@ export function processSearchResults(response: any): Array<{id: string, url: str
   const agentqlProperties = response.data?.properties || response.properties || [];
   
   if (Array.isArray(agentqlProperties)) {
+    console.log(`Found ${agentqlProperties.length} properties in AgentQL response`);
+    
     for (const property of agentqlProperties) {
       try {
         let url = property.listingurl || property.url || property.href;
-        const address = property.listingaddress || property.address || '';
-        let listingId = property.listingid || property.listing_id || '';
+        const address = property.listingaddress || property.address || property.title || '';
+        let listingId = property.listingid || property.listing_id || property.id || '';
+        
+        console.log(`Processing property:`, { url, address, listingId });
         
         if (url && address) {
           // Ensure URL is absolute
@@ -29,6 +34,11 @@ export function processSearchResults(response: any): Array<{id: string, url: str
           // Extract listing ID from URL if not found in data
           if (!listingId) {
             listingId = extractListingId(url) || '';
+          }
+          
+          // If still no listing ID, generate one from URL
+          if (!listingId) {
+            listingId = url.split('/').pop() || Math.random().toString(36).substr(2, 9);
           }
           
           // Validate TradeMe URL and required fields
@@ -46,16 +56,55 @@ export function processSearchResults(response: any): Array<{id: string, url: str
             
             if (!isDuplicate) {
               listings.push(listingData);
-              console.log(`Stage 1: Found listing - ID: ${listingId}, Address: ${address}`);
+              console.log(`Stage 1: Found valid listing - ID: ${listingId}, Address: ${address}, URL: ${url}`);
+            } else {
+              console.log(`Stage 1: Skipped duplicate listing - ID: ${listingId}`);
             }
+          } else {
+            console.log(`Stage 1: Invalid listing data:`, { 
+              hasTradeMe: url.includes('trademe.co.nz'), 
+              hasId: !!listingId, 
+              hasAddress: !!address,
+              url, listingId, address 
+            });
           }
+        } else {
+          console.log(`Stage 1: Missing required fields:`, { hasUrl: !!url, hasAddress: !!address, property });
         }
       } catch (error) {
         console.error('Error processing search result:', error, property);
       }
     }
   } else {
-    console.warn('No properties array found in AgentQL response');
+    console.warn('No properties array found in AgentQL response. Response structure:', Object.keys(response));
+    
+    // Try alternative response structures
+    if (response.data && typeof response.data === 'object') {
+      console.log('Checking response.data structure:', Object.keys(response.data));
+    }
+    
+    // If no properties found, try to extract from any array in the response
+    const findArrays = (obj: any, path = ''): any[] => {
+      const arrays: any[] = [];
+      if (Array.isArray(obj)) {
+        arrays.push({ path, data: obj });
+      } else if (obj && typeof obj === 'object') {
+        for (const [key, value] of Object.entries(obj)) {
+          arrays.push(...findArrays(value, path ? `${path}.${key}` : key));
+        }
+      }
+      return arrays;
+    };
+    
+    const foundArrays = findArrays(response);
+    console.log('Found arrays in response:', foundArrays.map(a => ({ path: a.path, length: a.data.length })));
+    
+    // Try the first non-empty array
+    if (foundArrays.length > 0) {
+      const firstArray = foundArrays[0];
+      console.log(`Trying array at path: ${firstArray.path}`);
+      return processSearchResults({ properties: firstArray.data });
+    }
   }
   
   console.log(`Stage 1 complete: Extracted ${listings.length} listings with basic metadata`);
