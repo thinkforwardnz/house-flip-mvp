@@ -48,6 +48,7 @@ serve(async (req) => {
     let agentqlClient;
     try {
       agentqlClient = new AgentQLClient();
+      console.log('AgentQL client initialized successfully');
     } catch (error) {
       console.error('Failed to initialize AgentQL client:', error);
       return new Response(JSON.stringify({
@@ -62,6 +63,26 @@ serve(async (req) => {
       });
     }
 
+    // Test AgentQL connection first
+    try {
+      console.log('Testing AgentQL API connectivity...');
+      const testResult = await agentqlClient.testConnection();
+      console.log('AgentQL test successful:', testResult);
+    } catch (testError) {
+      console.error('AgentQL connectivity test failed:', testError);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'AgentQL API connectivity failed: ' + testError.message,
+        scraped: 0,
+        skipped: 0,
+        total: 0,
+        source: 'TradeMe',
+        details: 'API connectivity test failed - check API key and endpoint'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Step 1: Build TradeMe search URL and get listing URLs
     const searchUrl = buildTradeeMeSearchUrl(filters);
     console.log('Step 1: Scraping search results from:', searchUrl);
@@ -69,27 +90,21 @@ serve(async (req) => {
     let searchResults;
     try {
       searchResults = await agentqlClient.scrapeSearchResults(searchUrl);
+      console.log('AgentQL search results received:', !!searchResults);
     } catch (error) {
-      console.error('Primary search query failed:', error);
-      try {
-        console.log('Attempting fallback query...');
-        const fallbackQuery = agentqlClient.getTradeeMeFallbackQuery();
-        searchResults = await agentqlClient.queryPropertyData(searchUrl, fallbackQuery);
-      } catch (fallbackError) {
-        console.error('Fallback search query also failed:', fallbackError);
-        return new Response(JSON.stringify({
-          success: false,
-          error: 'AgentQL scraping failed: ' + error.message,
-          scraped: 0,
-          skipped: 0,
-          total: 0,
-          source: 'TradeMe',
-          url: searchUrl,
-          details: 'Both primary and fallback queries failed'
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      console.error('AgentQL search query failed:', error);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'AgentQL scraping failed: ' + error.message,
+        scraped: 0,
+        skipped: 0,
+        total: 0,
+        source: 'TradeMe',
+        url: searchUrl,
+        details: 'Search query failed - check AgentQL response format'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Process search results to get listing URLs
@@ -104,7 +119,8 @@ serve(async (req) => {
         total: 0,
         source: 'TradeMe',
         message: 'No listings found in search results',
-        searchResponse: searchResults
+        searchResponse: searchResults,
+        searchUrl: searchUrl
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -116,8 +132,8 @@ serve(async (req) => {
     let successCount = 0;
     let errorCount = 0;
 
-    // Limit to first 3 properties to avoid timeouts
-    const maxProperties = Math.min(listingUrls.length, 3);
+    // Limit to first 2 properties to avoid timeouts and test the integration
+    const maxProperties = Math.min(listingUrls.length, 2);
     
     for (let i = 0; i < maxProperties; i++) {
       const listingUrl = listingUrls[i];
@@ -130,6 +146,9 @@ serve(async (req) => {
         if (property) {
           properties.push(property);
           successCount++;
+          console.log(`Successfully processed property: ${property.address}`);
+        } else {
+          console.warn(`Failed to process property details for: ${listingUrl}`);
         }
         
         // Add delay to avoid rate limiting
@@ -214,7 +233,8 @@ serve(async (req) => {
       source: 'TradeMe',
       url: searchUrl,
       listingUrlsFound: listingUrls.length,
-      processingErrors: errorCount
+      processingErrors: errorCount,
+      agentqlConnected: true
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

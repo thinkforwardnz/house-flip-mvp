@@ -3,20 +3,20 @@ import { PropertyData } from './types.ts';
 import { extractSuburb } from './url-builder.ts';
 
 /**
- * Process search results to extract listing URLs
+ * Process search results to extract listing URLs from corrected AgentQL response
  */
 export function processSearchResults(response: any): string[] {
   const listingUrls: string[] = [];
   
-  console.log('Processing search results:', JSON.stringify(response, null, 2));
+  console.log('Processing AgentQL search results:', JSON.stringify(response, null, 2));
   
-  // Handle AgentQL response structure
-  const searchResults = response.search_results || response.listings || [];
+  // Handle corrected AgentQL response structure
+  const listings = response.property_listings || response.data?.property_listings || [];
   
-  if (Array.isArray(searchResults)) {
-    for (const result of searchResults) {
+  if (Array.isArray(listings)) {
+    for (const listing of listings) {
       try {
-        let url = result.link || result.url || result.href;
+        let url = listing.listing_url || listing.url || listing.href;
         
         if (url) {
           // Ensure URL is absolute
@@ -30,27 +30,27 @@ export function processSearchResults(response: any): string[] {
           }
         }
       } catch (error) {
-        console.error('Error processing search result:', error, result);
+        console.error('Error processing search result:', error, listing);
       }
     }
   }
   
-  console.log(`Extracted ${listingUrls.length} listing URLs from search results`);
+  console.log(`Extracted ${listingUrls.length} listing URLs from AgentQL results`);
   return listingUrls;
 }
 
 /**
- * Process individual property details page
+ * Process individual property details page from corrected AgentQL response
  */
 export function processPropertyDetails(response: any, listingUrl: string, searchUrl: string): PropertyData | null {
-  console.log('Processing property details for:', listingUrl);
+  console.log('Processing AgentQL property details for:', listingUrl);
   console.log('Property details response:', JSON.stringify(response, null, 2));
   
   try {
-    const details = response.property_details || response;
+    const details = response.property_info || response.data?.property_info || response;
     
     if (!details) {
-      console.warn('No property details found in response');
+      console.warn('No property_info found in AgentQL response');
       return null;
     }
     
@@ -64,12 +64,12 @@ export function processPropertyDetails(response: any, listingUrl: string, search
       return null;
     }
     
-    // Extract photos from AgentQL response
+    // Extract photos from corrected AgentQL response
     const photos: string[] = [];
     if (Array.isArray(details.photos)) {
       for (const photo of details.photos) {
-        if (photo.src) {
-          photos.push(photo.src);
+        if (photo.image_src) {
+          photos.push(photo.image_src);
         }
       }
     }
@@ -89,11 +89,11 @@ export function processPropertyDetails(response: any, listingUrl: string, search
       listing_date: details.listing_date || new Date().toISOString().split('T')[0]
     };
     
-    console.log('Successfully processed property:', property.address);
+    console.log('Successfully processed property from AgentQL:', property.address);
     return property;
     
   } catch (error) {
-    console.error('Error processing property details:', error);
+    console.error('Error processing AgentQL property details:', error);
     return null;
   }
 }

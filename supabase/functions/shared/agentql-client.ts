@@ -5,11 +5,11 @@ declare const Deno: any;
 
 /**
  * AgentQLClient for property data extraction via AgentQL API.
- * Updated to use correct API endpoint and payload structure.
+ * Updated to use correct API endpoint and payload structure based on official docs.
  */
 export class AgentQLClient {
   private apiKey: string;
-  private baseUrl: string = 'https://api.agentql.com/v1/query-data';
+  private baseUrl: string = 'https://api.agentql.com/v1/query-page';
 
   constructor() {
     // Safely access Deno.env.get for Supabase Edge Functions
@@ -28,22 +28,19 @@ export class AgentQLClient {
   }
 
   /**
-   * Extracts data using AgentQL structured queries with correct API format.
+   * Extracts data using AgentQL with correct API format from official docs.
    */
-  async queryPropertyData(url: string, query: string): Promise<any> {
+  async queryPropertyData(pageUrl: string, query: string): Promise<any> {
     const payload = {
-      url,
-      query,
-      is_scroll_to_bottom: false,
-      wait_for: {
-        selector: '.tm-property-search-card, .property-gallery, .tm-property-listing-body',
-        timeout_ms: 30000
-      }
+      page_url: pageUrl,
+      query: query,
+      wait_for_timeout_ms: 30000
     };
 
-    console.log('AgentQL request payload:', JSON.stringify(payload, null, 2));
-    console.log('Using API endpoint:', this.baseUrl);
+    console.log('AgentQL request to:', this.baseUrl);
+    console.log('AgentQL payload:', JSON.stringify(payload, null, 2));
     console.log('API Key configured:', !!this.apiKey);
+    console.log('API Key length:', this.apiKey.length);
 
     try {
       const response = await fetch(this.baseUrl, {
@@ -56,6 +53,7 @@ export class AgentQLClient {
       });
 
       console.log('AgentQL response status:', response.status, response.statusText);
+      console.log('AgentQL response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -64,7 +62,7 @@ export class AgentQLClient {
       }
 
       const data = await response.json();
-      console.log('AgentQL raw response:', JSON.stringify(data, null, 2));
+      console.log('AgentQL response data:', JSON.stringify(data, null, 2));
 
       if (!data || typeof data !== 'object') {
         throw new Error('AgentQL API response is not a valid object');
@@ -78,30 +76,28 @@ export class AgentQLClient {
   }
 
   /**
-   * Gets the TradeMe search results query using proper AgentQL syntax.
+   * Gets the TradeMe search results query using AgentQL syntax.
    */
   getTradeeMeSearchQuery(): string {
     return `
 {
-  search_results: [
-    {
-      title
-      price
-      address
-      link(href)
-      image(src)
-    }
-  ] @tm-property-search-card
+  property_listings[] {
+    title
+    listing_url
+    price
+    address
+    image_url
+  }
 }`;
   }
 
   /**
-   * Gets the TradeMe individual property page query using proper AgentQL syntax.
+   * Gets the TradeMe individual property page query using AgentQL syntax.
    */
   getTradeeMePropertyDetailQuery(): string {
     return `
 {
-  property_details: {
+  property_info {
     title
     price
     address
@@ -110,18 +106,16 @@ export class AgentQLClient {
     floor_area
     land_area
     description
-    photos: [
-      {
-        src
-      }
-    ]
+    photos[] {
+      image_src
+    }
     listing_date
-  } @property-listing-body, @tm-property-listing-body
+  }
 }`;
   }
 
   /**
-   * Scrapes TradeMe search results to get listing URLs.
+   * Scrapes TradeMe search results to get listing data.
    */
   async scrapeSearchResults(searchUrl: string): Promise<any> {
     const query = this.getTradeeMeSearchQuery();
@@ -137,20 +131,14 @@ export class AgentQLClient {
   }
 
   /**
-   * Fallback query for TradeMe search results if main query fails.
+   * Simple test query to verify API connectivity.
    */
-  getTradeeMeFallbackQuery(): string {
-    return `
+  async testConnection(testUrl: string = 'https://www.trademe.co.nz'): Promise<any> {
+    const testQuery = `
 {
-  listings: [
-    {
-      title
-      url(href)
-      price
-      location
-      image(src)
-    }
-  ] @property-card, @listing-card
+  page_title
 }`;
+    console.log('Testing AgentQL connection with simple query...');
+    return await this.queryPropertyData(testUrl, testQuery);
   }
 }
