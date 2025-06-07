@@ -24,7 +24,7 @@ serve(async (req) => {
 
   try {
     const { filters = {} }: { filters: ScrapingFilters } = await req.json();
-    console.log('Stage 1: TradeMe Search Results Scraping with AgentQL');
+    console.log('Stage 1: TradeMe Discovery - Search Results Only');
     console.log('Filters:', JSON.stringify(filters, null, 2));
 
     // Check if AgentQL API key is configured
@@ -35,9 +35,9 @@ serve(async (req) => {
         success: false,
         error: 'AgentQL API key not configured',
         discovered: 0,
-        total: 0,
+        discoveredListings: [],
         source: 'TradeMe',
-        stage: 'search-results'
+        stage: 'discovery'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -54,9 +54,9 @@ serve(async (req) => {
         success: false,
         error: 'Failed to initialize AgentQL client: ' + error.message,
         discovered: 0,
-        total: 0,
+        discoveredListings: [],
         source: 'TradeMe',
-        stage: 'search-results'
+        stage: 'discovery'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -73,18 +73,18 @@ serve(async (req) => {
         success: false,
         error: 'AgentQL API connectivity failed: ' + testError.message,
         discovered: 0,
-        total: 0,
+        discoveredListings: [],
         source: 'TradeMe',
-        stage: 'search-results',
+        stage: 'discovery',
         details: 'Check API key and endpoint configuration'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Stage 1: Build TradeMe search URL and get listing metadata
+    // Stage 1: Build TradeMe search URL and discover listing metadata
     const searchUrl = buildTradeeMeSearchUrl(filters);
-    console.log('Stage 1: Scraping search results from:', searchUrl);
+    console.log('Stage 1: Discovering listings from:', searchUrl);
 
     let searchResults;
     try {
@@ -96,9 +96,9 @@ serve(async (req) => {
         success: false,
         error: 'AgentQL scraping failed: ' + error.message,
         discovered: 0,
-        total: 0,
+        discoveredListings: [],
         source: 'TradeMe',
-        stage: 'search-results',
+        stage: 'discovery',
         url: searchUrl,
         details: 'Search query failed with /query-data endpoint'
       }), {
@@ -108,15 +108,15 @@ serve(async (req) => {
 
     // Process search results to get basic listing metadata
     const listings = processSearchResults(searchResults);
-    console.log(`Stage 1: Found ${listings.length} listings with basic metadata`);
+    console.log(`Stage 1: Discovered ${listings.length} listings`);
 
     if (listings.length === 0) {
       return new Response(JSON.stringify({
         success: true,
         discovered: 0,
-        total: 0,
+        discoveredListings: [],
         source: 'TradeMe',
-        stage: 'search-results',
+        stage: 'discovery',
         message: 'No listings found in search results',
         searchResponse: searchResults,
         searchUrl: searchUrl
@@ -125,83 +125,40 @@ serve(async (req) => {
       });
     }
 
-    // Stage 1: Save discovered listings to database
-    let savedCount = 0;
-    let skippedCount = 0;
+    // Prepare discovered listings for return (no database storage)
+    const discoveredListings = listings.map(listing => ({
+      url: listing.url,
+      address: listing.address,
+      suburb: extractSuburb(listing.address),
+      city: 'Wellington',
+      source: 'TradeMe'
+    }));
 
-    for (const listing of listings) {
-      try {
-        // Check if listing already exists
-        const { data: existing } = await supabase
-          .from('scraped_listings')
-          .select('id')
-          .eq('source_url', listing.url)
-          .single();
-
-        if (existing) {
-          skippedCount++;
-          console.log(`Skipping existing listing: ${listing.address}`);
-          continue;
-        }
-
-        // Insert new discovered listing with basic metadata
-        const { data: newListing, error: insertError } = await supabase
-          .from('scraped_listings')
-          .insert({
-            source_site: 'TradeMe',
-            source_url: listing.url,
-            address: listing.address,
-            suburb: extractSuburb(listing.address),
-            city: 'Wellington',
-            status: 'discovered', // Stage 1 status
-            // Leave detailed fields as NULL for Stage 2
-            price: null,
-            bedrooms: null,
-            bathrooms: null,
-            floor_area: null,
-            land_area: null,
-            summary: null,
-            photos: null,
-            listing_date: null,
-            ai_score: null
-          })
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error('Error inserting discovered listing:', insertError);
-          continue;
-        }
-
-        savedCount++;
-        console.log(`Saved discovered listing: ${listing.address} (ID: ${listing.id})`);
-
-      } catch (error) {
-        console.error('Error processing listing:', error);
-      }
-    }
+    console.log(`Stage 1 Complete: Discovered ${discoveredListings.length} listings for potential detailed scraping`);
 
     return new Response(JSON.stringify({
       success: true,
-      discovered: savedCount,
-      skipped: skippedCount,
-      total: listings.length,
+      discovered: discoveredListings.length,
+      discoveredListings: discoveredListings,
       source: 'TradeMe',
-      stage: 'search-results',
+      stage: 'discovery',
       url: searchUrl,
-      message: `Stage 1 complete: Discovered ${savedCount} new listings for future detailed scraping`,
+      message: `Stage 1 complete: Discovered ${discoveredListings.length} property listings`,
       agentqlConnected: true,
-      nextStage: 'Stage 2: Individual property details scraping (future implementation)'
+      nextStage: 'Stage 2: Individual property details scraping (to be implemented)',
+      filters: filters
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in Stage 1 scrape-trademe function:', error);
+    console.error('Error in Stage 1 TradeMe discovery:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
       success: false,
-      stage: 'search-results'
+      discovered: 0,
+      discoveredListings: [],
+      stage: 'discovery'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
