@@ -1,7 +1,9 @@
 
 import { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useScrapingHistory } from '@/hooks/useScrapingHistory';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SourceProgress {
   name: string;
@@ -19,6 +21,7 @@ export const useEnhancedScraping = () => {
   
   const { toast } = useToast();
   const { createScrapingSession, updateScrapingSession } = useScrapingHistory();
+  const queryClient = useQueryClient();
 
   const startScraping = useCallback(async (
     filters: any = {},
@@ -47,63 +50,77 @@ export const useEnhancedScraping = () => {
               description: `Scraping properties from ${sources.length} sources...`,
             });
 
-            // Call the refresh-listings function using the correct URL and key
-            const SUPABASE_URL = "https://fblzswyxvhlfkbosxfsy.supabase.co";
-            const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZibHpzd3l4dmhsZmtib3N4ZnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4MzYyNzIsImV4cCI6MjA2NDQxMjI3Mn0.82dnSvUMaVW3FkmveZD771_cptrbBEratSwbnDw6zvo";
-
-            const response = await fetch(`${SUPABASE_URL}/functions/v1/refresh-listings`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ filters, sources }),
-            });
-
-            if (!response.ok) {
-              throw new Error(`Scraping failed: ${response.status}`);
-            }
-
-            const result = await response.json();
-            
-            // Update progress based on results
-            const updatedProgress = sources.map(source => {
-              const sourceResult = result.results?.sources?.find((s: any) => 
-                s.source?.toLowerCase().includes(source.toLowerCase())
-              );
-              
-              return {
-                name: source.charAt(0).toUpperCase() + source.slice(1),
-                status: sourceResult ? 'completed' as const : 'failed' as const,
-                scraped: sourceResult?.scraped || 0,
-                skipped: sourceResult?.skipped || 0,
-                error: !sourceResult ? 'No data returned' : undefined
-              };
-            });
-            
-            setSourceProgress(updatedProgress);
-            setTotalProgress(100);
-
-            // Update session with results
-            updateScrapingSession({
-              sessionId: session.id,
-              status: result.success ? 'completed' : 'failed',
-              results: result.results,
-              totalScraped: result.results?.scraped || 0,
-              totalSkipped: result.results?.skipped || 0,
-              errors: result.results?.errors || []
-            });
-
-            // Show detailed results
-            if (result.success) {
-              toast({
-                title: "Scraping Completed",
-                description: `Found ${result.results?.scraped || 0} new properties, skipped ${result.results?.skipped || 0} duplicates.`,
+            try {
+              // Call the refresh-listings function using Supabase client
+              const { data, error } = await supabase.functions.invoke('refresh-listings', {
+                body: { filters, sources }
               });
-            } else {
+
+              if (error) {
+                throw error;
+              }
+
+              // Update progress based on results
+              const updatedProgress = sources.map(source => {
+                const sourceResult = data.results?.sources?.find((s: any) => 
+                  s.source?.toLowerCase().includes(source.toLowerCase())
+                );
+                
+                return {
+                  name: source.charAt(0).toUpperCase() + source.slice(1),
+                  status: sourceResult ? 'completed' as const : 'failed' as const,
+                  scraped: sourceResult?.scraped || 0,
+                  skipped: sourceResult?.skipped || 0,
+                  error: !sourceResult ? 'No data returned' : undefined
+                };
+              });
+              
+              setSourceProgress(updatedProgress);
+              setTotalProgress(100);
+
+              // Update session with results
+              updateScrapingSession({
+                sessionId: session.id,
+                status: data.success ? 'completed' : 'failed',
+                results: data.results,
+                totalScraped: data.results?.scraped || 0,
+                totalSkipped: data.results?.skipped || 0,
+                errors: data.results?.errors || []
+              });
+
+              // Invalidate queries to refresh the property feed
+              queryClient.invalidateQueries({ queryKey: ['scraped-listings'] });
+
+              // Show detailed results
+              if (data.success) {
+                toast({
+                  title: "Scraping Completed",
+                  description: `Found ${data.results?.scraped || 0} new properties, skipped ${data.results?.skipped || 0} duplicates.`,
+                });
+              } else {
+                throw new Error(data.error || 'Scraping failed');
+              }
+            } catch (error: any) {
+              console.error('Scraping error:', error);
+              
+              // Update progress to show failure
+              const failedProgress = sources.map(source => ({
+                name: source.charAt(0).toUpperCase() + source.slice(1),
+                status: 'failed' as const,
+                error: error.message || 'Scraping failed'
+              }));
+              setSourceProgress(failedProgress);
+
+              // Update session with error
+              updateScrapingSession({
+                sessionId: session.id,
+                status: 'failed',
+                errors: [error.message || 'Unknown error']
+              });
+
               toast({
                 title: "Scraping Failed",
-                description: result.error || "Unknown error occurred",
+                description: error.message || "Unknown error occurred",
                 variant: "destructive",
               });
             }
@@ -126,6 +143,7 @@ export const useEnhancedScraping = () => {
         }
       );
     } catch (error: any) {
+      console.error('Enhanced scraping error:', error);
       toast({
         title: "Scraping Error",
         description: error.message,
@@ -135,7 +153,7 @@ export const useEnhancedScraping = () => {
       setIsScrapingActive(false);
       setCurrentSession(null);
     }
-  }, [createScrapingSession, updateScrapingSession, toast]);
+  }, [createScrapingSession, updateScrapingSession, toast, queryClient]);
 
   const cancelScraping = useCallback(() => {
     if (currentSession) {

@@ -5,7 +5,7 @@ declare const Deno: any;
 
 /**
  * AgentQLClient for property data extraction via AgentQL API.
- * Updated to use structured queries similar to the Python SDK approach.
+ * Updated to support two-step scraping: search results → individual listings.
  */
 export class AgentQLClient {
   private apiKey: string;
@@ -28,20 +28,13 @@ export class AgentQLClient {
   }
 
   /**
-   * Extracts TradeMe property listings using structured queries.
-   * 
-   * Args:
-   *   url (string): The TradeMe search URL to extract listings from.
-   *   query (string): The AgentQL structured query for property extraction.
-   * 
-   * Returns:
-   *   Promise<any>: The structured response from AgentQL.
+   * Extracts data using structured queries.
    */
-  async queryPropertyData(url: string, query: string): Promise<any> {
+  async queryPropertyData(url: string, query: string, waitForSelector?: string): Promise<any> {
     const payload = {
       url,
       query,
-      wait_for_selector: '.tm-property-search-card',
+      wait_for_selector: waitForSelector || '.tm-property-search-card',
       timeout: 30000
     };
 
@@ -73,13 +66,28 @@ export class AgentQLClient {
   }
 
   /**
-   * Gets the TradeMe property extraction query.
-   * This structured query targets the specific elements on TradeMe property listings.
+   * Gets the TradeMe search results query to extract listing URLs.
    */
-  getTradeeMePropertyQuery(): string {
+  getTradeeMeSearchQuery(): string {
     return `
 {
-  property_listings[] {
+  search_results[] {
+    listing_title
+    listing_url
+    price_text
+    address_text
+    image_url
+  }
+}`;
+  }
+
+  /**
+   * Gets the TradeMe individual property page query for detailed information.
+   */
+  getTradeeMePropertyDetailQuery(): string {
+    return `
+{
+  property_details {
     title
     price
     address
@@ -89,11 +97,27 @@ export class AgentQLClient {
     floor_area
     land_area
     description
-    listing_url
     photos[]
     listing_date
+    property_features[]
   }
 }`;
+  }
+
+  /**
+   * Scrapes TradeMe search results to get listing URLs.
+   */
+  async scrapeSearchResults(searchUrl: string): Promise<any> {
+    const query = this.getTradeeMeSearchQuery();
+    return await this.queryPropertyData(searchUrl, query, '.tm-property-search-card');
+  }
+
+  /**
+   * Scrapes individual TradeMe property page for detailed information.
+   */
+  async scrapePropertyDetails(propertyUrl: string): Promise<any> {
+    const query = this.getTradeeMePropertyDetailQuery();
+    return await this.queryPropertyData(propertyUrl, query, '.property-gallery, .tm-property-listing-body');
   }
 
   /**
@@ -102,12 +126,12 @@ export class AgentQLClient {
   getTradeeMeFallbackQuery(): string {
     return `
 {
-  search_results[] {
-    property_title
-    property_price
-    property_address
-    property_link
-    property_image
+  listings[] {
+    title
+    url
+    price
+    location
+    image
   }
 }`;
   }

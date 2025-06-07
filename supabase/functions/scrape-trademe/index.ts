@@ -8,10 +8,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
 import { corsHeaders } from './config.ts';
 import { calculateFlipPotential } from './scoring.ts';
-import { ScrapingFilters, PropertyData, AgentQLResponse } from './types.ts';
+import { ScrapingFilters, PropertyData } from './types.ts';
 import { AgentQLClient } from '../shared/agentql-client.ts';
 import { buildTradeeMeSearchUrl } from './url-builder.ts';
-import { processAgentQLResults } from './data-processor.ts';
+import { processSearchResults, processPropertyDetails } from './data-processor.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -25,7 +25,7 @@ serve(async (req) => {
 
   try {
     const { filters = {} }: { filters: ScrapingFilters } = await req.json();
-    console.log('Starting TradeMe scraping with AgentQL for Wellington region');
+    console.log('Starting TradeMe two-step scraping with AgentQL for Wellington region');
     console.log('Filters:', JSON.stringify(filters, null, 2));
 
     // Check if AgentQL API key is configured
@@ -37,31 +37,72 @@ serve(async (req) => {
     // Initialize AgentQL client
     const agentqlClient = new AgentQLClient();
 
-    // Build TradeMe search URL with filters
+    // Step 1: Build TradeMe search URL and get listing URLs
     const searchUrl = buildTradeeMeSearchUrl(filters);
-    console.log('Scraping URL:', searchUrl);
+    console.log('Step 1: Scraping search results from:', searchUrl);
 
-    // Get the structured query for TradeMe properties
-    const propertyQuery = agentqlClient.getTradeeMePropertyQuery();
-    console.log('Using query:', propertyQuery);
-
-    let agentqlResponse: AgentQLResponse;
-    
+    let searchResults;
     try {
-      // Try main property extraction query first
-      agentqlResponse = await agentqlClient.queryPropertyData(searchUrl, propertyQuery);
+      searchResults = await agentqlClient.scrapeSearchResults(searchUrl);
     } catch (error) {
-      console.warn('Main query failed, trying fallback query:', error);
-      
-      // Try fallback query if main query fails
+      console.warn('Main search query failed, trying fallback:', error);
       const fallbackQuery = agentqlClient.getTradeeMeFallbackQuery();
-      agentqlResponse = await agentqlClient.queryPropertyData(searchUrl, fallbackQuery);
+      searchResults = await agentqlClient.queryPropertyData(searchUrl, fallbackQuery);
     }
 
-    // Process the AgentQL response
-    const properties: PropertyData[] = processAgentQLResults(agentqlResponse, searchUrl);
-    console.log(`Processed ${properties.length} valid properties from AgentQL response`);
+    // Process search results to get listing URLs
+    const listingUrls = processSearchResults(searchResults);
+    console.log(`Step 1 complete: Found ${listingUrls.length} listing URLs`);
 
+    if (listingUrls.length === 0) {
+      return new Response(JSON.stringify({
+        success: true,
+        scraped: 0,
+        skipped: 0,
+        total: 0,
+        source: 'TradeMe',
+        message: 'No listings found in search results'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Step 2: Scrape individual property details
+    console.log('Step 2: Scraping individual property details...');
+    const properties: PropertyData[] = [];
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Limit to first 10 properties to avoid timeouts and rate limiting
+    const maxProperties = Math.min(listingUrls.length, 10);
+    
+    for (let i = 0; i < maxProperties; i++) {
+      const listingUrl = listingUrls[i];
+      try {
+        console.log(`Scraping property ${i + 1}/${maxProperties}: ${listingUrl}`);
+        
+        const propertyDetails = await agentqlClient.scrapePropertyDetails(listingUrl);
+        const property = processPropertyDetails(propertyDetails, listingUrl, searchUrl);
+        
+        if (property) {
+          properties.push(property);
+          successCount++;
+        }
+        
+        // Add delay to avoid rate limiting
+        if (i < maxProperties - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (error) {
+        console.error(`Error scraping property ${listingUrl}:`, error);
+        errorCount++;
+        // Continue with next property
+      }
+    }
+
+    console.log(`Step 2 complete: Successfully scraped ${successCount} properties, ${errorCount} errors`);
+
+    // Step 3: Save properties to database
     let savedCount = 0;
     let skippedCount = 0;
 
@@ -128,7 +169,9 @@ serve(async (req) => {
       skipped: skippedCount,
       total: properties.length,
       source: 'TradeMe',
-      url: searchUrl
+      url: searchUrl,
+      listingUrlsFound: listingUrls.length,
+      processingErrors: errorCount
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

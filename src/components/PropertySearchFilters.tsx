@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, RefreshCw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
 
 interface SearchFilters {
   suburb: string;
@@ -27,9 +27,9 @@ interface PropertySearchFiltersProps {
 }
 
 const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFiltersProps) => {
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedSources, setSelectedSources] = useState(['trademe', 'realestate', 'oneroof']);
   const { toast } = useToast();
+  const { isScrapingActive, startScraping } = useEnhancedScraping();
 
   const wellingtonSuburbs = [
     'Wellington Central', 'Kelburn', 'Mount Victoria', 'Thorndon', 'Te Aro', 'Newtown', 'Island Bay',
@@ -77,46 +77,12 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
       return;
     }
 
-    setIsRefreshing(true);
+    const scrapingFilters = {
+      ...filters,
+      keywords: filters.keywords || 'renovate, fixer upper, deceased estate, needs work'
+    };
     
-    try {
-      const { data, error } = await supabase.functions.invoke('refresh-listings', {
-        body: { 
-          filters: {
-            ...filters,
-            keywords: filters.keywords || 'renovate, fixer upper, deceased estate, needs work'
-          },
-          sources: selectedSources 
-        }
-      });
-
-      if (error) throw error;
-
-      if (data.success) {
-        const sourceDetails = data.results.sources.map((s: any) => 
-          `${s.source}: ${s.scraped} new, ${s.skipped} skipped`
-        ).join(', ');
-        
-        toast({
-          title: "Listings Refreshed",
-          description: `Found ${data.results.scraped} new Wellington listings. ${sourceDetails}`,
-        });
-        
-        // Trigger a page refresh to show new listings
-        window.location.reload();
-      } else {
-        throw new Error('Refresh failed');
-      }
-    } catch (error: any) {
-      console.error('Error refreshing listings:', error);
-      toast({
-        title: "Refresh Failed",
-        description: "Unable to refresh listings. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
+    startScraping(scrapingFilters, selectedSources);
   };
 
   return (
@@ -240,10 +206,10 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
             variant="outline" 
             size="sm" 
             onClick={handleRefreshListings}
-            disabled={isRefreshing}
+            disabled={isScrapingActive}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Scraping Wellington...' : 'Refresh Feed'}
+            <RefreshCw className={`h-4 w-4 mr-2 ${isScrapingActive ? 'animate-spin' : ''}`} />
+            {isScrapingActive ? 'Scraping Wellington...' : 'Refresh Feed'}
           </Button>
         </div>
       </CardContent>
