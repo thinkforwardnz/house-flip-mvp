@@ -10,13 +10,13 @@ export function processSearchResults(response: any): string[] {
   
   console.log('Processing search results:', JSON.stringify(response, null, 2));
   
-  // Try different possible response structures
+  // Handle AgentQL response structure
   const searchResults = response.search_results || response.listings || [];
   
   if (Array.isArray(searchResults)) {
     for (const result of searchResults) {
       try {
-        let url = result.listing_url || result.url || result.link;
+        let url = result.link || result.url || result.href;
         
         if (url) {
           // Ensure URL is absolute
@@ -64,6 +64,16 @@ export function processPropertyDetails(response: any, listingUrl: string, search
       return null;
     }
     
+    // Extract photos from AgentQL response
+    const photos: string[] = [];
+    if (Array.isArray(details.photos)) {
+      for (const photo of details.photos) {
+        if (photo.src) {
+          photos.push(photo.src);
+        }
+      }
+    }
+    
     const property: PropertyData = {
       source_url: listingUrl,
       address: address,
@@ -75,7 +85,7 @@ export function processPropertyDetails(response: any, listingUrl: string, search
       floor_area: parseFloat(details.floor_area || '') || null,
       land_area: parseFloat(details.land_area || '') || null,
       summary: details.description || title || '',
-      photos: Array.isArray(details.photos) ? details.photos : [],
+      photos: photos,
       listing_date: details.listing_date || new Date().toISOString().split('T')[0]
     };
     
