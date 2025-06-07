@@ -22,14 +22,42 @@ export function processSearchResults(response: any): Array<{id: string, url: str
         let url = property.listingurl || property.url || property.href;
         const address = property.listingaddress || property.address || property.title || '';
         let listingId = property.listingid || property.listing_id || property.id || '';
-        const featuredImage = property.listingfeaturedimg || property.featured_image || property.image || '';
         
-        console.log(`Processing property:`, { url, address, listingId, featuredImage });
+        // Extract featured image with better handling
+        let featuredImage = property.listingfeaturedimg || property.featured_image || property.image || '';
+        
+        console.log(`Processing property:`, { 
+          url, 
+          address, 
+          listingId, 
+          rawFeaturedImage: property.listingfeaturedimg,
+          processedFeaturedImage: featuredImage 
+        });
         
         if (url && address) {
           // Ensure URL is absolute
           if (url.startsWith('/')) {
             url = `https://www.trademe.co.nz${url}`;
+          }
+          
+          // Process featured image URL
+          if (featuredImage) {
+            // Remove any extra quotes or whitespace
+            featuredImage = featuredImage.trim().replace(/^["']|["']$/g, '');
+            
+            // Ensure featured image URL is absolute
+            if (featuredImage.startsWith('/')) {
+              featuredImage = `https://www.trademe.co.nz${featuredImage}`;
+            }
+            
+            // Validate that it's a proper URL
+            try {
+              new URL(featuredImage);
+              console.log(`Valid featured image URL: ${featuredImage}`);
+            } catch (e) {
+              console.warn(`Invalid featured image URL: ${featuredImage}, setting to empty`);
+              featuredImage = '';
+            }
           }
           
           // Extract listing ID from URL if not found in data

@@ -106,6 +106,7 @@ serve(async (req) => {
     for (const listing of listings) {
       try {
         console.log(`Processing listing: ${listing.address} (${listing.url})`);
+        console.log(`Featured image for ${listing.address}: ${listing.featuredImage || 'none'}`);
         
         // Check if listing already exists
         const { data: existing, error: checkError } = await supabase
@@ -132,14 +133,12 @@ serve(async (req) => {
 
         // Prepare photos array with featured image
         const photos: string[] = [];
-        if (listing.featuredImage) {
-          // Ensure featured image URL is absolute
-          let imageUrl = listing.featuredImage;
-          if (imageUrl.startsWith('/')) {
-            imageUrl = `https://www.trademe.co.nz${imageUrl}`;
-          }
+        if (listing.featuredImage && listing.featuredImage.trim()) {
+          const imageUrl = listing.featuredImage.trim();
           photos.push(imageUrl);
-          console.log(`Added featured image: ${imageUrl}`);
+          console.log(`Added featured image to photos array: ${imageUrl}`);
+        } else {
+          console.log(`No featured image available for ${listing.address}`);
         }
 
         // Insert new listing with proper default values including featured image
