@@ -3,7 +3,7 @@ import { extractSuburb } from './url-builder.ts';
 
 /**
  * Stage 1: Process search results to extract basic listing metadata from AgentQL response
- * Extracts: Listing ID, Listing URL, Address only
+ * Updated to use correct field names: listingid, listingurl, listingaddress
  */
 export function processSearchResults(response: any): Array<{id: string, url: string, address: string}> {
   const listings: Array<{id: string, url: string, address: string}> = [];
@@ -11,14 +11,14 @@ export function processSearchResults(response: any): Array<{id: string, url: str
   console.log('Stage 1: Processing AgentQL search results:', JSON.stringify(response, null, 2));
   
   // Handle AgentQL /query-data response structure
-  const agentqlListings = response.data?.listings || response.listings || [];
+  const agentqlProperties = response.data?.properties || response.properties || [];
   
-  if (Array.isArray(agentqlListings)) {
-    for (const listing of agentqlListings) {
+  if (Array.isArray(agentqlProperties)) {
+    for (const property of agentqlProperties) {
       try {
-        let url = listing.listing_url || listing.url || listing.href;
-        const address = listing.address || '';
-        let listingId = listing.listing_id || '';
+        let url = property.listingurl || property.url || property.href;
+        const address = property.listingaddress || property.address || '';
+        let listingId = property.listingid || property.listing_id || '';
         
         if (url && address) {
           // Ensure URL is absolute
@@ -51,11 +51,11 @@ export function processSearchResults(response: any): Array<{id: string, url: str
           }
         }
       } catch (error) {
-        console.error('Error processing search result:', error, listing);
+        console.error('Error processing search result:', error, property);
       }
     }
   } else {
-    console.warn('No listings array found in AgentQL response');
+    console.warn('No properties array found in AgentQL response');
   }
   
   console.log(`Stage 1 complete: Extracted ${listings.length} listings with basic metadata`);

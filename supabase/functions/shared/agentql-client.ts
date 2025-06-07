@@ -79,14 +79,14 @@ export class AgentQLClient {
 
   /**
    * Gets the TradeMe search results query - Stage 1: Basic listing metadata only.
-   * Extracts: Listing ID, Listing URL, Address
+   * Updated to use correct field names that work in AgentQL playground.
    */
   getTradeeMeSearchQuery(): string {
     return `{
-      listings[] {
-        listing_id(attr: "data-aria-id")
-        listing_url(attr: "href")
-        address
+      properties[] {
+        listingid
+        listingurl
+        listingaddress
       }
     }`;
   }
