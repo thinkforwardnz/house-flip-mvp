@@ -17,6 +17,12 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
+// Extract listing ID from TradeMe URL
+function extractListingIdFromUrl(url: string): string | null {
+  const match = url.match(/listing\/(\d+)/);
+  return match ? match[1] : null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -108,10 +114,20 @@ serve(async (req) => {
         console.log(`Processing listing: ${listing.address} (${listing.url})`);
         console.log(`Featured image for ${listing.address}: ${listing.featuredImage || 'none'}`);
         
-        // Check if listing already exists
+        // Extract listing ID from URL for deduplication
+        const listingId = extractListingIdFromUrl(listing.url);
+        if (!listingId) {
+          console.warn(`Could not extract listing ID from URL: ${listing.url}`);
+          errors.push(`Failed to extract listing ID from ${listing.address}`);
+          continue;
+        }
+
+        console.log(`Extracted listing ID: ${listingId} for ${listing.address}`);
+        
+        // Check if listing already exists using listing ID
         const { data: existing, error: checkError } = await supabase
           .from('scraped_listings')
-          .select('id')
+          .select('id, address')
           .eq('source_url', listing.url)
           .maybeSingle();
 
@@ -123,7 +139,26 @@ serve(async (req) => {
 
         if (existing) {
           skipped++;
-          console.log(`Skipped existing listing: ${listing.address}`);
+          console.log(`Skipped existing listing: ${listing.address} (ID: ${listingId})`);
+          continue;
+        }
+
+        // Also check by source URL pattern to catch any duplicates with different URLs
+        const { data: existingByPattern, error: patternError } = await supabase
+          .from('scraped_listings')
+          .select('id, address, source_url')
+          .like('source_url', `%/listing/${listingId}%`)
+          .maybeSingle();
+
+        if (patternError) {
+          console.error('Error checking existing listing by pattern:', patternError);
+          // Continue processing - this is just an additional check
+        }
+
+        if (existingByPattern) {
+          skipped++;
+          console.log(`Skipped duplicate listing by ID pattern: ${listing.address} (ID: ${listingId})`);
+          console.log(`Existing URL: ${existingByPattern.source_url}, New URL: ${listing.url}`);
           continue;
         }
 
@@ -149,7 +184,7 @@ serve(async (req) => {
           city: 'Wellington',
           price: 0, // Required field with default
           source_site: 'TradeMe',
-          summary: `Property listing from TradeMe: ${listing.address}`,
+          summary: `Property listing from TradeMe: ${listing.address} (ID: ${listingId})`,
           status: 'new' as const,
           bedrooms: null,
           bathrooms: null,
@@ -178,7 +213,7 @@ serve(async (req) => {
           errors.push(`Failed to save ${listing.address}: ${insertError.message}`);
         } else {
           scraped++;
-          console.log(`Successfully saved listing: ${listing.address} with ID: ${insertedListing.id} and ${photos.length} photos`);
+          console.log(`Successfully saved listing: ${listing.address} (ID: ${listingId}) with database ID: ${insertedListing.id} and ${photos.length} photos`);
         }
       } catch (error) {
         console.error('Error processing listing:', error);
