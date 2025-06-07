@@ -5,11 +5,11 @@ declare const Deno: any;
 
 /**
  * AgentQLClient for property data extraction via AgentQL API.
- * Updated to use correct API endpoint and payload structure based on official docs.
+ * Updated to use correct /query-data endpoint with proper authentication and payload structure.
  */
 export class AgentQLClient {
   private apiKey: string;
-  private baseUrl: string = 'https://api.agentql.com/v1/query-page';
+  private baseUrl: string = 'https://api.agentql.com/v1/query-data';
 
   constructor() {
     // Safely access Deno.env.get for Supabase Edge Functions
@@ -28,25 +28,27 @@ export class AgentQLClient {
   }
 
   /**
-   * Extracts data using AgentQL with correct API format from official docs.
+   * Executes an AgentQL query using the correct /query-data endpoint and payload structure.
    */
-  async queryPropertyData(pageUrl: string, query: string): Promise<any> {
+  async queryData(url: string, query: string, waitFor: number = 0): Promise<any> {
     const payload = {
-      page_url: pageUrl,
+      url: url,
       query: query,
-      wait_for_timeout_ms: 30000
+      params: {
+        wait_for: waitFor,
+        is_scroll_to_bottom_enabled: false
+      }
     };
 
     console.log('AgentQL request to:', this.baseUrl);
     console.log('AgentQL payload:', JSON.stringify(payload, null, 2));
     console.log('API Key configured:', !!this.apiKey);
-    console.log('API Key length:', this.apiKey.length);
 
     try {
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'X-API-Key': this.apiKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
@@ -76,69 +78,108 @@ export class AgentQLClient {
   }
 
   /**
-   * Gets the TradeMe search results query using AgentQL syntax.
+   * Gets the TradeMe search results query using proper AgentQL selector syntax.
    */
   getTradeeMeSearchQuery(): string {
-    return `
-{
-  property_listings[] {
-    title
-    listing_url
-    price
-    address
-    image_url
-  }
-}`;
+    return `{
+      listings[] {
+        id(attr: "data-listing-id")
+        url(attr: "href")
+        address
+        price
+        title
+      }
+    }`;
   }
 
   /**
-   * Gets the TradeMe individual property page query using AgentQL syntax.
+   * Gets the TradeMe individual property page query using proper AgentQL selector syntax.
    */
   getTradeeMePropertyDetailQuery(): string {
-    return `
-{
-  property_info {
-    title
-    price
-    address
-    bedrooms
-    bathrooms
-    floor_area
-    land_area
-    description
-    photos[] {
-      image_src
-    }
-    listing_date
-  }
-}`;
+    return `{
+      title
+      price
+      address
+      bedrooms
+      bathrooms
+      landSize
+      floorArea
+      features[]
+      description
+      agentName
+      agentContact
+      photos[] {
+        image_src(attr: "src")
+      }
+      listingDate
+    }`;
   }
 
   /**
-   * Scrapes TradeMe search results to get listing data.
+   * Scrapes TradeMe search results to get listing data with retry logic.
    */
   async scrapeSearchResults(searchUrl: string): Promise<any> {
     const query = this.getTradeeMeSearchQuery();
-    return await this.queryPropertyData(searchUrl, query);
+    return await this.queryDataWithRetry(searchUrl, query, 3000);
   }
 
   /**
-   * Scrapes individual TradeMe property page for detailed information.
+   * Scrapes individual TradeMe property page for detailed information with retry logic.
    */
   async scrapePropertyDetails(propertyUrl: string): Promise<any> {
     const query = this.getTradeeMePropertyDetailQuery();
-    return await this.queryPropertyData(propertyUrl, query);
+    return await this.queryDataWithRetry(propertyUrl, query, 5000);
   }
 
   /**
-   * Simple test query to verify API connectivity.
+   * Query data with retry logic and rate limiting.
+   */
+  async queryDataWithRetry(url: string, query: string, waitFor: number = 0, maxRetries: number = 3): Promise<any> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`AgentQL attempt ${attempt}/${maxRetries} for URL: ${url}`);
+        
+        const result = await this.queryData(url, query, waitFor);
+        
+        // Success - return result
+        return result;
+        
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`AgentQL attempt ${attempt} failed:`, error);
+        
+        // If not the last attempt, wait before retrying
+        if (attempt < maxRetries) {
+          const delay = attempt * 2000; // Progressive delay: 2s, 4s, 6s
+          console.log(`Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    // All retries failed
+    throw new Error(`AgentQL failed after ${maxRetries} attempts. Last error: ${lastError?.message}`);
+  }
+
+  /**
+   * Simple test query to verify API connectivity using correct endpoint.
    */
   async testConnection(testUrl: string = 'https://www.trademe.co.nz'): Promise<any> {
-    const testQuery = `
-{
-  page_title
-}`;
+    const testQuery = `{
+      title
+    }`;
     console.log('Testing AgentQL connection with simple query...');
-    return await this.queryPropertyData(testUrl, testQuery);
+    return await this.queryData(testUrl, testQuery, 1000);
+  }
+
+  /**
+   * Rate-limited delay between requests to avoid being blocked.
+   */
+  async rateLimitDelay(): Promise<void> {
+    const delay = 2000; // 2 second delay between requests
+    console.log(`Rate limiting: waiting ${delay}ms...`);
+    await new Promise(resolve => setTimeout(resolve, delay));
   }
 }

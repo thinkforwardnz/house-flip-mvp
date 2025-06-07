@@ -25,7 +25,7 @@ serve(async (req) => {
 
   try {
     const { filters = {} }: { filters: ScrapingFilters } = await req.json();
-    console.log('Starting TradeMe scraping with corrected AgentQL integration');
+    console.log('Starting TradeMe scraping with corrected AgentQL /query-data integration');
     console.log('Filters:', JSON.stringify(filters, null, 2));
 
     // Check if AgentQL API key is configured
@@ -63,9 +63,9 @@ serve(async (req) => {
       });
     }
 
-    // Test AgentQL connection first
+    // Test AgentQL connection with correct endpoint
     try {
-      console.log('Testing AgentQL API connectivity...');
+      console.log('Testing AgentQL API connectivity with /query-data endpoint...');
       const testResult = await agentqlClient.testConnection();
       console.log('AgentQL test successful:', testResult);
     } catch (testError) {
@@ -77,7 +77,8 @@ serve(async (req) => {
         skipped: 0,
         total: 0,
         source: 'TradeMe',
-        details: 'API connectivity test failed - check API key and endpoint'
+        details: 'Check API key and endpoint configuration',
+        endpoint: 'https://api.agentql.com/v1/query-data'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -101,7 +102,7 @@ serve(async (req) => {
         total: 0,
         source: 'TradeMe',
         url: searchUrl,
-        details: 'Search query failed - check AgentQL response format'
+        details: 'Search query failed with new /query-data endpoint'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -126,19 +127,24 @@ serve(async (req) => {
       });
     }
 
-    // Step 2: Scrape individual property details
-    console.log('Step 2: Scraping individual property details...');
+    // Step 2: Scrape individual property details with rate limiting
+    console.log('Step 2: Scraping individual property details with rate limiting...');
     const properties: PropertyData[] = [];
     let successCount = 0;
     let errorCount = 0;
 
-    // Limit to first 2 properties to avoid timeouts and test the integration
-    const maxProperties = Math.min(listingUrls.length, 2);
+    // Limit to first 3 properties for testing and to respect rate limits
+    const maxProperties = Math.min(listingUrls.length, 3);
     
     for (let i = 0; i < maxProperties; i++) {
       const listingUrl = listingUrls[i];
       try {
         console.log(`Scraping property ${i + 1}/${maxProperties}: ${listingUrl}`);
+        
+        // Add rate limiting delay before each request (except the first)
+        if (i > 0) {
+          await agentqlClient.rateLimitDelay();
+        }
         
         const propertyDetails = await agentqlClient.scrapePropertyDetails(listingUrl);
         const property = processPropertyDetails(propertyDetails, listingUrl, searchUrl);
@@ -149,12 +155,9 @@ serve(async (req) => {
           console.log(`Successfully processed property: ${property.address}`);
         } else {
           console.warn(`Failed to process property details for: ${listingUrl}`);
+          errorCount++;
         }
         
-        // Add delay to avoid rate limiting
-        if (i < maxProperties - 1) {
-          await new Promise(resolve => setTimeout(resolve, 3000));
-        }
       } catch (error) {
         console.error(`Error scraping property ${listingUrl}:`, error);
         errorCount++;
@@ -234,7 +237,8 @@ serve(async (req) => {
       url: searchUrl,
       listingUrlsFound: listingUrls.length,
       processingErrors: errorCount,
-      agentqlConnected: true
+      agentqlConnected: true,
+      endpoint: 'https://api.agentql.com/v1/query-data'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

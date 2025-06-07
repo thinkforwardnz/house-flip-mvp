@@ -3,20 +3,20 @@ import { PropertyData } from './types.ts';
 import { extractSuburb } from './url-builder.ts';
 
 /**
- * Process search results to extract listing URLs from corrected AgentQL response
+ * Process search results to extract listing URLs from AgentQL response using new structure
  */
 export function processSearchResults(response: any): string[] {
   const listingUrls: string[] = [];
   
   console.log('Processing AgentQL search results:', JSON.stringify(response, null, 2));
   
-  // Handle corrected AgentQL response structure
-  const listings = response.property_listings || response.data?.property_listings || [];
+  // Handle AgentQL /query-data response structure
+  const listings = response.listings || response.data?.listings || [];
   
   if (Array.isArray(listings)) {
     for (const listing of listings) {
       try {
-        let url = listing.listing_url || listing.url || listing.href;
+        let url = listing.url || listing.href;
         
         if (url) {
           // Ensure URL is absolute
@@ -24,15 +24,18 @@ export function processSearchResults(response: any): string[] {
             url = `https://www.trademe.co.nz${url}`;
           }
           
-          // Validate TradeMe URL
+          // Validate TradeMe URL and avoid duplicates
           if (url.includes('trademe.co.nz') && !listingUrls.includes(url)) {
             listingUrls.push(url);
+            console.log(`Found listing URL: ${url}`);
           }
         }
       } catch (error) {
         console.error('Error processing search result:', error, listing);
       }
     }
+  } else {
+    console.warn('No listings array found in AgentQL response');
   }
   
   console.log(`Extracted ${listingUrls.length} listing URLs from AgentQL results`);
@@ -40,17 +43,18 @@ export function processSearchResults(response: any): string[] {
 }
 
 /**
- * Process individual property details page from corrected AgentQL response
+ * Process individual property details page from AgentQL response using new structure
  */
 export function processPropertyDetails(response: any, listingUrl: string, searchUrl: string): PropertyData | null {
   console.log('Processing AgentQL property details for:', listingUrl);
   console.log('Property details response:', JSON.stringify(response, null, 2));
   
   try {
-    const details = response.property_info || response.data?.property_info || response;
+    // AgentQL /query-data returns data directly in response
+    const details = response;
     
-    if (!details) {
-      console.warn('No property_info found in AgentQL response');
+    if (!details || (!details.title && !details.address && !details.price)) {
+      console.warn('No valid property data found in AgentQL response');
       return null;
     }
     
@@ -59,20 +63,28 @@ export function processPropertyDetails(response: any, listingUrl: string, search
     const priceStr = details.price || '0';
     const price = parsePrice(priceStr);
     
-    if (!address || price === 0) {
-      console.warn('Missing required fields: address or price');
+    if (!address) {
+      console.warn('Missing required field: address');
       return null;
     }
     
-    // Extract photos from corrected AgentQL response
+    // Extract photos from AgentQL response
     const photos: string[] = [];
     if (Array.isArray(details.photos)) {
       for (const photo of details.photos) {
         if (photo.image_src) {
-          photos.push(photo.image_src);
+          let photoUrl = photo.image_src;
+          // Ensure photo URL is absolute
+          if (photoUrl.startsWith('/')) {
+            photoUrl = `https://www.trademe.co.nz${photoUrl}`;
+          }
+          photos.push(photoUrl);
         }
       }
     }
+    
+    // Build features array from AgentQL response
+    const features = Array.isArray(details.features) ? details.features : [];
     
     const property: PropertyData = {
       source_url: listingUrl,
@@ -82,11 +94,11 @@ export function processPropertyDetails(response: any, listingUrl: string, search
       price: price,
       bedrooms: parseInteger(details.bedrooms),
       bathrooms: parseFloat(details.bathrooms || '') || null,
-      floor_area: parseFloat(details.floor_area || '') || null,
-      land_area: parseFloat(details.land_area || '') || null,
+      floor_area: parseFloat(details.floorArea || details.floor_area || '') || null,
+      land_area: parseFloat(details.landSize || details.land_area || '') || null,
       summary: details.description || title || '',
       photos: photos,
-      listing_date: details.listing_date || new Date().toISOString().split('T')[0]
+      listing_date: details.listingDate || details.listing_date || new Date().toISOString().split('T')[0]
     };
     
     console.log('Successfully processed property from AgentQL:', property.address);
@@ -101,7 +113,7 @@ export function processPropertyDetails(response: any, listingUrl: string, search
 function parsePrice(priceStr: string): number {
   if (!priceStr) return 0;
   
-  // Remove common price prefixes and suffixes
+  // Remove common price prefixes, suffixes, and formatting
   const cleaned = priceStr
     .replace(/\$|,|\s+/g, '')
     .replace(/NZD|nzd/gi, '')
