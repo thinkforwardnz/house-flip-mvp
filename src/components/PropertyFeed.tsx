@@ -122,6 +122,14 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {visibleListings.map((listing) => {
+              // Get the featured image from photos array
+              const featuredImage = listing.photos && listing.photos.length > 0 
+                ? listing.photos[0] 
+                : '/placeholder.svg';
+              
+              console.log('Listing photos for', listing.address, ':', listing.photos);
+              console.log('Featured image URL:', featuredImage);
+
               // Transform scraped listing to match PropertyListingCard props
               const property = {
                 id: listing.id,
@@ -133,7 +141,7 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
                 bathrooms: Number(listing.bathrooms || 0),
                 floorArea: Number(listing.floor_area || 0),
                 landArea: Number(listing.land_area || 0),
-                imageUrl: listing.photos && listing.photos.length > 0 ? listing.photos[0] : '/placeholder.svg',
+                imageUrl: featuredImage,
                 listingUrl: listing.source_url,
                 description: listing.summary || 'No description available',
                 aiAnalysis: {
