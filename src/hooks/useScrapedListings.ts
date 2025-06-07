@@ -29,6 +29,23 @@ interface ScrapedListing {
   user_action?: 'new' | 'saved' | 'dismissed' | 'imported';
 }
 
+// Map dropdown suburb names to possible database values
+const getSuburbVariations = (suburb: string): string[] => {
+  const variations: { [key: string]: string[] } = {
+    'Paraparaumu Beach': ['Paraparaumu Beach', 'Paraparaumu'],
+    'Paraparaumu': ['Paraparaumu', 'Paraparaumu Beach'],
+    'Waikanae Beach': ['Waikanae Beach', 'Waikanae'],
+    'Waikanae': ['Waikanae', 'Waikanae Beach'],
+    'Raumati Beach': ['Raumati Beach', 'Raumati'],
+    'Raumati South': ['Raumati South', 'Raumati'],
+    'Te Horo Beach': ['Te Horo Beach', 'Te Horo'],
+    'Otaki Beach': ['Otaki Beach', 'Otaki'],
+    'Pekapeka': ['Pekapeka', 'Peka Peka'],
+  };
+  
+  return variations[suburb] || [suburb];
+};
+
 export const useScrapedListings = (filters: SearchFilters) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -45,8 +62,12 @@ export const useScrapedListings = (filters: SearchFilters) => {
 
       // Apply filters
       if (filters.suburb) {
-        // Use exact match for suburb instead of partial match
-        query = query.eq('suburb', filters.suburb);
+        // Get all possible variations of the suburb name
+        const suburbVariations = getSuburbVariations(filters.suburb);
+        console.log(`Suburb variations for "${filters.suburb}":`, suburbVariations);
+        
+        // Use 'in' filter to match any of the variations
+        query = query.in('suburb', suburbVariations);
       }
       
       if (filters.minPrice) {
