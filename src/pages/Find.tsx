@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PropertySearchFilters from '@/components/PropertySearchFilters';
 import PropertyFeed from '@/components/PropertyFeed';
 import SavedProperties from '@/components/SavedProperties';
+import ScrapingHistoryPanel from '@/components/ScrapingHistoryPanel';
 
 const Find = () => {
   const [searchFilters, setSearchFilters] = useState({
@@ -39,13 +40,14 @@ const Find = () => {
         </CardContent>
       </Card>
 
-      {/* Property Feed */}
+      {/* Main Content Tabs */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">
         <CardContent className="p-6">
           <Tabs defaultValue="feed" className="w-full">
             <TabsList className="mb-6">
               <TabsTrigger value="feed">Property Feed</TabsTrigger>
               <TabsTrigger value="saved">Saved Properties</TabsTrigger>
+              <TabsTrigger value="history">Scraping History</TabsTrigger>
             </TabsList>
             
             <TabsContent value="feed">
@@ -54,6 +56,10 @@ const Find = () => {
             
             <TabsContent value="saved">
               <SavedProperties />
+            </TabsContent>
+            
+            <TabsContent value="history">
+              <ScrapingHistoryPanel />
             </TabsContent>
           </Tabs>
         </CardContent>

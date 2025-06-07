@@ -7,7 +7,6 @@ import { RefreshCw } from 'lucide-react';
 import { useScrapedListings } from '@/hooks/useScrapedListings';
 import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
 import ScrapingProgress from '@/components/ScrapingProgress';
-import ScrapingHistoryPanel from '@/components/ScrapingHistoryPanel';
 
 interface SearchFilters {
   suburb: string;
@@ -93,9 +92,6 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
         totalProgress={totalProgress}
         onCancel={cancelScraping}
       />
-
-      {/* Scraping History */}
-      <ScrapingHistoryPanel />
 
       {/* Property Listings */}
       {isLoading ? (

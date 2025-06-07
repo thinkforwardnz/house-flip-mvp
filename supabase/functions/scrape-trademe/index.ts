@@ -24,8 +24,7 @@ serve(async (req) => {
 
   try {
     const { filters = {} }: { filters: ScrapingFilters } = await req.json();
-    console.log('Stage 1: TradeMe Discovery - Search Results Only');
-    console.log('Filters:', JSON.stringify(filters, null, 2));
+    console.log('TradeMe scraper started with filters:', JSON.stringify(filters, null, 2));
 
     // Check if AgentQL API key is configured
     const agentqlKey = Deno.env.get('AGENTQL_API_KEY');
@@ -34,10 +33,9 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'AgentQL API key not configured',
-        discovered: 0,
-        discoveredListings: [],
-        source: 'TradeMe',
-        stage: 'discovery'
+        scraped: 0,
+        skipped: 0,
+        source: 'TradeMe'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -53,38 +51,17 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'Failed to initialize AgentQL client: ' + error.message,
-        discovered: 0,
-        discoveredListings: [],
-        source: 'TradeMe',
-        stage: 'discovery'
+        scraped: 0,
+        skipped: 0,
+        source: 'TradeMe'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Test AgentQL connection
-    try {
-      console.log('Testing AgentQL API connectivity...');
-      const testResult = await agentqlClient.testConnection();
-      console.log('AgentQL test successful:', testResult);
-    } catch (testError) {
-      console.error('AgentQL connectivity test failed:', testError);
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'AgentQL API connectivity failed: ' + testError.message,
-        discovered: 0,
-        discoveredListings: [],
-        source: 'TradeMe',
-        stage: 'discovery',
-        details: 'Check API key and endpoint configuration'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Stage 1: Build TradeMe search URL and discover listing metadata
+    // Build TradeMe search URL and discover listing metadata
     const searchUrl = buildTradeeMeSearchUrl(filters);
-    console.log('Stage 1: Discovering listings from:', searchUrl);
+    console.log('Discovering listings from:', searchUrl);
 
     let searchResults;
     try {
@@ -95,12 +72,10 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'AgentQL scraping failed: ' + error.message,
-        discovered: 0,
-        discoveredListings: [],
+        scraped: 0,
+        skipped: 0,
         source: 'TradeMe',
-        stage: 'discovery',
-        url: searchUrl,
-        details: 'Search query failed with /query-data endpoint'
+        url: searchUrl
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -108,57 +83,90 @@ serve(async (req) => {
 
     // Process search results to get basic listing metadata
     const listings = processSearchResults(searchResults);
-    console.log(`Stage 1: Discovered ${listings.length} listings`);
+    console.log(`Discovered ${listings.length} listings`);
 
     if (listings.length === 0) {
       return new Response(JSON.stringify({
         success: true,
-        discovered: 0,
-        discoveredListings: [],
+        scraped: 0,
+        skipped: 0,
         source: 'TradeMe',
-        stage: 'discovery',
         message: 'No listings found in search results',
-        searchResponse: searchResults,
         searchUrl: searchUrl
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Prepare discovered listings for return (no database storage)
-    const discoveredListings = listings.map(listing => ({
-      url: listing.url,
-      address: listing.address,
-      suburb: extractSuburb(listing.address),
-      city: 'Wellington',
-      source: 'TradeMe'
-    }));
+    // Store listings in database
+    let scraped = 0;
+    let skipped = 0;
+    const errors: string[] = [];
 
-    console.log(`Stage 1 Complete: Discovered ${discoveredListings.length} listings for potential detailed scraping`);
+    for (const listing of listings) {
+      try {
+        // Check if listing already exists
+        const { data: existing } = await supabase
+          .from('scraped_listings')
+          .select('id')
+          .eq('source_url', listing.url)
+          .single();
+
+        if (existing) {
+          skipped++;
+          console.log(`Skipped existing listing: ${listing.address}`);
+          continue;
+        }
+
+        // Insert new listing
+        const { error } = await supabase
+          .from('scraped_listings')
+          .insert({
+            source_url: listing.url,
+            address: listing.address,
+            suburb: extractSuburb(listing.address),
+            city: 'Wellington',
+            price: 0, // Default price since we don't have it in discovery stage
+            source_site: 'TradeMe',
+            summary: `Property listing from TradeMe: ${listing.address}`,
+            status: 'new'
+          });
+
+        if (error) {
+          console.error('Error saving listing:', error);
+          errors.push(`Failed to save ${listing.address}: ${error.message}`);
+        } else {
+          scraped++;
+          console.log(`Saved listing: ${listing.address}`);
+        }
+      } catch (error) {
+        console.error('Error processing listing:', error);
+        errors.push(`Error processing ${listing.address}: ${error.message}`);
+      }
+    }
+
+    console.log(`TradeMe scraping complete: ${scraped} saved, ${skipped} skipped`);
 
     return new Response(JSON.stringify({
       success: true,
-      discovered: discoveredListings.length,
-      discoveredListings: discoveredListings,
+      scraped: scraped,
+      skipped: skipped,
       source: 'TradeMe',
-      stage: 'discovery',
       url: searchUrl,
-      message: `Stage 1 complete: Discovered ${discoveredListings.length} property listings`,
-      agentqlConnected: true,
-      nextStage: 'Stage 2: Individual property details scraping (to be implemented)',
-      filters: filters
+      message: `TradeMe scraping complete: ${scraped} new listings saved, ${skipped} duplicates skipped`,
+      errors: errors.length > 0 ? errors : undefined
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in Stage 1 TradeMe discovery:', error);
+    console.error('Error in TradeMe scraper:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
       success: false,
-      discovered: 0,
-      discoveredListings: [],
-      stage: 'discovery'
+      scraped: 0,
+      skipped: 0,
+      source: 'TradeMe'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
