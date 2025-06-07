@@ -45,7 +45,8 @@ export const useScrapedListings = (filters: SearchFilters) => {
 
       // Apply filters
       if (filters.suburb) {
-        query = query.ilike('suburb', `%${filters.suburb}%`);
+        // Use exact match for suburb instead of partial match
+        query = query.eq('suburb', filters.suburb);
       }
       
       if (filters.minPrice) {
