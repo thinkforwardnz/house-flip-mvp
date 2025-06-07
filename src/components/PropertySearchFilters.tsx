@@ -84,6 +84,24 @@ const poririaSuburbs = [
   'Ascot Park', 'Ranui Heights', 'Paremata', 'Plimmerton', 'Pukerua Bay'
 ];
 
+const kapitiCoastSuburbs = [
+  'Paraparaumu', 'Paraparaumu Beach', 'Waikanae', 'Waikanae Beach', 'Raumati South', 
+  'Raumati Beach', 'Paekakariki', 'Otaki', 'Otaki Beach', 'Te Horo', 'Te Horo Beach',
+  'Manakau', 'Lindale', 'Maungakotare', 'Nikau', 'Pekapeka', 'Peka Peka'
+];
+
+const southWairarapaSuburbs = [
+  'Martinborough', 'Featherston', 'Greytown', 'Lake Ferry', 'Pirinoa'
+];
+
+const cartertonSuburbs = [
+  'Carterton', 'Clareville', 'Dalefield'
+];
+
+const mastertonSuburbs = [
+  'Masterton', 'Lansdowne', 'Solway', 'Riverside', 'Renall Street', 'Opaki'
+];
+
 const aucklandSuburbs = [
   'Auckland Central', 'Ponsonby', 'Grey Lynn', 'Parnell', 'Remuera', 'Epsom',
   'Mount Eden', 'Newmarket', 'Kingsland', 'Morningside', 'Point Chevalier',
@@ -160,6 +178,14 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
         return upperHuttSuburbs;
       case 'Porirua City':
         return poririaSuburbs;
+      case 'Kapiti Coast District':
+        return kapitiCoastSuburbs;
+      case 'South Wairarapa District':
+        return southWairarapaSuburbs;
+      case 'Carterton District':
+        return cartertonSuburbs;
+      case 'Masterton District':
+        return mastertonSuburbs;
       case 'Auckland Council':
         return aucklandSuburbs;
       case 'Christchurch City':
