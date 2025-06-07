@@ -25,13 +25,21 @@ export const useScrapingHistory = () => {
   const { data: history, isLoading } = useQuery({
     queryKey: ['scraping-history'],
     queryFn: async () => {
+      console.log('Fetching scraping history...');
+      
       const { data, error } = await supabase
         .from('scraping_history')
         .select('*')
         .order('started_at', { ascending: false })
         .limit(20);
       
-      if (error) throw error;
+      console.log('Scraping history query result:', { data, error, count: data?.length });
+      
+      if (error) {
+        console.error('Error fetching scraping history:', error);
+        throw error;
+      }
+      
       return data as ScrapingHistoryRecord[];
     },
   });
@@ -41,9 +49,12 @@ export const useScrapingHistory = () => {
       sources: string[];
       filters: any;
     }) => {
+      console.log('Creating scraping session with params:', params);
+      
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
+        console.error('User not authenticated:', userError);
         throw new Error('User not authenticated');
       }
 
@@ -58,10 +69,17 @@ export const useScrapingHistory = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      console.log('Scraping session creation result:', { data, error });
+      
+      if (error) {
+        console.error('Error creating scraping session:', error);
+        throw error;
+      }
+      
       return data;
     },
     onSuccess: () => {
+      console.log('Scraping session created successfully, invalidating queries...');
       queryClient.invalidateQueries({ queryKey: ['scraping-history'] });
     },
   });
@@ -75,6 +93,8 @@ export const useScrapingHistory = () => {
       totalSkipped?: number;
       errors?: string[];
     }) => {
+      console.log('Updating scraping session with params:', params);
+      
       const updateData: any = {
         status: params.status,
       };
@@ -95,10 +115,17 @@ export const useScrapingHistory = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      console.log('Scraping session update result:', { data, error });
+      
+      if (error) {
+        console.error('Error updating scraping session:', error);
+        throw error;
+      }
+      
       return data;
     },
     onSuccess: () => {
+      console.log('Scraping session updated successfully, invalidating queries...');
       queryClient.invalidateQueries({ queryKey: ['scraping-history'] });
     },
   });

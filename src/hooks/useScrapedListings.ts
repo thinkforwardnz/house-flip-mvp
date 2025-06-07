@@ -47,6 +47,8 @@ export const useScrapedListings = (filters: SearchFilters) => {
   const { data: listings, isLoading, error } = useQuery({
     queryKey: ['scraped-listings', filters],
     queryFn: async () => {
+      console.log('Fetching scraped listings with filters:', filters);
+      
       let query = supabase
         .from('scraped_listings')
         .select('*')
@@ -87,7 +89,12 @@ export const useScrapedListings = (filters: SearchFilters) => {
 
       const { data, error } = await query.limit(50);
       
-      if (error) throw error;
+      console.log('Scraped listings query result:', { data, error, count: data?.length });
+      
+      if (error) {
+        console.error('Error fetching scraped listings:', error);
+        throw error;
+      }
 
       // Get user actions for these listings if user is authenticated
       const { data: { user } } = await supabase.auth.getUser();
@@ -100,17 +107,23 @@ export const useScrapedListings = (filters: SearchFilters) => {
           .in('scraped_listing_id', listingIds)
           .eq('user_id', user.id);
 
+        console.log('User actions for listings:', userActions);
+
         // Merge user actions with listings
         const actionsMap = new Map(
           userActions?.map(action => [action.scraped_listing_id, action.action]) || []
         );
 
-        return data.map(listing => ({
+        const listingsWithActions = data.map(listing => ({
           ...listing,
           user_action: actionsMap.get(listing.id) || 'new'
         })) as ScrapedListing[];
+
+        console.log('Final listings with user actions:', listingsWithActions);
+        return listingsWithActions;
       }
 
+      console.log('Returning listings without user actions:', data);
       return data as ScrapedListing[];
     },
   });

@@ -27,6 +27,8 @@ export const useEnhancedScraping = () => {
     filters: any = {},
     sources: string[] = ['trademe']
   ) => {
+    console.log('Starting scraping with filters:', filters);
+    
     try {
       setIsScrapingActive(true);
       setTotalProgress(0);
@@ -43,6 +45,7 @@ export const useEnhancedScraping = () => {
         { sources, filters },
         {
           onSuccess: async (session) => {
+            console.log('Scraping session created:', session);
             setCurrentSession(session.id);
             
             toast({
@@ -58,12 +61,17 @@ export const useEnhancedScraping = () => {
               })));
               setTotalProgress(25);
 
+              console.log('Calling TradeMe scraper with filters:', filters);
+              
               // Call TradeMe scraper directly
               const { data, error } = await supabase.functions.invoke('scrape-trademe', {
                 body: { filters }
               });
 
+              console.log('TradeMe scraper response:', { data, error });
+
               if (error) {
+                console.error('Scraper error:', error);
                 throw error;
               }
 
@@ -78,6 +86,13 @@ export const useEnhancedScraping = () => {
               
               setSourceProgress(updatedProgress);
               setTotalProgress(100);
+
+              console.log('Updating scraping session with results:', {
+                sessionId: session.id,
+                status: data.success ? 'completed' : 'failed',
+                totalScraped: data.scraped || 0,
+                totalSkipped: data.skipped || 0
+              });
 
               // Update session with results
               updateScrapingSession({
@@ -97,7 +112,9 @@ export const useEnhancedScraping = () => {
               });
 
               // Invalidate queries to refresh the property feed
+              console.log('Invalidating queries to refresh data...');
               queryClient.invalidateQueries({ queryKey: ['scraped-listings'] });
+              queryClient.invalidateQueries({ queryKey: ['scraping-history'] });
 
               // Show detailed results
               if (data.success) {
@@ -120,11 +137,13 @@ export const useEnhancedScraping = () => {
               setSourceProgress(failedProgress);
 
               // Update session with error
-              updateScrapingSession({
-                sessionId: session.id,
-                status: 'failed',
-                errors: [error.message || 'Unknown error']
-              });
+              if (session?.id) {
+                updateScrapingSession({
+                  sessionId: session.id,
+                  status: 'failed',
+                  errors: [error.message || 'Unknown error']
+                });
+              }
 
               toast({
                 title: "Scraping Failed",
@@ -134,6 +153,7 @@ export const useEnhancedScraping = () => {
             }
           },
           onError: (error) => {
+            console.error('Session creation error:', error);
             toast({
               title: "Error",
               description: error.message,
@@ -164,6 +184,7 @@ export const useEnhancedScraping = () => {
   }, [createScrapingSession, updateScrapingSession, toast, queryClient]);
 
   const cancelScraping = useCallback(() => {
+    console.log('Cancelling scraping...');
     if (currentSession) {
       updateScrapingSession({
         sessionId: currentSession,
