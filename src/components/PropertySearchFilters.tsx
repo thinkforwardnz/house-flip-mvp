@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -77,12 +76,8 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
       return;
     }
 
-    const scrapingFilters = {
-      ...filters,
-      keywords: filters.keywords || 'renovate, fixer upper, deceased estate, needs work'
-    };
-    
-    startScraping(scrapingFilters, selectedSources);
+    // Send filters as-is without adding default keywords
+    startScraping(filters, selectedSources);
   };
 
   return (
