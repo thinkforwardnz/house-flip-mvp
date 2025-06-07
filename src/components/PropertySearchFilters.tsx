@@ -236,13 +236,13 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
 
         <div>
           <Label htmlFor="bedrooms">Bedrooms</Label>
-          <Select value={filters.minBeds} onValueChange={(value) => handleInputChange('minBeds', value)}>
+          <Select value={filters.minBeds} onValueChange={(value) => handleInputChange('minBeds', value === 'any' ? '' : value)}>
             <SelectTrigger>
               <SelectValue placeholder="Any" />
             </SelectTrigger>
             <SelectContent>
               {bedroomOptions.map((option) => (
-                <SelectItem key={option} value={option === 'Any' ? '' : option}>
+                <SelectItem key={option} value={option === 'Any' ? 'any' : option}>
                   {option}
                 </SelectItem>
               ))}
@@ -252,13 +252,13 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
 
         <div>
           <Label htmlFor="bathrooms">Bathrooms</Label>
-          <Select value={filters.minBaths} onValueChange={(value) => handleInputChange('minBaths', value)}>
+          <Select value={filters.minBaths} onValueChange={(value) => handleInputChange('minBaths', value === 'any' ? '' : value)}>
             <SelectTrigger>
               <SelectValue placeholder="Any" />
             </SelectTrigger>
             <SelectContent>
               {bathroomOptions.map((option) => (
-                <SelectItem key={option} value={option === 'Any' ? '' : option}>
+                <SelectItem key={option} value={option === 'Any' ? 'any' : option}>
                   {option}
                 </SelectItem>
               ))}
@@ -268,13 +268,13 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
 
         <div>
           <Label htmlFor="propertyType">Property Type</Label>
-          <Select value={filters.propertyType} onValueChange={(value) => handleInputChange('propertyType', value)}>
+          <Select value={filters.propertyType} onValueChange={(value) => handleInputChange('propertyType', value === 'all' ? '' : value)}>
             <SelectTrigger>
               <SelectValue placeholder="All Properties" />
             </SelectTrigger>
             <SelectContent>
               {propertyTypes.map((type) => (
-                <SelectItem key={type} value={type === 'All Properties' ? '' : type}>
+                <SelectItem key={type} value={type === 'All Properties' ? 'all' : type}>
                   {type}
                 </SelectItem>
               ))}
