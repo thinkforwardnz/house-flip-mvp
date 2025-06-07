@@ -8,17 +8,7 @@ import { useScrapedListings } from '@/hooks/useScrapedListings';
 import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
 import { usePropertyEnrichment } from '@/hooks/usePropertyEnrichment';
 import ScrapingProgress from '@/components/ScrapingProgress';
-
-interface SearchFilters {
-  suburb: string;
-  minPrice: string;
-  maxPrice: string;
-  minBeds: string;
-  maxBeds: string;
-  minBaths: string;
-  maxBaths: string;
-  keywords: string;
-}
+import { SearchFilters } from '@/types/filters';
 
 interface PropertyFeedProps {
   filters: SearchFilters;
@@ -68,14 +58,20 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
     if (isScrapingActive || isEnriching) return;
     
     const scrapingFilters = {
+      region: filters.region,
+      district: filters.district,
       suburb: filters.suburb,
       minPrice: filters.minPrice,
       maxPrice: filters.maxPrice,
       minBeds: filters.minBeds,
-      keywords: filters.keywords
+      propertyType: filters.propertyType,
+      keywords: filters.keywords,
+      searchNearbySuburbs: filters.searchNearbySuburbs,
+      openHomesOnly: filters.openHomesOnly,
+      newHomesOnly: filters.newHomesOnly
     };
     
-    startScraping(scrapingFilters);
+    startScraping(scrapingFilters, filters.selectedSources);
   };
 
   const handleRefreshFeed = () => {

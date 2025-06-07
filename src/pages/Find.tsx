@@ -6,9 +6,12 @@ import PropertySearchFilters from '@/components/PropertySearchFilters';
 import PropertyFeed from '@/components/PropertyFeed';
 import SavedProperties from '@/components/SavedProperties';
 import ScrapingHistoryPanel from '@/components/ScrapingHistoryPanel';
+import { SearchFilters } from '@/types/filters';
 
 const Find = () => {
-  const [searchFilters, setSearchFilters] = useState({
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+    region: '',
+    district: '',
     suburb: '',
     minPrice: '',
     maxPrice: '',
@@ -16,7 +19,12 @@ const Find = () => {
     maxBeds: '',
     minBaths: '',
     maxBaths: '',
+    propertyType: '',
     keywords: '',
+    selectedSources: ['trademe'],
+    searchNearbySuburbs: false,
+    openHomesOnly: false,
+    newHomesOnly: false,
   });
 
   return (

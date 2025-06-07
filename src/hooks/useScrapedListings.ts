@@ -1,18 +1,7 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface SearchFilters {
-  suburb: string;
-  minPrice: string;
-  maxPrice: string;
-  minBeds: string;
-  maxBeds: string;
-  minBaths: string;
-  maxBaths: string;
-  keywords: string;
-}
+import { SearchFilters } from '@/types/filters';
 
 interface ScrapedListing {
   id: string;
@@ -67,20 +56,24 @@ export const useScrapedListings = (filters: SearchFilters) => {
         query = query.lte('price', parseInt(filters.maxPrice));
       }
       
-      if (filters.minBeds) {
-        query = query.gte('bedrooms', parseInt(filters.minBeds));
+      if (filters.minBeds && filters.minBeds !== 'Any') {
+        const bedCount = parseInt(filters.minBeds.replace('+', ''));
+        query = query.gte('bedrooms', bedCount);
       }
       
-      if (filters.maxBeds) {
-        query = query.lte('bedrooms', parseInt(filters.maxBeds));
+      if (filters.maxBeds && filters.maxBeds !== 'Any') {
+        const bedCount = parseInt(filters.maxBeds.replace('+', ''));
+        query = query.lte('bedrooms', bedCount);
       }
       
-      if (filters.minBaths) {
-        query = query.gte('bathrooms', parseInt(filters.minBaths));
+      if (filters.minBaths && filters.minBaths !== 'Any') {
+        const bathCount = parseInt(filters.minBaths.replace('+', ''));
+        query = query.gte('bathrooms', bathCount);
       }
       
-      if (filters.maxBaths) {
-        query = query.lte('bathrooms', parseInt(filters.maxBaths));
+      if (filters.maxBaths && filters.maxBaths !== 'Any') {
+        const bathCount = parseInt(filters.maxBaths.replace('+', ''));
+        query = query.lte('bathrooms', bathCount);
       }
       
       if (filters.keywords) {
