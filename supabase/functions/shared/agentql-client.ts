@@ -5,7 +5,7 @@ declare const Deno: any;
 
 /**
  * AgentQLClient for property data extraction via AgentQL API.
- * Updated to use correct /query-data endpoint with proper authentication and payload structure.
+ * Updated with corrected TradeMe-specific DOM selectors.
  */
 export class AgentQLClient {
   private apiKey: string;
@@ -78,27 +78,30 @@ export class AgentQLClient {
   }
 
   /**
-   * Gets the TradeMe search results query using proper AgentQL selector syntax.
+   * Gets the TradeMe search results query using TradeMe-specific DOM selectors.
    */
   getTradeeMeSearchQuery(): string {
     return `{
       listings[] {
-        id(attr: "data-listing-id")
-        url(attr: "href")
+        listing_id(attr: "data-aria-id")
+        listing_url(attr: "href")
         address
         price
         title
+        bedrooms
+        bathrooms
+        floor_area
       }
     }`;
   }
 
   /**
-   * Gets the TradeMe individual property page query using proper AgentQL selector syntax.
+   * Gets the TradeMe individual property page query using TradeMe-specific DOM selectors.
    */
   getTradeeMePropertyDetailQuery(): string {
     return `{
       title
-      price
+      price  
       address
       bedrooms
       bathrooms
@@ -120,7 +123,7 @@ export class AgentQLClient {
    */
   async scrapeSearchResults(searchUrl: string): Promise<any> {
     const query = this.getTradeeMeSearchQuery();
-    return await this.queryDataWithRetry(searchUrl, query, 3000);
+    return await this.queryDataWithRetry(searchUrl, query, 5000);
   }
 
   /**

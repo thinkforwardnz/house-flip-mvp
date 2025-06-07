@@ -3,7 +3,7 @@ import { PropertyData } from './types.ts';
 import { extractSuburb } from './url-builder.ts';
 
 /**
- * Process search results to extract listing URLs from AgentQL response using new structure
+ * Process search results to extract listing URLs from AgentQL response using TradeMe DOM structure
  */
 export function processSearchResults(response: any): string[] {
   const listingUrls: string[] = [];
@@ -11,12 +11,12 @@ export function processSearchResults(response: any): string[] {
   console.log('Processing AgentQL search results:', JSON.stringify(response, null, 2));
   
   // Handle AgentQL /query-data response structure
-  const listings = response.listings || response.data?.listings || [];
+  const listings = response.data?.listings || response.listings || [];
   
   if (Array.isArray(listings)) {
     for (const listing of listings) {
       try {
-        let url = listing.url || listing.href;
+        let url = listing.listing_url || listing.url || listing.href;
         
         if (url) {
           // Ensure URL is absolute
@@ -28,6 +28,12 @@ export function processSearchResults(response: any): string[] {
           if (url.includes('trademe.co.nz') && !listingUrls.includes(url)) {
             listingUrls.push(url);
             console.log(`Found listing URL: ${url}`);
+            
+            // Extract listing ID for logging
+            const listingId = listing.listing_id || extractListingId(url);
+            if (listingId) {
+              console.log(`  Listing ID: ${listingId}`);
+            }
           }
         }
       } catch (error) {
@@ -43,15 +49,15 @@ export function processSearchResults(response: any): string[] {
 }
 
 /**
- * Process individual property details page from AgentQL response using new structure
+ * Process individual property details page from AgentQL response using TradeMe DOM structure
  */
 export function processPropertyDetails(response: any, listingUrl: string, searchUrl: string): PropertyData | null {
   console.log('Processing AgentQL property details for:', listingUrl);
   console.log('Property details response:', JSON.stringify(response, null, 2));
   
   try {
-    // AgentQL /query-data returns data directly in response
-    const details = response;
+    // AgentQL /query-data returns data directly in response.data
+    const details = response.data || response;
     
     if (!details || (!details.title && !details.address && !details.price)) {
       console.warn('No valid property data found in AgentQL response');
@@ -127,4 +133,9 @@ function parseInteger(value: string | undefined): number | null {
   if (!value) return null;
   const parsed = parseInt(value.replace(/[^0-9]/g, ''));
   return isNaN(parsed) ? null : parsed;
+}
+
+function extractListingId(url: string): string | null {
+  const match = url.match(/listing\/(\d+)/);
+  return match ? match[1] : null;
 }
