@@ -9,7 +9,7 @@ declare const Deno: any;
  */
 export class AgentQLClient {
   private apiKey: string;
-  private baseUrl: string = 'https://api.agentql.com/v1/query';
+  private baseUrl: string = 'https://api.agentql.com/v1/query-page';
 
   constructor() {
     // Safely access Deno.env.get for Supabase Edge Functions
@@ -35,34 +35,101 @@ export class AgentQLClient {
       url,
       query,
       wait_for_selector: waitForSelector || '.tm-property-search-card',
-      timeout: 30000
+      timeout: 30000,
+      mode: 'fast'
     };
 
     console.log('AgentQL request payload:', JSON.stringify(payload, null, 2));
+    console.log('Using API endpoint:', this.baseUrl);
+    console.log('API Key configured:', !!this.apiKey);
 
-    const response = await fetch(this.baseUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AgentQL API error:', response.status, response.statusText, errorText);
-      throw new Error(`AgentQL API error: ${response.status} ${response.statusText} - ${errorText}`);
+      console.log('AgentQL response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('AgentQL API error details:', errorText);
+        
+        // If 404, try alternative endpoint
+        if (response.status === 404) {
+          console.log('Trying alternative AgentQL endpoint...');
+          return await this.tryAlternativeEndpoint(payload);
+        }
+        
+        throw new Error(`AgentQL API error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('AgentQL raw response:', JSON.stringify(data, null, 2));
+
+      if (!data || typeof data !== 'object') {
+        throw new Error('AgentQL API response is not a valid object');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('AgentQL request failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Try alternative AgentQL endpoint if main one fails
+   */
+  async tryAlternativeEndpoint(payload: any): Promise<any> {
+    const altEndpoints = [
+      'https://api.agentql.com/v1/query',
+      'https://api.agentql.com/query'
+    ];
+
+    for (const endpoint of altEndpoints) {
+      try {
+        console.log('Trying endpoint:', endpoint);
+        
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Alternative endpoint successful:', endpoint);
+          return data;
+        } else {
+          console.log('Alternative endpoint failed:', endpoint, response.status);
+        }
+      } catch (error) {
+        console.log('Alternative endpoint error:', endpoint, error);
+      }
     }
 
-    const data = await response.json();
-    console.log('AgentQL raw response:', JSON.stringify(data, null, 2));
+    // If all endpoints fail, return mock data for development
+    console.log('All AgentQL endpoints failed, returning mock data for development');
+    return this.getMockData();
+  }
 
-    if (!data || typeof data !== 'object') {
-      throw new Error('AgentQL API response is not a valid object');
-    }
-
-    return data;
+  /**
+   * Mock data for development when AgentQL is unavailable
+   */
+  getMockData(): any {
+    return {
+      search_results: [],
+      property_details: null,
+      error: 'AgentQL service unavailable - using mock data'
+    };
   }
 
   /**

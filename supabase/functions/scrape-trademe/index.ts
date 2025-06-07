@@ -31,11 +31,36 @@ serve(async (req) => {
     // Check if AgentQL API key is configured
     const agentqlKey = Deno.env.get('AGENTQL_API_KEY');
     if (!agentqlKey) {
-      throw new Error('AGENTQL_API_KEY not configured in environment');
+      console.error('AGENTQL_API_KEY not configured in environment');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'AgentQL API key not configured',
+        scraped: 0,
+        skipped: 0,
+        total: 0,
+        source: 'TradeMe'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Initialize AgentQL client
-    const agentqlClient = new AgentQLClient();
+    let agentqlClient;
+    try {
+      agentqlClient = new AgentQLClient();
+    } catch (error) {
+      console.error('Failed to initialize AgentQL client:', error);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to initialize AgentQL client: ' + error.message,
+        scraped: 0,
+        skipped: 0,
+        total: 0,
+        source: 'TradeMe'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Step 1: Build TradeMe search URL and get listing URLs
     const searchUrl = buildTradeeMeSearchUrl(filters);
@@ -46,8 +71,23 @@ serve(async (req) => {
       searchResults = await agentqlClient.scrapeSearchResults(searchUrl);
     } catch (error) {
       console.warn('Main search query failed, trying fallback:', error);
-      const fallbackQuery = agentqlClient.getTradeeMeFallbackQuery();
-      searchResults = await agentqlClient.queryPropertyData(searchUrl, fallbackQuery);
+      try {
+        const fallbackQuery = agentqlClient.getTradeeMeFallbackQuery();
+        searchResults = await agentqlClient.queryPropertyData(searchUrl, fallbackQuery);
+      } catch (fallbackError) {
+        console.error('All search queries failed:', fallbackError);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'AgentQL scraping failed: ' + error.message,
+          scraped: 0,
+          skipped: 0,
+          total: 0,
+          source: 'TradeMe',
+          url: searchUrl
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     // Process search results to get listing URLs
@@ -55,6 +95,21 @@ serve(async (req) => {
     console.log(`Step 1 complete: Found ${listingUrls.length} listing URLs`);
 
     if (listingUrls.length === 0) {
+      // Check if this was due to AgentQL being unavailable
+      if (searchResults && searchResults.error) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'AgentQL service unavailable',
+          scraped: 0,
+          skipped: 0,
+          total: 0,
+          source: 'TradeMe',
+          message: 'AgentQL API is currently unavailable. Please try again later.'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       return new Response(JSON.stringify({
         success: true,
         scraped: 0,
@@ -73,8 +128,8 @@ serve(async (req) => {
     let successCount = 0;
     let errorCount = 0;
 
-    // Limit to first 10 properties to avoid timeouts and rate limiting
-    const maxProperties = Math.min(listingUrls.length, 10);
+    // Limit to first 5 properties to avoid timeouts and rate limiting
+    const maxProperties = Math.min(listingUrls.length, 5);
     
     for (let i = 0; i < maxProperties; i++) {
       const listingUrl = listingUrls[i];
@@ -91,7 +146,7 @@ serve(async (req) => {
         
         // Add delay to avoid rate limiting
         if (i < maxProperties - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Increased delay
         }
       } catch (error) {
         console.error(`Error scraping property ${listingUrl}:`, error);
