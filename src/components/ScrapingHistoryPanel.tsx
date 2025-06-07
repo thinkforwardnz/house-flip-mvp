@@ -117,14 +117,26 @@ const ScrapingHistoryPanel = () => {
                   {record.results && Object.keys(record.results).length > 0 && (
                     <div className="space-y-2">
                       <div className="font-medium text-sm">Results by Source:</div>
-                      {Object.entries(record.results).map(([source, result]: [string, any]) => (
-                        <div key={source} className="text-sm bg-white p-2 rounded border">
-                          <div className="font-medium">{source}</div>
-                          <div className="text-gray-600">
-                            Scraped: {result.scraped || 0}, Skipped: {result.skipped || 0}
+                      {Object.entries(record.results).map(([source, result]: [string, any]) => {
+                        // Add null check for result
+                        if (!result || typeof result !== 'object') {
+                          return (
+                            <div key={source} className="text-sm bg-white p-2 rounded border">
+                              <div className="font-medium">{source}</div>
+                              <div className="text-gray-600">No data available</div>
+                            </div>
+                          );
+                        }
+                        
+                        return (
+                          <div key={source} className="text-sm bg-white p-2 rounded border">
+                            <div className="font-medium">{source}</div>
+                            <div className="text-gray-600">
+                              Scraped: {result.scraped || 0}, Skipped: {result.skipped || 0}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                   
