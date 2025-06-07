@@ -1,20 +1,22 @@
-
+// deno-lint-ignore no-explicit-any
+// @ts-ignore: Deno global is available in Edge Functions
+declare const Deno: any;
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
 import { corsHeaders } from './config.ts';
 import { calculateFlipPotential } from './scoring.ts';
-import { ScrapingFilters } from './types.ts';
-import { ApifyClient } from '../shared/apify-client.ts';
-import { TRADEME_ACTOR_ID, buildTradeeMeApifyInput, processTradeeMeResults } from './apify-config.ts';
+import { ScrapingFilters, PropertyData } from './types.ts';
+import { AgentQLClient } from '../shared/agentql-client.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-const apifyApiToken = Deno.env.get('APIFY_API_TOKEN');
+// Initialize AgentQL client (reads API key from secrets)
+const agentqlClient = new AgentQLClient();
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -23,30 +25,58 @@ serve(async (req) => {
 
   try {
     const { filters = {} }: { filters: ScrapingFilters } = await req.json();
-    console.log('Starting TradeMe scraping with Apify for Wellington region');
+    console.log('Starting TradeMe scraping with AgentQL for Wellington region');
 
-    if (!apifyApiToken) {
-      throw new Error('Apify API token not configured');
+    // Build TradeMe search URL with filters
+    const baseUrl = 'https://www.trademe.co.nz/a/property/residential/sale/wellington';
+    const params = new URLSearchParams();
+    if (filters.keywords) {
+      const keywords = filters.keywords.split(',').map((k: string) => k.trim());
+      params.append('search_string', keywords[0] || '');
     }
+    if (filters.minPrice) params.append('price_min', filters.minPrice);
+    if (filters.maxPrice) params.append('price_max', filters.maxPrice);
+    if (filters.minBeds) params.append('bedrooms_min', filters.minBeds);
+    if (filters.maxBeds) params.append('bedrooms_max', filters.maxBeds);
+    if (filters.suburb) params.append('suburb', filters.suburb);
+    const searchUrl = `${baseUrl}?${params.toString()}`;
 
-    // Initialize Apify client
-    const apifyClient = new ApifyClient(apifyApiToken);
-    
-    // Build input for TradeMe actor
-    const actorInput = buildTradeeMeApifyInput(filters);
-    console.log('TradeMe Apify input:', JSON.stringify(actorInput, null, 2));
+    // Call AgentQL to extract property listings
+    const agentqlResults = await agentqlClient.extractProperties({ url: searchUrl });
+    console.log(`Received ${agentqlResults.length} properties from AgentQL`);
 
-    // Run the actor and get results
-    const apifyResults = await apifyClient.runActorAndGetResults(TRADEME_ACTOR_ID, actorInput);
-    console.log(`Received ${apifyResults.length} properties from Apify`);
+    // Process the results (map AgentQL fields to our schema)
+    // Type guard to filter out nulls
+    function isPropertyData(item: any): item is PropertyData {
+      return item !== null && typeof item === 'object' && 'city' in item;
+    }
+    const properties: PropertyData[] = agentqlResults.map((item: any) => {
+      try {
+        return {
+          source_url: item.url || '',
+          address: item.address || '',
+          suburb: item.suburb || '',
+          city: 'Wellington',
+          price: typeof item.price === 'number' ? item.price : parseInt(String(item.price).replace(/[^0-9]/g, '')) || 0,
+          bedrooms: item.bedrooms ? parseInt(item.bedrooms) : null,
+          bathrooms: item.bathrooms ? parseFloat(item.bathrooms) : null,
+          floor_area: item.floorArea ? parseFloat(item.floorArea) : null,
+          land_area: item.landArea ? parseFloat(item.landArea) : null,
+          summary: item.description || '',
+          photos: Array.isArray(item.photos) ? item.photos : [],
+          listing_date: item.listingDate || new Date().toISOString().split('T')[0]
+        };
+      } catch (error) {
+        console.error('Error processing AgentQL result:', error, item);
+        return null;
+      }
+    }).filter(isPropertyData);
 
-    // Process the results
-    const properties = processTradeeMeResults(apifyResults);
-    
     let savedCount = 0;
     let skippedCount = 0;
 
     for (const property of properties) {
+      if (!property) continue; // Type safety
       try {
         // Check if listing already exists
         const { data: existing } = await supabase
@@ -71,7 +101,7 @@ serve(async (req) => {
             source_url: property.source_url,
             address: property.address,
             suburb: property.suburb,
-            city: 'Wellington',
+            city: property.city,
             price: property.price,
             bedrooms: property.bedrooms,
             bathrooms: property.bathrooms,
