@@ -169,6 +169,14 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
     }
   };
 
+  const formatDistrictName = (district: string) => {
+    return district.replace(' District', '').replace(' City', '').replace(' Council', '');
+  };
+
+  const hasSuburbOptions = (district: string) => {
+    return getSuburbsForDistrict(district).length > 0;
+  };
+
   const handleSourceChange = (source: string, checked: boolean) => {
     const updatedSources = checked
       ? [...filters.selectedSources, source]
@@ -248,7 +256,7 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
             <SelectContent>
               {getDistrictsForRegion(filters.region).map((district) => (
                 <SelectItem key={district} value={district}>
-                  {district}
+                  {formatDistrictName(district)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -257,22 +265,32 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
 
         <div>
           <Label htmlFor="suburb">Suburb</Label>
-          <Select 
-            value={filters.suburb} 
-            onValueChange={(value) => handleInputChange('suburb', value)}
-            disabled={!filters.district}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select suburb" />
-            </SelectTrigger>
-            <SelectContent>
-              {getSuburbsForDistrict(filters.district).map((suburb) => (
-                <SelectItem key={suburb} value={suburb}>
-                  {suburb}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {hasSuburbOptions(filters.district) ? (
+            <Select 
+              value={filters.suburb} 
+              onValueChange={(value) => handleInputChange('suburb', value)}
+              disabled={!filters.district}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select suburb" />
+              </SelectTrigger>
+              <SelectContent>
+                {getSuburbsForDistrict(filters.district).map((suburb) => (
+                  <SelectItem key={suburb} value={suburb}>
+                    {suburb}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              id="suburb"
+              value={filters.suburb}
+              onChange={(e) => handleInputChange('suburb', e.target.value)}
+              placeholder="Enter suburb"
+              disabled={!filters.district}
+            />
+          )}
         </div>
 
         <div className="flex items-end">
