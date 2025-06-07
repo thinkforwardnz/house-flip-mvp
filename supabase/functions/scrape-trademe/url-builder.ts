@@ -82,9 +82,6 @@ export function buildTradeeMeSearchUrl(filters: ScrapingFilters): string {
     params.append('bathrooms_max', filters.maxBaths);
   }
   
-  // Add default sorting for best flip opportunities
-  params.append('sort_order', 'price_asc'); // Lower prices first for flip potential
-  
   const queryString = params.toString();
   const finalUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl;
   
