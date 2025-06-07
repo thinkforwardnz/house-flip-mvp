@@ -61,6 +61,45 @@ const canterburyDistricts = [
   'Kaikoura District'
 ];
 
+// Suburb options by district
+const wellingtonCitySuburbs = [
+  'Kelburn', 'Thorndon', 'Te Aro', 'Mount Victoria', 'Oriental Bay', 'Newtown', 
+  'Island Bay', 'Berhampore', 'Brooklyn', 'Vogeltown', 'Aro Valley', 'Mount Cook',
+  'Hataitai', 'Roseneath', 'Seatoun', 'Miramar', 'Kilbirnie', 'Lyall Bay',
+  'Karori', 'Northland', 'Wadestown', 'Johnsonville', 'Tawa', 'Churton Park'
+];
+
+const lowerHuttSuburbs = [
+  'Petone', 'Eastbourne', 'Wainuiomata', 'Stokes Valley', 'Naenae', 'Taita',
+  'Pomare', 'Epuni', 'Waterloo', 'Hutt Central', 'Belmont', 'Woburn'
+];
+
+const upperHuttSuburbs = [
+  'Te Marua', 'Brown Owl', 'Birchville', 'Heretaunga', 'Pinehaven', 'Silverstream',
+  'Totara Park', 'Elderslea', 'Trentham', 'Wallaceville'
+];
+
+const poririaSuburbs = [
+  'Titahi Bay', 'Elsdon', 'Takapuwahia', 'Cannons Creek', 'Waitangirua',
+  'Ascot Park', 'Ranui Heights', 'Paremata', 'Plimmerton', 'Pukerua Bay'
+];
+
+const aucklandSuburbs = [
+  'Auckland Central', 'Ponsonby', 'Grey Lynn', 'Parnell', 'Remuera', 'Epsom',
+  'Mount Eden', 'Newmarket', 'Kingsland', 'Morningside', 'Point Chevalier',
+  'Westmere', 'Herne Bay', 'Saint Marys Bay', 'Freemans Bay', 'Viaduct Harbour',
+  'Takapuna', 'Devonport', 'Milford', 'Birkenhead', 'Northcote', 'Glenfield',
+  'Albany', 'Browns Bay', 'Torbay', 'Long Bay', 'Mairangi Bay', 'Castor Bay',
+  'Manly', 'Whangaparaoa', 'Orewa', 'Silverdale', 'Red Beach', 'Stanmore Bay'
+];
+
+const christchurchSuburbs = [
+  'Christchurch Central', 'Riccarton', 'Ilam', 'Fendalton', 'Merivale', 'Papanui',
+  'Shirley', 'New Brighton', 'Sumner', 'Lyttelton', 'Cashmere', 'Huntsbury',
+  'Halswell', 'Hornby', 'Burnside', 'Bryndwr', 'Strowan', 'Northwood',
+  'Redwood', 'Bishopdale', 'Harewood', 'Russley', 'Sockburn', 'Addington'
+];
+
 const propertyTypes = [
   'All Properties',
   'House',
@@ -106,6 +145,25 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
         return aucklandDistricts;
       case 'Canterbury':
         return canterburyDistricts;
+      default:
+        return [];
+    }
+  };
+
+  const getSuburbsForDistrict = (district: string) => {
+    switch (district) {
+      case 'Wellington City':
+        return wellingtonCitySuburbs;
+      case 'Lower Hutt City':
+        return lowerHuttSuburbs;
+      case 'Upper Hutt City':
+        return upperHuttSuburbs;
+      case 'Porirua City':
+        return poririaSuburbs;
+      case 'Auckland Council':
+        return aucklandSuburbs;
+      case 'Christchurch City':
+        return christchurchSuburbs;
       default:
         return [];
     }
@@ -199,12 +257,22 @@ const PropertySearchFilters = ({ filters, onFiltersChange }: PropertySearchFilte
 
         <div>
           <Label htmlFor="suburb">Suburb</Label>
-          <Input
-            id="suburb"
-            value={filters.suburb}
-            onChange={(e) => handleInputChange('suburb', e.target.value)}
-            placeholder="e.g. Kelburn"
-          />
+          <Select 
+            value={filters.suburb} 
+            onValueChange={(value) => handleInputChange('suburb', value)}
+            disabled={!filters.district}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select suburb" />
+            </SelectTrigger>
+            <SelectContent>
+              {getSuburbsForDistrict(filters.district).map((suburb) => (
+                <SelectItem key={suburb} value={suburb}>
+                  {suburb}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-end">
