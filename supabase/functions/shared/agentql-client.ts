@@ -5,7 +5,7 @@ declare const Deno: any;
 
 /**
  * AgentQLClient for property data extraction via AgentQL API.
- * Stage 1: Simplified for search results only (ID, URL, Address).
+ * Stage 1: Simplified for search results only (ID, URL, Address, Featured Image).
  */
 export class AgentQLClient {
   private apiKey: string;
@@ -78,13 +78,14 @@ export class AgentQLClient {
   }
 
   /**
-   * Gets the TradeMe search results query - Stage 1: Basic listing metadata only.
-   * Updated to use correct field names that work in AgentQL playground.
+   * Gets the TradeMe search results query - Stage 1: Basic listing metadata including featured image.
+   * Updated to include listingfeaturedimg field.
    */
   getTradeeMeSearchQuery(): string {
     return `{
       properties[] {
         listingid
+        listingfeaturedimg
         listingurl
         listingaddress
       }

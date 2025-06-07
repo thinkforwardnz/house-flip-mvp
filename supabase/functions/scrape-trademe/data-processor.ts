@@ -4,10 +4,10 @@ import { extractSuburb } from './url-builder.ts';
 
 /**
  * Stage 1: Process search results to extract basic listing metadata from AgentQL response
- * Updated to use correct field names: listingid, listingurl, listingaddress
+ * Updated to include featured image: listingfeaturedimg
  */
-export function processSearchResults(response: any): Array<{id: string, url: string, address: string}> {
-  const listings: Array<{id: string, url: string, address: string}> = [];
+export function processSearchResults(response: any): Array<{id: string, url: string, address: string, featuredImage?: string}> {
+  const listings: Array<{id: string, url: string, address: string, featuredImage?: string}> = [];
   
   console.log('Stage 1: Processing AgentQL search results:', JSON.stringify(response, null, 2));
   
@@ -22,8 +22,9 @@ export function processSearchResults(response: any): Array<{id: string, url: str
         let url = property.listingurl || property.url || property.href;
         const address = property.listingaddress || property.address || property.title || '';
         let listingId = property.listingid || property.listing_id || property.id || '';
+        const featuredImage = property.listingfeaturedimg || property.featured_image || property.image || '';
         
-        console.log(`Processing property:`, { url, address, listingId });
+        console.log(`Processing property:`, { url, address, listingId, featuredImage });
         
         if (url && address) {
           // Ensure URL is absolute
@@ -46,7 +47,8 @@ export function processSearchResults(response: any): Array<{id: string, url: str
             const listingData = {
               id: listingId,
               url: url,
-              address: address.trim()
+              address: address.trim(),
+              featuredImage: featuredImage || undefined
             };
             
             // Check for duplicates
@@ -56,7 +58,7 @@ export function processSearchResults(response: any): Array<{id: string, url: str
             
             if (!isDuplicate) {
               listings.push(listingData);
-              console.log(`Stage 1: Found valid listing - ID: ${listingId}, Address: ${address}, URL: ${url}`);
+              console.log(`Stage 1: Found valid listing - ID: ${listingId}, Address: ${address}, Featured Image: ${featuredImage || 'none'}, URL: ${url}`);
             } else {
               console.log(`Stage 1: Skipped duplicate listing - ID: ${listingId}`);
             }
@@ -107,7 +109,7 @@ export function processSearchResults(response: any): Array<{id: string, url: str
     }
   }
   
-  console.log(`Stage 1 complete: Extracted ${listings.length} listings with basic metadata`);
+  console.log(`Stage 1 complete: Extracted ${listings.length} listings with basic metadata including featured images`);
   return listings;
 }
 

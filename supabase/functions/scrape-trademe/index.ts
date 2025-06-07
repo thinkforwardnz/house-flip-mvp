@@ -130,7 +130,19 @@ serve(async (req) => {
         const suburb = extractSuburb(listing.address);
         console.log(`Extracted suburb "${suburb}" from address "${listing.address}"`);
 
-        // Insert new listing with proper default values
+        // Prepare photos array with featured image
+        const photos: string[] = [];
+        if (listing.featuredImage) {
+          // Ensure featured image URL is absolute
+          let imageUrl = listing.featuredImage;
+          if (imageUrl.startsWith('/')) {
+            imageUrl = `https://www.trademe.co.nz${imageUrl}`;
+          }
+          photos.push(imageUrl);
+          console.log(`Added featured image: ${imageUrl}`);
+        }
+
+        // Insert new listing with proper default values including featured image
         const listingData = {
           source_url: listing.url,
           address: listing.address,
@@ -144,7 +156,7 @@ serve(async (req) => {
           bathrooms: null,
           floor_area: null,
           land_area: null,
-          photos: null,
+          photos: photos.length > 0 ? photos : null,
           listing_date: null,
           ai_score: null,
           ai_est_profit: null,
@@ -167,7 +179,7 @@ serve(async (req) => {
           errors.push(`Failed to save ${listing.address}: ${insertError.message}`);
         } else {
           scraped++;
-          console.log(`Successfully saved listing: ${listing.address} with ID: ${insertedListing.id}`);
+          console.log(`Successfully saved listing: ${listing.address} with ID: ${insertedListing.id} and ${photos.length} photos`);
         }
       } catch (error) {
         console.error('Error processing listing:', error);
