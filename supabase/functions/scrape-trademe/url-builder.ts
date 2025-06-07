@@ -41,8 +41,8 @@ export function buildTradeeMeSearchUrl(filters: ScrapingFilters): string {
   
   const params = new URLSearchParams();
   
-  // Handle search keywords (flip-related terms)
-  if (filters.keywords) {
+  // Handle search keywords (flip-related terms) - only add if provided
+  if (filters.keywords && filters.keywords.trim()) {
     const keywords = filters.keywords.split(',').map((k: string) => k.trim());
     if (keywords.length > 0 && keywords[0]) {
       params.append('search_string', keywords[0]);
