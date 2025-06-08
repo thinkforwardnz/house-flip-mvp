@@ -37,14 +37,28 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
         });
 
         // Fetch the updated deal data
-        const { data: updatedDeal, error: fetchError } = await supabase
+        const { data: updatedDealData, error: fetchError } = await supabase
           .from('deals')
           .select('*')
           .eq('id', deal.id)
           .single();
 
-        if (!fetchError && updatedDeal && onDealUpdate) {
-          onDealUpdate(updatedDeal);
+        if (!fetchError && updatedDealData && onDealUpdate) {
+          // Transform the Supabase data to match our Deal interface
+          const transformedDeal: Deal = {
+            ...updatedDealData,
+            coordinates: updatedDealData.coordinates && 
+              typeof updatedDealData.coordinates === 'object' && 
+              updatedDealData.coordinates !== null &&
+              'lat' in updatedDealData.coordinates && 
+              'lng' in updatedDealData.coordinates
+              ? {
+                  lat: (updatedDealData.coordinates as any).lat,
+                  lng: (updatedDealData.coordinates as any).lng
+                }
+              : undefined
+          };
+          onDealUpdate(transformedDeal);
         }
       } else {
         toast({
