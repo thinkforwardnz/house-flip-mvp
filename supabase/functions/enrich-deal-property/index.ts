@@ -4,7 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
 import { corsHeaders } from '../shared/cors.ts';
-import { AgentQLClient } from '../shared/agentql-client.ts';
+import { AgentQLPropertyClient } from '../shared/agentql-property-client.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -57,7 +57,7 @@ serve(async (req) => {
     // If we have a source URL, scrape it for enhanced data
     if (sourceUrl) {
       try {
-        const agentqlClient = new AgentQLClient();
+        const agentqlClient = new AgentQLPropertyClient();
         const propertyData = await agentqlClient.scrapePropertyPage(sourceUrl);
         
         if (propertyData) {
