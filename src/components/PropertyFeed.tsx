@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import PropertyListingCard from '@/components/PropertyListingCard';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw } from 'lucide-react';
 import { useScrapedListings } from '@/hooks/useScrapedListings';
 import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
-import { usePropertyEnrichment } from '@/hooks/usePropertyEnrichment';
+import { useRefreshFeed } from '@/hooks/useRefreshFeed';
 import ScrapingProgress from '@/components/ScrapingProgress';
 import { SearchFilters } from '@/types/filters';
 
@@ -24,7 +25,8 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
     importAsDeal,
     isSaving,
     isDismissing,
-    isImporting
+    isImporting,
+    refetch
   } = useScrapedListings(filters);
 
   const {
@@ -36,11 +38,10 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
   } = useEnhancedScraping();
 
   const {
-    isEnriching,
-    progress: enrichmentProgress,
-    startEnrichment,
-    cancelEnrichment,
-  } = usePropertyEnrichment();
+    isRefreshing,
+    progress: refreshProgress,
+    refreshFeed,
+  } = useRefreshFeed();
 
   const handleImportAsDeal = (listing: any) => {
     importAsDeal(listing);
@@ -65,7 +66,7 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
   };
 
   const handleSearchProperties = () => {
-    if (isScrapingActive || isEnriching) return;
+    if (isScrapingActive || isRefreshing) return;
     
     const scrapingFilters = {
       region: filters.region,
@@ -84,9 +85,16 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
     startScraping(scrapingFilters, filters.selectedSources);
   };
 
-  const handleRefreshFeed = () => {
-    if (isScrapingActive || isEnriching) return;
-    startEnrichment();
+  const handleRefreshFeed = async () => {
+    if (isScrapingActive || isRefreshing) return;
+    
+    try {
+      await refreshFeed();
+      // Refetch the listings after refresh
+      refetch();
+    } catch (error) {
+      console.error('Error refreshing feed:', error);
+    }
   };
 
   if (error) {
@@ -112,31 +120,23 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
         onCancel={cancelScraping}
       />
 
-      {/* Enrichment Progress */}
-      {isEnriching && (
+      {/* Refresh Feed Progress */}
+      {isRefreshing && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-blue-900">
-              Enriching Property Data...
+              Refreshing Feed Data...
             </h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={cancelEnrichment}
-              className="text-blue-700 border-blue-300"
-            >
-              Cancel
-            </Button>
           </div>
           <p className="text-sm text-blue-700 mb-2">
-            Enriched: {enrichmentProgress.enriched} | Skipped: {enrichmentProgress.skipped} | Total: {enrichmentProgress.total}
+            Completed: {refreshProgress.completed} | Skipped: {refreshProgress.skipped} | Total: {refreshProgress.total}
           </p>
           <div className="w-full bg-blue-200 rounded-full h-2">
             <div
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
               style={{
-                width: enrichmentProgress.total > 0 
-                  ? `${((enrichmentProgress.enriched + enrichmentProgress.skipped) / enrichmentProgress.total) * 100}%`
+                width: refreshProgress.total > 0 
+                  ? `${((refreshProgress.completed + refreshProgress.skipped) / refreshProgress.total) * 100}%`
                   : '0%'
               }}
             />
@@ -164,10 +164,10 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
             <Button 
               variant="outline"
               onClick={handleRefreshFeed}
-              disabled={isEnriching || isScrapingActive}
+              disabled={isRefreshing || isScrapingActive}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isEnriching ? 'animate-spin' : ''}`} />
-              {isEnriching ? 'Enriching...' : 'Refresh Feed'}
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh Feed'}
             </Button>
           </div>
           
@@ -177,9 +177,6 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
               const featuredImage = listing.photos && listing.photos.length > 0 
                 ? listing.photos[0] 
                 : '/placeholder.svg';
-              
-              console.log('Listing photos for', listing.address, ':', listing.photos);
-              console.log('Featured image URL:', featuredImage);
 
               // Transform scraped listing to match PropertyListingCard props
               const property = {
@@ -226,10 +223,10 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
               <Button 
                 variant="outline" 
                 onClick={handleRefreshFeed}
-                disabled={isEnriching || isScrapingActive}
+                disabled={isRefreshing || isScrapingActive}
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isEnriching ? 'animate-spin' : ''}`} />
-                {isEnriching ? 'Enriching...' : 'Refresh Feed'}
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh Feed'}
               </Button>
             </div>
           )}

@@ -50,7 +50,7 @@ export function processTrademeListing(rawData: any): ProcessedListing | null {
       photos = [rawData.listingfeaturedimg];
     }
 
-    // Create basic listing with only search result data
+    // Create basic listing with only search result data - no detailed fields
     const processed: ProcessedListing = {
       source_url: rawData.listingurl || '',
       source_site: 'Trade Me',
@@ -59,7 +59,7 @@ export function processTrademeListing(rawData: any): ProcessedListing | null {
       city: locationInfo.city || 'Auckland',
       district: district,
       price: 0, // Price not reliably available in search results
-      summary: null, // Summary not available in search results
+      summary: null, // Summary not available in search results  
       bedrooms: null, // Detailed data not available in search results
       bathrooms: null,
       floor_area: null,

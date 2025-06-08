@@ -2,7 +2,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { corsHeaders } from '../shared/cors.ts';
-import { AgentQLClient } from '../shared/agentql-client.ts';
+import { AgentQLSearchClient } from '../shared/agentql-search-client.ts';
 import { processTrademeListing } from './data-processor.ts';
 import { buildTradeeMeSearchUrl } from './url-builder.ts';
 
@@ -18,18 +18,18 @@ serve(async (req) => {
 
   try {
     const { filters = {} } = await req.json();
-    console.log('Starting Trade Me scraping with basic listing collection and filters:', filters);
+    console.log('Starting Trade Me basic scraping with filters:', filters);
 
-    // Initialize AgentQL client
-    const agentqlClient = new AgentQLClient();
+    // Initialize search client only
+    const searchClient = new AgentQLSearchClient();
     
     // Build search URL based on filters
     const searchUrl = buildTradeeMeSearchUrl(filters);
     console.log('Built search URL:', searchUrl);
 
-    // Scrape search results to get basic listing metadata only
+    // Scrape search results for basic property information only
     console.log('Scraping search results for basic property information...');
-    const searchResults = await agentqlClient.scrapeSearchResults(searchUrl);
+    const searchResults = await searchClient.scrapeSearchResults(searchUrl);
     
     if (!searchResults?.data?.properties || !Array.isArray(searchResults.data.properties)) {
       console.error('No properties found in search results');
@@ -57,7 +57,7 @@ serve(async (req) => {
         
         // Basic rate limiting between requests
         if (i > 0 && i % 10 === 0) {
-          await agentqlClient.rateLimitDelay();
+          await searchClient.rateLimitDelay();
         }
 
         // Process with basic search data only
@@ -106,14 +106,7 @@ serve(async (req) => {
               photos: listing.photos,
               listing_date: listing.listing_date,
               date_scraped: new Date().toISOString(),
-              status: 'new',
-              // AI fields will be populated during analysis stage
-              ai_score: null,
-              ai_est_profit: null,
-              ai_reno_cost: null,
-              ai_arv: null,
-              ai_confidence: null,
-              flip_potential: null
+              status: 'new'
             })
             .select()
             .single();
@@ -137,8 +130,7 @@ serve(async (req) => {
       message: `Basic scraping complete: found ${processedListings.length} listings, saved ${savedListings.length} new ones`,
       total_processed: processedListings.length,
       total_saved: savedListings.length,
-      search_url: searchUrl,
-      enrichment_note: 'Detailed property data and AI analysis will be performed during the analysis stage'
+      search_url: searchUrl
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
