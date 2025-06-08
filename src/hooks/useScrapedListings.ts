@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +11,7 @@ interface ScrapedListing {
   address: string;
   suburb: string | null;
   city: string | null;
+  district: string | null;
   price: number;
   summary: string | null;
   bedrooms: number | null;
@@ -29,23 +31,6 @@ interface ScrapedListing {
   user_action?: 'new' | 'saved' | 'dismissed' | 'imported';
 }
 
-// Map dropdown suburb names to possible database values
-const getSuburbVariations = (suburb: string): string[] => {
-  const variations: { [key: string]: string[] } = {
-    'Paraparaumu Beach': ['Paraparaumu Beach', 'Paraparaumu'],
-    'Paraparaumu': ['Paraparaumu', 'Paraparaumu Beach'],
-    'Waikanae Beach': ['Waikanae Beach', 'Waikanae'],
-    'Waikanae': ['Waikanae', 'Waikanae Beach'],
-    'Raumati Beach': ['Raumati Beach', 'Raumati'],
-    'Raumati South': ['Raumati South', 'Raumati'],
-    'Te Horo Beach': ['Te Horo Beach', 'Te Horo'],
-    'Otaki Beach': ['Otaki Beach', 'Otaki'],
-    'Pekapeka': ['Pekapeka', 'Peka Peka'],
-  };
-  
-  return variations[suburb] || [suburb];
-};
-
 export const useScrapedListings = (filters: SearchFilters) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -60,14 +45,16 @@ export const useScrapedListings = (filters: SearchFilters) => {
         .select('*')
         .order('date_scraped', { ascending: false });
 
-      // Apply filters
+      // Apply district filter first (this is the main fix)
+      if (filters.district) {
+        console.log(`Filtering by district: "${filters.district}"`);
+        query = query.eq('district', filters.district);
+      }
+
+      // Apply suburb filter - use exact match
       if (filters.suburb) {
-        // Get all possible variations of the suburb name
-        const suburbVariations = getSuburbVariations(filters.suburb);
-        console.log(`Suburb variations for "${filters.suburb}":`, suburbVariations);
-        
-        // Use 'in' filter to match any of the variations
-        query = query.in('suburb', suburbVariations);
+        console.log(`Filtering by suburb: "${filters.suburb}"`);
+        query = query.eq('suburb', filters.suburb);
       }
       
       if (filters.minPrice) {

@@ -452,6 +452,7 @@ export type Database = {
           city: string | null
           created_at: string
           date_scraped: string
+          district: string | null
           flip_potential: Database["public"]["Enums"]["flip_potential"] | null
           floor_area: number | null
           id: string
@@ -478,6 +479,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           date_scraped?: string
+          district?: string | null
           flip_potential?: Database["public"]["Enums"]["flip_potential"] | null
           floor_area?: number | null
           id?: string
@@ -504,6 +506,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           date_scraped?: string
+          district?: string | null
           flip_potential?: Database["public"]["Enums"]["flip_potential"] | null
           floor_area?: number | null
           id?: string
