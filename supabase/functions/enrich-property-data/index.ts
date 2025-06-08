@@ -1,4 +1,3 @@
-
 // deno-lint-ignore no-explicit-any
 // @ts-ignore: Deno global is available in Edge Functions
 declare const Deno: any;
@@ -20,15 +19,30 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Property data enrichment started with enhanced listing details collection');
+    console.log('Property data enrichment started with enhanced error handling and debugging');
 
-    // Check if AgentQL API key is configured
+    // Check if AgentQL API key is configured with detailed logging
     const agentqlKey = Deno.env.get('AGENTQL_API_KEY');
+    console.log('AgentQL API key check:', {
+      exists: !!agentqlKey,
+      length: agentqlKey?.length || 0,
+      prefix: agentqlKey?.substring(0, 8) + '...' || 'N/A'
+    });
+
     if (!agentqlKey) {
       console.error('AGENTQL_API_KEY not configured in environment');
       return new Response(JSON.stringify({
         success: false,
         error: 'AgentQL API key not configured',
+        message: 'Please add your AgentQL API key to Supabase Edge Function secrets',
+        troubleshooting: {
+          steps: [
+            '1. Go to Supabase Dashboard > Edge Functions > Settings',
+            '2. Add a new secret: AGENTQL_API_KEY',
+            '3. Enter your AgentQL API key value',
+            '4. Redeploy the function'
+          ]
+        },
         enriched: 0,
         skipped: 0
       }), {
@@ -36,16 +50,42 @@ serve(async (req) => {
       });
     }
 
-    // Initialize AgentQL client
+    // Initialize AgentQL client with enhanced error handling
     let agentqlClient;
     try {
       agentqlClient = new AgentQLPropertyClient();
       console.log('AgentQL client initialized successfully');
+
+      // Test connection before proceeding
+      const connectionTest = await agentqlClient.testConnection();
+      if (!connectionTest.success) {
+        console.error('AgentQL connection test failed:', connectionTest);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'AgentQL connection test failed',
+          message: connectionTest.message,
+          details: connectionTest.details,
+          enriched: 0,
+          skipped: 0
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log('AgentQL connection test passed');
+
     } catch (error) {
       console.error('Failed to initialize AgentQL client:', error);
       return new Response(JSON.stringify({
         success: false,
-        error: 'Failed to initialize AgentQL client: ' + error.message,
+        error: 'Failed to initialize AgentQL client',
+        message: error.message,
+        troubleshooting: {
+          possibleCauses: [
+            'Invalid API key format',
+            'API key too short',
+            'Environment variable not set correctly'
+          ]
+        },
         enriched: 0,
         skipped: 0
       }), {
@@ -83,7 +123,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Found ${listingsToEnrich.length} listings to enrich with detailed data`);
+    console.log(`Found ${listingsToEnrich.length} listings to enrich with enhanced debugging`);
 
     let enriched = 0;
     let skipped = 0;
@@ -91,9 +131,9 @@ serve(async (req) => {
 
     for (const listing of listingsToEnrich) {
       try {
-        console.log(`Enriching listing with enhanced details: ${listing.address} (${listing.source_url})`);
+        console.log(`Enriching listing with detailed debugging: ${listing.address} (${listing.source_url})`);
 
-        // Use AgentQL to scrape the individual property page with enhanced details
+        // Use AgentQL to scrape the individual property page with enhanced error handling
         const enhancedData = await agentqlClient.scrapePropertyPage(listing.source_url);
         
         if (!enhancedData) {
@@ -166,12 +206,22 @@ serve(async (req) => {
 
       } catch (error) {
         console.error('Error enriching listing:', error);
-        errors.push(`Error enriching ${listing.address}: ${error.message}`);
+        const errorMessage = `Error enriching ${listing.address}: ${error.message}`;
+        errors.push(errorMessage);
+        
+        // Log detailed error information
+        if (error.message.includes('401')) {
+          console.error('Authentication error detected - API key issue');
+        } else if (error.message.includes('429')) {
+          console.error('Rate limit error detected - slowing down requests');
+          await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
+        }
+        
         skipped++;
       }
     }
 
-    console.log(`Property enrichment complete: ${enriched} enriched, ${skipped} skipped, ${errors.length} errors`);
+    console.log(`Property enrichment complete with enhanced debugging: ${enriched} enriched, ${skipped} skipped, ${errors.length} errors`);
 
     return new Response(JSON.stringify({
       success: enriched > 0 || (enriched === 0 && skipped > 0),
@@ -179,7 +229,11 @@ serve(async (req) => {
       skipped: skipped,
       message: `Property enrichment complete: ${enriched} properties enriched with enhanced details, ${skipped} skipped`,
       errors: errors.length > 0 ? errors : undefined,
-      totalProcessed: listingsToEnrich.length
+      totalProcessed: listingsToEnrich.length,
+      debugging: {
+        agentqlConfigured: true,
+        connectionTested: true
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -190,7 +244,8 @@ serve(async (req) => {
       error: error.message,
       success: false,
       enriched: 0,
-      skipped: 0
+      skipped: 0,
+      stack: error.stack
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

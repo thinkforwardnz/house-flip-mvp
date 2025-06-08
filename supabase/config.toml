@@ -153,6 +153,9 @@ backend = "postgres"
 [functions.analyze-property]
 verify_jwt = false
 
+[functions.test-agentql]
+verify_jwt = false
+
 [functions.scrape-trademe]
 verify_jwt = false
 
