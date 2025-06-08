@@ -1,4 +1,5 @@
 
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +46,7 @@ export const useScrapedListings = (filters: SearchFilters) => {
         .select('*')
         .order('date_scraped', { ascending: false });
 
-      // Apply district filter first (this is the main fix)
+      // Apply district filter first
       if (filters.district) {
         console.log(`Filtering by district: "${filters.district}"`);
         query = query.eq('district', filters.district);
@@ -122,10 +123,12 @@ export const useScrapedListings = (filters: SearchFilters) => {
         })) as ScrapedListing[];
 
         console.log('Final listings with user actions:', listingsWithActions);
+        console.log(`Returned ${listingsWithActions.length} listings for district: ${filters.district}`);
         return listingsWithActions;
       }
 
       console.log('Returning listings without user actions:', data);
+      console.log(`Returned ${data?.length || 0} listings for district: ${filters.district}`);
       return data as ScrapedListing[];
     },
   });

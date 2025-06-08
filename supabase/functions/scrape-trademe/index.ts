@@ -1,257 +1,181 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { corsHeaders } from '../shared/cors.ts';
+import { supabase } from '../shared/supabase-client.ts';
+import { processTrademeListing } from './data-processor.ts';
 
-// deno-lint-ignore no-explicit-any
-// @ts-ignore: Deno global is available in Edge Functions
-declare const Deno: any;
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
+const APIFY_API_TOKEN = Deno.env.get('APIFY_API_TOKEN');
+const APIFY_ACTOR_ID = 'petfinder~trademe-scraper';
 
-import { corsHeaders } from './config.ts';
-import { ScrapingFilters } from './types.ts';
-import { AgentQLClient } from '../shared/agentql-client.ts';
-import { buildTradeeMeSearchUrl, extractSuburb } from './url-builder.ts';
-import { processSearchResults } from './data-processor.ts';
+if (!APIFY_API_TOKEN) {
+  console.warn('Apify API token is missing!');
+}
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-);
+// Helper function to run the Apify actor
+async function runApifyActor(filters: any) {
+  const payload = {
+    token: APIFY_API_TOKEN,
+    actorId: APIFY_ACTOR_ID,
+    input: {
+      ...filters,
+      extendOutputFunction: `async ({ item, label, request, log }) => {
+        // Add some custom fields based on the URL
+        const url = request.url;
+        item.url = url;
+        item.source_url = url;
+        return item;
+      }`,
+    },
+  };
 
-// Extract listing ID from TradeMe URL
-function extractListingIdFromUrl(url: string): string | null {
-  const match = url.match(/listing\/(\d+)/);
-  return match ? match[1] : null;
+  const response = await fetch('https://api.apify.com/v2/runs', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const run = await response.json();
+  console.log('Apify run started:', run.data.id);
+
+  // Wait for the actor to finish
+  const runResult = await waitForApifyRun(run.data.id);
+  return runResult;
+}
+
+// Helper function to wait for the Apify actor to finish
+async function waitForApifyRun(runId: string) {
+  while (true) {
+    const response = await fetch(`https://api.apify.com/v2/runs/${runId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const run = await response.json();
+
+    if (run.data.status === 'SUCCEEDED') {
+      console.log('Apify run succeeded:', runId);
+      return {
+        defaultDatasetId: run.data.defaultDatasetId,
+        defaultDatasetItems: await getDatasetItems(run.data.defaultDatasetId),
+      };
+    } else if (run.data.status === 'FAILED' || run.data.status === 'ABORTED') {
+      console.error('Apify run failed:', runId, run.data.error);
+      throw new Error(`Apify run failed: ${run.data.error}`);
+    } else {
+      console.log('Apify run still running, status:', run.data.status);
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds
+    }
+  }
+}
+
+// Helper function to get items from the Apify dataset
+async function getDatasetItems(datasetId: string) {
+  const response = await fetch(`https://api.apify.com/v2/datasets/${datasetId}/items?clean=1`, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const items = await response.json();
+  console.log(`Got ${items.length} items from dataset ${datasetId}`);
+  return items;
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const { filters = {} }: { filters: ScrapingFilters } = await req.json();
-    console.log('TradeMe scraper started with filters:', JSON.stringify(filters, null, 2));
+    const { filters = {} } = await req.json();
+    console.log('Starting Trade Me scraping with filters:', filters);
 
-    // Check if AgentQL API key is configured
-    const agentqlKey = Deno.env.get('AGENTQL_API_KEY');
-    if (!agentqlKey) {
-      console.error('AGENTQL_API_KEY not configured in environment');
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'AgentQL API key not configured',
-        scraped: 0,
-        skipped: 0,
-        source: 'TradeMe'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Run the Apify actor
+    const runResult = await runApifyActor(filters);
 
-    // Initialize AgentQL client
-    let agentqlClient;
-    try {
-      agentqlClient = new AgentQLClient();
-      console.log('AgentQL client initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize AgentQL client:', error);
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Failed to initialize AgentQL client: ' + error.message,
-        scraped: 0,
-        skipped: 0,
-        source: 'TradeMe'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Build TradeMe search URL and discover listing metadata
-    const searchUrl = buildTradeeMeSearchUrl(filters);
-    console.log('Discovering listings from:', searchUrl);
-
-    let searchResults;
-    try {
-      searchResults = await agentqlClient.scrapeSearchResults(searchUrl);
-      console.log('AgentQL search results received:', JSON.stringify(searchResults, null, 2));
-    } catch (error) {
-      console.error('AgentQL search query failed:', error);
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'AgentQL scraping failed: ' + error.message,
-        scraped: 0,
-        skipped: 0,
-        source: 'TradeMe',
-        url: searchUrl
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Process search results to get basic listing metadata
-    const listings = processSearchResults(searchResults);
-    console.log(`Discovered ${listings.length} listings:`, listings);
-
-    if (listings.length === 0) {
-      return new Response(JSON.stringify({
-        success: true,
-        scraped: 0,
-        skipped: 0,
-        source: 'TradeMe',
-        message: 'No listings found in search results',
-        searchUrl: searchUrl
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Store listings in database
-    let scraped = 0;
-    let skipped = 0;
-    const errors: string[] = [];
-
-    for (const listing of listings) {
-      try {
-        console.log(`Processing listing: ${listing.address} (${listing.url})`);
-        console.log(`Featured image for ${listing.address}: ${listing.featuredImage || 'none'}`);
-        
-        // Extract listing ID from URL for deduplication
-        const listingId = extractListingIdFromUrl(listing.url);
-        if (!listingId) {
-          console.warn(`Could not extract listing ID from URL: ${listing.url}`);
-          errors.push(`Failed to extract listing ID from ${listing.address}`);
-          continue;
+    // Process the scraped data with improved location parsing
+    const processedListings = [];
+    
+    if (runResult.defaultDatasetItems && Array.isArray(runResult.defaultDatasetItems)) {
+      for (const item of runResult.defaultDatasetItems) {
+        const processed = processTrademeListing(item);
+        if (processed) {
+          processedListings.push(processed);
         }
-
-        console.log(`Extracted listing ID: ${listingId} for ${listing.address}`);
-        
-        // Check if listing already exists using listing ID
-        const { data: existing, error: checkError } = await supabase
-          .from('scraped_listings')
-          .select('id, address')
-          .eq('source_url', listing.url)
-          .maybeSingle();
-
-        if (checkError) {
-          console.error('Error checking existing listing:', checkError);
-          errors.push(`Failed to check existing listing ${listing.address}: ${checkError.message}`);
-          continue;
-        }
-
-        if (existing) {
-          skipped++;
-          console.log(`Skipped existing listing: ${listing.address} (ID: ${listingId})`);
-          continue;
-        }
-
-        // Also check by source URL pattern to catch any duplicates with different URLs
-        const { data: existingByPattern, error: patternError } = await supabase
-          .from('scraped_listings')
-          .select('id, address, source_url')
-          .like('source_url', `%/listing/${listingId}%`)
-          .maybeSingle();
-
-        if (patternError) {
-          console.error('Error checking existing listing by pattern:', patternError);
-          // Continue processing - this is just an additional check
-        }
-
-        if (existingByPattern) {
-          skipped++;
-          console.log(`Skipped duplicate listing by ID pattern: ${listing.address} (ID: ${listingId})`);
-          console.log(`Existing URL: ${existingByPattern.source_url}, New URL: ${listing.url}`);
-          continue;
-        }
-
-        // Extract suburb from address
-        const suburb = extractSuburb(listing.address);
-        console.log(`Extracted suburb "${suburb}" from address "${listing.address}"`);
-
-        // Prepare photos array with featured image
-        const photos: string[] = [];
-        if (listing.featuredImage && listing.featuredImage.trim()) {
-          const imageUrl = listing.featuredImage.trim();
-          photos.push(imageUrl);
-          console.log(`Added featured image to photos array: ${imageUrl}`);
-        } else {
-          console.log(`No featured image available for ${listing.address}`);
-        }
-
-        // Insert new listing with proper default values including featured image
-        const listingData = {
-          source_url: listing.url,
-          address: listing.address,
-          suburb: suburb,
-          city: 'Wellington',
-          price: 0, // Required field with default
-          source_site: 'TradeMe',
-          summary: `Property listing from TradeMe: ${listing.address} (ID: ${listingId})`,
-          status: 'new' as const,
-          bedrooms: null,
-          bathrooms: null,
-          floor_area: null,
-          land_area: null,
-          photos: photos.length > 0 ? photos : null,
-          listing_date: null,
-          ai_score: null,
-          ai_est_profit: null,
-          ai_reno_cost: null,
-          ai_arv: null,
-          flip_potential: null,
-          ai_confidence: null
-        };
-
-        console.log('Inserting listing data:', listingData);
-
-        const { data: insertedListing, error: insertError } = await supabase
-          .from('scraped_listings')
-          .insert(listingData)
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error('Error inserting listing:', insertError);
-          errors.push(`Failed to save ${listing.address}: ${insertError.message}`);
-        } else {
-          scraped++;
-          console.log(`Successfully saved listing: ${listing.address} (ID: ${listingId}) with database ID: ${insertedListing.id} and ${photos.length} photos`);
-        }
-      } catch (error) {
-        console.error('Error processing listing:', error);
-        errors.push(`Error processing ${listing.address}: ${error.message}`);
       }
     }
 
-    console.log(`TradeMe scraping complete: ${scraped} saved, ${skipped} skipped, ${errors.length} errors`);
+    console.log(`Processed ${processedListings.length} Trade Me listings`);
 
-    // Log final results for debugging
-    const finalResults = {
-      success: scraped > 0 || (scraped === 0 && skipped > 0),
-      scraped: scraped,
-      skipped: skipped,
-      source: 'TradeMe',
-      url: searchUrl,
-      message: `TradeMe scraping complete: ${scraped} new listings saved, ${skipped} duplicates skipped`,
-      errors: errors.length > 0 ? errors : undefined,
-      totalProcessed: listings.length
-    };
+    // Save to database with improved district information
+    const savedListings = [];
+    
+    for (const listing of processedListings) {
+      try {
+        // Check if listing already exists
+        const { data: existing } = await supabase
+          .from('scraped_listings')
+          .select('id')
+          .eq('source_url', listing.source_url)
+          .single();
 
-    console.log('Final scraping results:', finalResults);
+        if (!existing) {
+          const { data: saved, error } = await supabase
+            .from('scraped_listings')
+            .insert({
+              source_url: listing.source_url,
+              source_site: listing.source_site,
+              address: listing.address,
+              suburb: listing.suburb,
+              city: listing.city,
+              district: listing.district, // Now properly set
+              price: listing.price,
+              summary: listing.summary,
+              bedrooms: listing.bedrooms,
+              bathrooms: listing.bathrooms,
+              floor_area: listing.floor_area,
+              land_area: listing.land_area,
+              photos: listing.photos,
+              listing_date: listing.listing_date,
+              date_scraped: new Date().toISOString(),
+              status: 'new'
+            })
+            .select()
+            .single();
 
-    return new Response(JSON.stringify(finalResults), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          if (error) {
+            console.error('Error saving listing:', error);
+          } else {
+            savedListings.push(saved);
+            console.log(`Saved listing with district: ${listing.district} for suburb: ${listing.suburb}`);
+          }
+        } else {
+          console.log('Listing already exists, skipping:', listing.source_url);
+        }
+      } catch (error) {
+        console.error('Error processing listing:', error);
+      }
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: `Scraped ${processedListings.length} listings, saved ${savedListings.length} new ones`,
+      total_processed: processedListings.length,
+      total_saved: savedListings.length
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('Error in TradeMe scraper:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      success: false,
-      scraped: 0,
-      skipped: 0,
-      source: 'TradeMe'
+    console.error('Trade Me scraping error:', error);
+    return new Response(JSON.stringify({
+      error: 'Scraping failed',
+      details: error.message
     }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });
