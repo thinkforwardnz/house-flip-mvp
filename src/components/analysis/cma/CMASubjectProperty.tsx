@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,11 +76,8 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
               updatedDealData.analysis_data !== null
               ? (updatedDealData.analysis_data as any)
               : undefined,
-            listing_details: updatedDealData.listing_details && 
-              typeof updatedDealData.listing_details === 'object' && 
-              updatedDealData.listing_details !== null
-              ? (updatedDealData.listing_details as any)
-              : undefined
+            // Keep the existing listing_details from the original deal since it's not in the database
+            listing_details: deal.listing_details
           };
           onDealUpdate(transformedDeal);
         }
