@@ -1,7 +1,7 @@
 
 export class AgentQLSearchClient {
   private apiKey: string;
-  private baseUrl = 'https://api.agentql.com/v1';
+  private baseUrl = 'https://api.agentql.com/v1/query-data';
 
   constructor() {
     const key = Deno.env.get('AGENTQL_API_KEY');
@@ -26,7 +26,7 @@ export class AgentQLSearchClient {
       }
       `;
 
-      const response = await fetch(`${this.baseUrl}/query-data`, {
+      const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
