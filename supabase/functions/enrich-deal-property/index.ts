@@ -68,7 +68,7 @@ serve(async (req) => {
             land_area: propertyData.land_area || deal.land_area,
             photos: propertyData.photos?.length > 0 ? propertyData.photos : deal.photos,
             description: propertyData.description || deal.description,
-            // Store additional listing details in a structured way
+            // Store detailed listing details in the new JSONB column
             listing_details: {
               title: propertyData.title,
               method: propertyData.method,
@@ -84,7 +84,8 @@ serve(async (req) => {
             bathrooms: enrichedData.bathrooms,
             floor_area: enrichedData.floor_area,
             land_area: enrichedData.land_area,
-            photos_count: enrichedData.photos?.length || 0
+            photos_count: enrichedData.photos?.length || 0,
+            listing_details: enrichedData.listing_details
           });
         }
       } catch (error) {

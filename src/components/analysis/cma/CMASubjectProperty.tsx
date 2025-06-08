@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,8 +77,11 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
               updatedDealData.analysis_data !== null
               ? (updatedDealData.analysis_data as any)
               : undefined,
-            // Keep the existing listing_details from the original deal since it's not in the database
-            listing_details: deal.listing_details
+            listing_details: updatedDealData.listing_details && 
+              typeof updatedDealData.listing_details === 'object' && 
+              updatedDealData.listing_details !== null
+              ? (updatedDealData.listing_details as any)
+              : undefined
           };
           onDealUpdate(transformedDeal);
         }
@@ -99,7 +103,7 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
     }
   };
 
-  // Get listing details if available
+  // Get listing details from the database
   const listingDetails = deal.listing_details || {};
 
   return (
@@ -131,6 +135,13 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
                 <span className="font-medium text-navy-dark">Address:</span>
                 <span className="text-navy">{deal.address}</span>
               </div>
+              
+              {listingDetails.title && (
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-navy-dark">Listing Title:</span>
+                  <span className="text-navy">{listingDetails.title}</span>
+                </div>
+              )}
               
               {listingDetails.type && (
                 <div className="flex items-center gap-2">

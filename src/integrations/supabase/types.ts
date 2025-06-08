@@ -79,6 +79,7 @@ export type Database = {
           floor_area: number | null
           id: string
           land_area: number | null
+          listing_details: Json | null
           market_analysis: Json | null
           notes: string | null
           photos: string[] | null
@@ -107,6 +108,7 @@ export type Database = {
           floor_area?: number | null
           id?: string
           land_area?: number | null
+          listing_details?: Json | null
           market_analysis?: Json | null
           notes?: string | null
           photos?: string[] | null
@@ -135,6 +137,7 @@ export type Database = {
           floor_area?: number | null
           id?: string
           land_area?: number | null
+          listing_details?: Json | null
           market_analysis?: Json | null
           notes?: string | null
           photos?: string[] | null
