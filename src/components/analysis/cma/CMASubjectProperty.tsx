@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Home, MapPin, Ruler, RefreshCw, Car, Wifi } from 'lucide-react';
+import { Home, MapPin, Ruler, RefreshCw, Car, Wifi, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Deal } from '@/types/analysis';
@@ -13,27 +13,46 @@ interface CMASubjectPropertyProps {
 }
 
 const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => {
-  const [isEnriching, setIsEnriching] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
-  const handleEnrichProperty = async () => {
-    setIsEnriching(true);
+  const handleAnalyzeAndEnrich = async () => {
+    setIsAnalyzing(true);
     try {
-      console.log('Starting property enrichment for deal:', deal.id);
+      console.log('Starting property analysis and enrichment for deal:', deal.id);
       
-      const { data, error } = await supabase.functions.invoke('enrich-deal-property', {
-        body: { dealId: deal.id }
+      // First, try to find a scraped listing for this address
+      const { data: scrapedListing } = await supabase
+        .from('scraped_listings')
+        .select('id, source_url')
+        .eq('address', deal.address)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!scrapedListing) {
+        toast({
+          title: "No Listing Found",
+          description: "No scraped listing found for this property address to analyze",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Call the new analysis and enrichment function
+      const { data, error } = await supabase.functions.invoke('analyze-and-enrich-property', {
+        body: { listingId: scrapedListing.id }
       });
 
       if (error) {
-        console.error('Enrichment error:', error);
+        console.error('Analysis and enrichment error:', error);
         throw error;
       }
 
       if (data.success) {
         toast({
-          title: "Property Enriched",
-          description: "Property data has been updated with latest information",
+          title: "Property Analyzed",
+          description: "Property has been analyzed and enriched with detailed information and AI insights",
         });
 
         // Fetch the updated deal data
@@ -87,19 +106,19 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
         }
       } else {
         toast({
-          title: "No New Data",
-          description: data.message || "No additional property data found",
+          title: "Analysis Incomplete",
+          description: data.message || "Could not collect additional property data",
         });
       }
     } catch (error: any) {
-      console.error('Error enriching property:', error);
+      console.error('Error analyzing and enriching property:', error);
       toast({
-        title: "Enrichment Failed",
-        description: error.message || "Failed to enrich property data",
+        title: "Analysis Failed",
+        description: error.message || "Failed to analyze and enrich property data",
         variant: "destructive",
       });
     } finally {
-      setIsEnriching(false);
+      setIsAnalyzing(false);
     }
   };
 
@@ -116,14 +135,14 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
               Subject Property Details
             </CardTitle>
             <Button
-              onClick={handleEnrichProperty}
-              disabled={isEnriching}
+              onClick={handleAnalyzeAndEnrich}
+              disabled={isAnalyzing}
               variant="outline"
               size="sm"
               className="rounded-xl"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isEnriching ? 'animate-spin' : ''}`} />
-              {isEnriching ? 'Enriching...' : 'Refresh Data'}
+              <TrendingUp className={`h-4 w-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
+              {isAnalyzing ? 'Analyzing...' : 'Analyze & Enrich'}
             </Button>
           </div>
         </CardHeader>

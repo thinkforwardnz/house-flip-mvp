@@ -55,18 +55,19 @@ export const usePropertyEnrichment = () => {
     setProgress({ enriched: 0, skipped: 0, total: 0 });
 
     try {
-      console.log('Starting property data enrichment...');
+      console.log('Starting batch property enrichment...');
 
+      // Use the existing enrich-property-data function for batch processing
       const { data, error } = await supabase.functions.invoke('enrich-property-data', {
         body: {}
       });
 
       if (error) {
-        console.error('Enrichment error:', error);
+        console.error('Batch enrichment error:', error);
         throw error;
       }
 
-      console.log('Enrichment response:', data);
+      console.log('Batch enrichment response:', data);
 
       setProgress({
         enriched: data.enriched || 0,
@@ -89,7 +90,7 @@ export const usePropertyEnrichment = () => {
 
       return data;
     } catch (error: any) {
-      console.error('Error during enrichment:', error);
+      console.error('Error during batch enrichment:', error);
       toast({
         title: "Enrichment Error",
         description: error.message || "Failed to start property enrichment",
