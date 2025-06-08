@@ -7,7 +7,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
 import { corsHeaders } from '../shared/cors.ts';
-import { AgentQLClient } from '../shared/agentql-client.ts';
+import { AgentQLPropertyClient } from '../shared/agentql-property-client.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -39,7 +39,7 @@ serve(async (req) => {
     // Initialize AgentQL client
     let agentqlClient;
     try {
-      agentqlClient = new AgentQLClient();
+      agentqlClient = new AgentQLPropertyClient();
       console.log('AgentQL client initialized successfully');
     } catch (error) {
       console.error('Failed to initialize AgentQL client:', error);
