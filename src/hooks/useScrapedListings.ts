@@ -1,5 +1,3 @@
-
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -36,7 +34,7 @@ export const useScrapedListings = (filters: SearchFilters) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: listings, isLoading, error } = useQuery({
+  const { data: listings, isLoading, error, refetch } = useQuery({
     queryKey: ['scraped-listings', filters],
     queryFn: async () => {
       console.log('Fetching scraped listings with filters:', filters);
@@ -285,6 +283,7 @@ export const useScrapedListings = (filters: SearchFilters) => {
     listings: listings || [],
     isLoading,
     error,
+    refetch,
     saveListing: saveListingMutation.mutate,
     dismissListing: dismissListingMutation.mutate,
     importAsDeal: importAsDealMutation.mutate,
