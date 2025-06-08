@@ -90,6 +90,16 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/analysis/:dealId"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <PropertyAnalysis />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/offer"
         element={
           <ProtectedRoute>

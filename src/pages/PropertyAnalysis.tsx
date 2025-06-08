@@ -1,56 +1,31 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React from 'react';
+import { useParams } from 'react-router-dom';
 import PropertySelector from '@/components/PropertySelector';
 import { useSelectedDeal } from '@/hooks/useSelectedDeal';
-import AnalysisForm from '@/components/AnalysisForm';
-import AnalysisOverviewCards from '@/components/AnalysisOverviewCards';
-import FinancialAnalysisCard from '@/components/FinancialAnalysisCard';
-import PropertyNotesCard from '@/components/PropertyNotesCard';
+import { useDeals } from '@/hooks/useDeals';
+import AnalysisDashboard from '@/components/AnalysisDashboard';
+import PropertyAnalysisDetail from '@/components/PropertyAnalysisDetail';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
 
 const PropertyAnalysis = () => {
+  const { dealId } = useParams();
   const { selectedDeal, selectedDealId, selectDeal, isLoading } = useSelectedDeal('Analysis');
+  const { updateDeal } = useDeals();
 
-  // Analysis form state
-  const [analysisData, setAnalysisData] = useState({
-    offerPrice: selectedDeal?.purchase_price || 0,
-    renoEstimate: 50000,
-    timeline: 6,
-    holdingCosts: 2500,
-    sellingCosts: 25000,
-    addBedroom: false,
-    bedroomCost: 15000,
-    notes: ''
-  });
+  // If we have a specific dealId in the URL, use that for detailed analysis
+  const currentDealId = dealId || selectedDealId;
+  const currentDeal = dealId 
+    ? useDeals().deals.find(d => d.id === dealId)
+    : selectedDeal;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NZ', {
-      style: 'currency',
-      currency: 'NZD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'low': return 'text-green-600 bg-green-50';
-      case 'medium': return 'text-yellow-600 bg-yellow-50';
-      case 'high': return 'text-red-600 bg-red-50';
-      default: return 'text-gray-600 bg-gray-50';
+  const handleUpdateDeal = (updates: any) => {
+    if (currentDeal) {
+      updateDeal({ id: currentDeal.id, ...updates });
     }
   };
-
-  // Update analysis data when selected deal changes
-  React.useEffect(() => {
-    if (selectedDeal) {
-      setAnalysisData(prev => ({
-        ...prev,
-        offerPrice: selectedDeal.purchase_price || 0
-      }));
-    }
-  }, [selectedDeal]);
 
   if (isLoading) {
     return (
@@ -68,68 +43,48 @@ const PropertyAnalysis = () => {
     );
   }
 
-  if (!selectedDeal) {
-    return (
-      <div className="max-w-7xl mx-auto space-y-6">
-        <PropertySelector 
-          currentDealId={selectedDealId}
-          onDealSelect={selectDeal}
-          currentStage="Analysis"
-        />
-        <Card className="bg-white shadow-lg rounded-2xl border-0">
-          <CardContent className="p-12 text-center">
-            <MapPin className="h-16 w-16 text-gray-300 mx-auto mb-6" />
-            <h3 className="text-lg font-semibold text-navy-dark mb-2">No Properties in Analysis</h3>
-            <p className="text-navy mb-6">There are no properties currently in the analysis stage.</p>
-            <Button onClick={() => window.location.href = '/find'} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
-              Find Properties
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Property Selector */}
-      <PropertySelector 
-        currentDealId={selectedDealId}
-        onDealSelect={selectDeal}
-        currentStage="Analysis"
-      />
-
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Property Analysis</h1>
-        <p className="text-blue-100 text-lg">AI-powered analysis and financial modeling</p>
+        <p className="text-blue-100 text-lg">
+          {dealId ? 'Detailed property analysis and financial modeling' : 'AI-powered analysis dashboard'}
+        </p>
       </div>
 
-      {/* Analysis Overview Cards */}
-      <AnalysisOverviewCards 
-        selectedDeal={selectedDeal}
-        formatCurrency={formatCurrency}
-        getRiskColor={getRiskColor}
-      />
-
-      {/* Financial Analysis */}
-      <FinancialAnalysisCard 
-        selectedDeal={selectedDeal}
-        formatCurrency={formatCurrency}
-      />
-
-      {/* Property Notes */}
-      <PropertyNotesCard selectedDeal={selectedDeal} />
-
-      {/* Analysis Form */}
-      <Card className="bg-white shadow-lg rounded-2xl border-0">
-        <CardContent className="p-6">
-          <AnalysisForm 
-            data={analysisData}
-            onChange={setAnalysisData}
+      {/* Show detailed analysis if dealId is provided, otherwise show dashboard */}
+      {dealId ? (
+        <>
+          {/* Property Selector for detailed view */}
+          <PropertySelector 
+            currentDealId={currentDealId}
+            onDealSelect={selectDeal}
+            currentStage="Analysis"
           />
-        </CardContent>
-      </Card>
+
+          {currentDeal ? (
+            <PropertyAnalysisDetail 
+              deal={currentDeal}
+              onUpdateDeal={handleUpdateDeal}
+            />
+          ) : (
+            <Card className="bg-white shadow-lg rounded-2xl border-0">
+              <CardContent className="p-12 text-center">
+                <MapPin className="h-16 w-16 text-gray-300 mx-auto mb-6" />
+                <h3 className="text-lg font-semibold text-navy-dark mb-2">Property Not Found</h3>
+                <p className="text-navy mb-6">The requested property could not be found in the analysis stage.</p>
+                <Button onClick={() => window.location.href = '/analysis'} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
+                  Back to Analysis Dashboard
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      ) : (
+        // Show analysis dashboard
+        <AnalysisDashboard />
+      )}
     </div>
   );
 };
