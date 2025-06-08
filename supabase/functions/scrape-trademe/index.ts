@@ -1,7 +1,13 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { corsHeaders } from '../shared/cors.ts';
-import { supabase } from '../shared/supabase-client.ts';
 import { processTrademeListing } from './data-processor.ts';
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+);
 
 const APIFY_API_TOKEN = Deno.env.get('APIFY_API_TOKEN');
 const APIFY_ACTOR_ID = 'petfinder~trademe-scraper';
