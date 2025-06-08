@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, Plus, X, ExternalLink, Bed, Bath, Home, MapPin, CheckCircle } from 'lucide-react';
+import { Heart, Plus, X, ExternalLink, Bed, Bath, Home, MapPin, CheckCircle, BarChart3 } from 'lucide-react';
 
 interface PropertyListingCardProps {
   property: {
@@ -29,7 +29,7 @@ interface PropertyListingCardProps {
     source: string;
     listedDate: string;
   };
-  onImportAsDeal: () => void;
+  onAnalyse: () => void;
   onSaveForLater: () => void;
   onDismiss: () => void;
   isLoading?: boolean;
@@ -38,7 +38,7 @@ interface PropertyListingCardProps {
 
 const PropertyListingCard = ({ 
   property, 
-  onImportAsDeal, 
+  onAnalyse, 
   onSaveForLater, 
   onDismiss, 
   isLoading = false,
@@ -171,12 +171,12 @@ const PropertyListingCard = ({
         <div className="flex flex-col gap-2 w-full">
           <div className="flex gap-2">
             <Button 
-              onClick={onImportAsDeal}
+              onClick={onAnalyse}
               disabled={isLoading || userAction === 'imported'}
               className="flex-1 bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-xs h-8"
             >
-              <Plus className="h-3 w-3 mr-1" />
-              {userAction === 'imported' ? 'Imported' : 'Import as Deal'}
+              <BarChart3 className="h-3 w-3 mr-1" />
+              {userAction === 'imported' ? 'Analysed' : 'Analyse'}
             </Button>
             <Button 
               onClick={onSaveForLater}

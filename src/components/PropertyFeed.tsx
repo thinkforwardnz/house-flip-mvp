@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import PropertyListingCard from '@/components/PropertyListingCard';
 import { Button } from '@/components/ui/button';
@@ -12,9 +11,10 @@ import { SearchFilters } from '@/types/filters';
 
 interface PropertyFeedProps {
   filters: SearchFilters;
+  onSwitchToSavedTab?: () => void;
 }
 
-const PropertyFeed = ({ filters }: PropertyFeedProps) => {
+const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
   const {
     listings,
     isLoading,
@@ -52,6 +52,16 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
 
   const handleDismiss = (listing: any) => {
     dismissListing(listing.id);
+  };
+
+  const handleAnalyse = (listing: any) => {
+    importAsDeal(listing);
+    // Switch to saved properties tab after analysis
+    if (onSwitchToSavedTab) {
+      setTimeout(() => {
+        onSwitchToSavedTab();
+      }, 1000); // Small delay to allow the import to complete
+    }
   };
 
   const handleSearchProperties = () => {
@@ -200,7 +210,7 @@ const PropertyFeed = ({ filters }: PropertyFeedProps) => {
                 <PropertyListingCard
                   key={listing.id}
                   property={property}
-                  onImportAsDeal={() => handleImportAsDeal(listing)}
+                  onAnalyse={() => handleAnalyse(listing)}
                   onSaveForLater={() => handleSaveForLater(listing)}
                   onDismiss={() => handleDismiss(listing)}
                   isLoading={isSaving || isDismissing || isImporting}

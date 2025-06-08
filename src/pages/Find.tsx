@@ -9,6 +9,7 @@ import ScrapingHistoryPanel from '@/components/ScrapingHistoryPanel';
 import { SearchFilters } from '@/types/filters';
 
 const Find = () => {
+  const [activeTab, setActiveTab] = useState('feed');
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     region: '',
     district: '',
@@ -26,6 +27,10 @@ const Find = () => {
     openHomesOnly: false,
     newHomesOnly: false,
   });
+
+  const handleSwitchToSavedTab = () => {
+    setActiveTab('saved');
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -51,7 +56,7 @@ const Find = () => {
       {/* Main Content Tabs */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">
         <CardContent className="p-6">
-          <Tabs defaultValue="feed" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-6">
               <TabsTrigger value="feed">Property Feed</TabsTrigger>
               <TabsTrigger value="saved">Saved Properties</TabsTrigger>
@@ -59,7 +64,10 @@ const Find = () => {
             </TabsList>
             
             <TabsContent value="feed">
-              <PropertyFeed filters={searchFilters} />
+              <PropertyFeed 
+                filters={searchFilters} 
+                onSwitchToSavedTab={handleSwitchToSavedTab}
+              />
             </TabsContent>
             
             <TabsContent value="saved">
