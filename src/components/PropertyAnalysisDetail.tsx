@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { 
   MapPin, 
   Home, 
@@ -32,6 +33,8 @@ interface PropertyAnalysisDetailProps {
 const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailProps) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState('');
+  const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NZ', {
@@ -99,20 +102,114 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
 
   const handleRunAnalysis = async () => {
     setIsAnalyzing(true);
-    // Simulate analysis process
-    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Mock analysis results
-    const mockARV = deal.purchase_price ? deal.purchase_price * 1.3 : 800000;
-    const mockProfit = mockARV * 0.15;
-    
-    onUpdateDeal({
-      target_sale_price: mockARV,
-      current_profit: mockProfit,
-      current_risk: 'medium'
-    });
-    
-    setIsAnalyzing(false);
+    try {
+      // Step 1: Market Analysis
+      setAnalysisStep('Running market analysis...');
+      console.log('Starting market analysis for deal:', deal.id);
+      
+      const marketResponse = await supabase.functions.invoke('market-analysis', {
+        body: {
+          dealId: deal.id,
+          address: deal.address,
+          suburb: deal.suburb,
+          city: deal.city,
+          bedrooms: deal.bedrooms,
+          bathrooms: deal.bathrooms
+        }
+      });
+
+      if (marketResponse.error) {
+        console.error('Market analysis error:', marketResponse.error);
+        throw new Error(`Market analysis failed: ${marketResponse.error.message}`);
+      }
+
+      // Step 2: Property Enrichment
+      setAnalysisStep('Enriching property data...');
+      console.log('Starting property enrichment for deal:', deal.id);
+      
+      const enrichResponse = await supabase.functions.invoke('enrich-property-analysis', {
+        body: {
+          dealId: deal.id,
+          address: deal.address,
+          coordinates: deal.coordinates
+        }
+      });
+
+      if (enrichResponse.error) {
+        console.error('Property enrichment error:', enrichResponse.error);
+        // Continue with analysis even if enrichment fails
+      }
+
+      // Step 3: Renovation Analysis
+      setAnalysisStep('Analyzing renovation requirements...');
+      console.log('Starting renovation analysis for deal:', deal.id);
+      
+      const renovationResponse = await supabase.functions.invoke('renovation-analysis', {
+        body: {
+          dealId: deal.id,
+          photos: deal.photos || [],
+          propertyDescription: deal.description || deal.summary,
+          bedrooms: deal.bedrooms,
+          bathrooms: deal.bathrooms,
+          floorArea: deal.floor_area
+        }
+      });
+
+      if (renovationResponse.error) {
+        console.error('Renovation analysis error:', renovationResponse.error);
+        throw new Error(`Renovation analysis failed: ${renovationResponse.error.message}`);
+      }
+
+      // Step 4: Risk Assessment
+      setAnalysisStep('Performing risk assessment...');
+      console.log('Starting risk assessment for deal:', deal.id);
+      
+      const riskResponse = await supabase.functions.invoke('risk-assessment', {
+        body: {
+          dealId: deal.id
+        }
+      });
+
+      if (riskResponse.error) {
+        console.error('Risk assessment error:', riskResponse.error);
+        throw new Error(`Risk assessment failed: ${riskResponse.error.message}`);
+      }
+
+      // Fetch updated deal data
+      setAnalysisStep('Finalizing analysis...');
+      const { data: updatedDeal, error: fetchError } = await supabase
+        .from('deals')
+        .select('*')
+        .eq('id', deal.id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching updated deal:', fetchError);
+        throw new Error('Failed to fetch updated deal data');
+      }
+
+      // Update the deal in the parent component
+      onUpdateDeal(updatedDeal);
+
+      toast({
+        title: "Analysis Complete",
+        description: "Property analysis has been completed successfully.",
+      });
+
+      console.log('Analysis completed successfully for deal:', deal.id);
+      
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "An error occurred during analysis.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+      setAnalysisStep('');
+    }
   };
 
   return (
@@ -150,6 +247,17 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
               </Button>
             </div>
           </div>
+
+          {/* Show analysis progress */}
+          {isAnalyzing && (
+            <div className="bg-blue-50 p-4 rounded-xl mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">{analysisStep}</span>
+              </div>
+              <Progress value={75} className="h-2" />
+            </div>
+          )}
 
           {/* Progress Overview */}
           <div className="bg-gray-50 p-4 rounded-xl">
