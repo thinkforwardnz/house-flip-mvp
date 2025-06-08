@@ -11,9 +11,10 @@ import type { Deal } from '@/types/analysis';
 interface CMATabProps {
   deal: Deal;
   formatCurrency: (amount: number) => string;
+  onDealUpdate?: (updatedDeal: Deal) => void;
 }
 
-const CMATab = ({ deal, formatCurrency }: CMATabProps) => {
+const CMATab = ({ deal, formatCurrency, onDealUpdate }: CMATabProps) => {
   const [activeView, setActiveView] = useState('overview');
 
   // Calculate key metrics
@@ -80,7 +81,10 @@ const CMATab = ({ deal, formatCurrency }: CMATabProps) => {
         </TabsContent>
 
         <TabsContent value="subject" className="space-y-6">
-          <CMASubjectProperty deal={deal} />
+          <CMASubjectProperty 
+            deal={deal} 
+            onDealUpdate={onDealUpdate}
+          />
         </TabsContent>
 
         <TabsContent value="comparables" className="space-y-6">

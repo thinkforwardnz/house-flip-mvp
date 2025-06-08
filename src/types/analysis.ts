@@ -1,4 +1,3 @@
-
 export interface RiskFactor {
   level: 'low' | 'medium' | 'high';
   score: number;
@@ -78,21 +77,55 @@ export interface MarketData {
 export interface Deal {
   id: string;
   address: string;
-  suburb?: string;
-  city?: string;
+  suburb: string;
+  city: string;
+  pipeline_stage: 'Analysis' | 'Offer' | 'Under Contract' | 'Reno' | 'Listed' | 'Sold';
+  current_profit: number;
+  current_risk: 'low' | 'medium' | 'high';
+  notes: string;
+  purchase_price: number;
+  target_sale_price: number;
+  created_at: string;
+  updated_at: string;
   bedrooms?: number;
   bathrooms?: number;
   floor_area?: number;
   land_area?: number;
-  purchase_price?: number;
-  target_sale_price?: number;
-  current_profit?: number;
-  current_risk?: 'low' | 'medium' | 'high';
   photos?: string[];
-  coordinates?: any;
   description?: string;
-  market_analysis?: MarketData;
-  renovation_analysis?: RenovationAnalysis;
-  risk_assessment?: RiskAssessment;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+  market_analysis?: {
+    analysis?: {
+      estimated_arv?: number;
+      market_confidence?: number;
+      price_per_sqm?: number;
+      market_trend?: string;
+      location_score?: number;
+    };
+    comparables?: Comparable[];
+  };
+  renovation_analysis?: {
+    total_cost?: number;
+    breakdown?: RenovationItem[];
+    timeline?: number;
+    complexity?: 'low' | 'medium' | 'high';
+  };
+  risk_assessment?: {
+    overall_risk_score?: number;
+    risk_factors?: RiskFactor[];
+    recommendations?: string[];
+  };
   analysis_data?: any;
+  listing_details?: {
+    title?: string;
+    method?: string;
+    type?: string;
+    parking?: string;
+    internet?: string;
+    other_features?: string;
+    date?: string;
+  };
 }

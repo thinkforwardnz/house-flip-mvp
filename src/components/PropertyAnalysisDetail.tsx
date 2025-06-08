@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -222,6 +221,10 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
     }
   };
 
+  const handleDealUpdate = (updatedDeal: Deal) => {
+    onUpdateDeal(updatedDeal);
+  };
+
   return (
     <div className="space-y-6">
       {/* Property Header */}
@@ -266,7 +269,11 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
             </TabsContent>
 
             <TabsContent value="cma">
-              <CMATab deal={deal} formatCurrency={formatCurrency} />
+              <CMATab 
+                deal={deal} 
+                formatCurrency={formatCurrency}
+                onDealUpdate={handleDealUpdate}
+              />
             </TabsContent>
 
             <TabsContent value="renovation">
