@@ -13,12 +13,12 @@ import { MapPin } from 'lucide-react';
 const PropertyAnalysis = () => {
   const { dealId } = useParams();
   const { selectedDeal, selectedDealId, selectDeal, isLoading } = useSelectedDeal('Analysis');
-  const { updateDeal } = useDeals();
+  const { deals, updateDeal } = useDeals();
 
-  // If we have a specific dealId in the URL, use that for detailed analysis
+  // Always call useDeals once, then find the deal
   const currentDealId = dealId || selectedDealId;
   const currentDeal = dealId 
-    ? useDeals().deals.find(d => d.id === dealId)
+    ? deals.find(d => d.id === dealId)
     : selectedDeal;
 
   const handleUpdateDeal = (updates: any) => {
