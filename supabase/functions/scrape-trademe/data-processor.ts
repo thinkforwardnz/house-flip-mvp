@@ -17,6 +17,12 @@ export interface ProcessedListing {
   photos: string[] | null;
   listing_date: string | null;
   ai_analysis?: any;
+  // Enhanced listing details
+  listing_title?: string | null;
+  listing_method?: string | null;
+  listing_type?: string | null;
+  parking_spaces?: number | null;
+  other_features?: string | null;
 }
 
 export function processTrademeListing(rawData: any): ProcessedListing | null {
@@ -25,7 +31,8 @@ export function processTrademeListing(rawData: any): ProcessedListing | null {
       address: rawData.address,
       hasDescription: !!rawData.description,
       hasPhotos: Array.isArray(rawData.photos) ? rawData.photos.length : 0,
-      hasAiAnalysis: !!rawData.ai_analysis
+      hasAiAnalysis: !!rawData.ai_analysis,
+      hasEnhancedDetails: !!(rawData.title || rawData.method || rawData.type)
     });
 
     if (!rawData || !rawData.address) {
@@ -80,15 +87,30 @@ export function processTrademeListing(rawData: any): ProcessedListing | null {
       summary = cleanTextValue(rawData.summary);
     }
 
-    // Process property features if available
-    if (Array.isArray(rawData.property_features) && rawData.property_features.length > 0) {
-      const featuresText = rawData.property_features.join(', ');
+    // Process enhanced features
+    if (rawData.other_features) {
+      const featuresText = Array.isArray(rawData.other_features) 
+        ? rawData.other_features.join(', ') 
+        : rawData.other_features;
       if (summary) {
         summary += `\n\nFeatures: ${featuresText}`;
       } else {
         summary = `Features: ${featuresText}`;
       }
     }
+
+    // Process property features if available (legacy support)
+    if (Array.isArray(rawData.property_features) && rawData.property_features.length > 0) {
+      const featuresText = rawData.property_features.join(', ');
+      if (summary) {
+        summary += `\n\nAdditional Features: ${featuresText}`;
+      } else {
+        summary = `Features: ${featuresText}`;
+      }
+    }
+
+    // Parse parking information
+    const parkingSpaces = rawData.parking ? parseNumericValue(rawData.parking) : null;
 
     const processed: ProcessedListing = {
       source_url: rawData.url || rawData.listingurl || rawData.source_url || '',
@@ -104,8 +126,14 @@ export function processTrademeListing(rawData: any): ProcessedListing | null {
       floor_area: parseNumericValue(rawData.floor_area),
       land_area: parseNumericValue(rawData.land_area),
       photos: photos,
-      listing_date: rawData.listing_date || null,
+      listing_date: rawData.date || rawData.listing_date || null,
       ai_analysis: rawData.ai_analysis || null,
+      // Enhanced listing details
+      listing_title: cleanTextValue(rawData.title),
+      listing_method: cleanTextValue(rawData.method),
+      listing_type: cleanTextValue(rawData.type),
+      parking_spaces: parkingSpaces,
+      other_features: cleanTextValue(rawData.other_features),
     };
 
     console.log('Successfully processed Trade Me listing:', {
@@ -116,6 +144,7 @@ export function processTrademeListing(rawData: any): ProcessedListing | null {
       photos_count: processed.photos?.length || 0,
       has_summary: !!processed.summary,
       has_ai_analysis: !!processed.ai_analysis,
+      has_enhanced_details: !!(processed.listing_title || processed.listing_method),
       district: processed.district
     });
 
@@ -137,6 +166,9 @@ function parseNumericValue(value: any): number | null {
 // Helper function to clean text values
 function cleanTextValue(value: any): string | null {
   if (!value) return null;
+  if (Array.isArray(value)) {
+    return value.join(', ').trim() || null;
+  }
   const cleaned = value.toString().trim();
   return cleaned.length > 0 ? cleaned : null;
 }

@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { corsHeaders } from '../shared/cors.ts';
@@ -93,7 +92,7 @@ serve(async (req) => {
 
   try {
     const { filters = {} } = await req.json();
-    console.log('Starting Trade Me scraping with AgentQL and filters:', filters);
+    console.log('Starting Trade Me scraping with enhanced AgentQL listing details and filters:', filters);
 
     // Initialize AgentQL client
     const agentqlClient = new AgentQLClient();
@@ -120,9 +119,9 @@ serve(async (req) => {
 
     console.log(`Found ${searchResults.data.properties.length} properties in search results`);
 
-    // Stage 2: Process each property for enrichment
+    // Stage 2: Process each property for enrichment with enhanced details
     const processedListings = [];
-    const maxListings = 20; // Limit for initial implementation
+    const maxListings = 15; // Reduced for more detailed processing
     
     for (let i = 0; i < Math.min(searchResults.data.properties.length, maxListings); i++) {
       const property = searchResults.data.properties[i];
@@ -135,8 +134,8 @@ serve(async (req) => {
           await agentqlClient.rateLimitDelay();
         }
 
-        // Stage 2a: Get detailed property page data
-        let enrichedData = {
+        // Stage 2a: Get detailed property page data with enhanced listing details
+        let enhancedData = {
           listingid: property.listingid,
           listingurl: property.listingurl,
           listingaddress: property.listingaddress,
@@ -144,20 +143,29 @@ serve(async (req) => {
           photos: property.listingfeaturedimg ? [property.listingfeaturedimg] : [],
         };
 
-        // If we have a property URL, scrape the individual page for more details
+        // If we have a property URL, scrape the individual page for enhanced details
         if (property.listingurl) {
           try {
             const propertyPageData = await agentqlClient.scrapePropertyPage(property.listingurl);
             
             if (propertyPageData) {
-              enrichedData = {
-                ...enrichedData,
+              enhancedData = {
+                ...enhancedData,
                 ...propertyPageData,
                 // Merge photos, prioritizing property page photos
                 photos: propertyPageData.photos?.length > 0 
                   ? propertyPageData.photos 
-                  : enrichedData.photos
+                  : enhancedData.photos
               };
+              console.log(`Enhanced data collected for ${property.listingaddress}:`, {
+                hasTitle: !!propertyPageData.title,
+                hasDescription: !!propertyPageData.description,
+                photosCount: propertyPageData.photos?.length || 0,
+                bedrooms: propertyPageData.bedrooms,
+                bathrooms: propertyPageData.bathrooms,
+                floorArea: propertyPageData.floor_area,
+                landArea: propertyPageData.land_area
+              });
             }
           } catch (pageError) {
             console.error(`Error scraping property page for ${property.listingurl}:`, pageError);
@@ -167,14 +175,14 @@ serve(async (req) => {
 
         // Stage 2b: AI analysis of description if available
         let aiAnalysis = null;
-        if (enrichedData.description || enrichedData.summary) {
-          const description = enrichedData.description || enrichedData.summary;
+        if (enhancedData.description || enhancedData.summary) {
+          const description = enhancedData.description || enhancedData.summary;
           aiAnalysis = await analyzePropertyDescription(description, property.listingaddress);
         }
 
-        // Stage 3: Process and normalize the data
+        // Stage 3: Process and normalize the enhanced data
         const processed = processTrademeListing({
-          ...enrichedData,
+          ...enhancedData,
           url: property.listingurl,
           address: property.listingaddress,
           ai_analysis: aiAnalysis
@@ -190,9 +198,9 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Successfully processed ${processedListings.length} Trade Me listings`);
+    console.log(`Successfully processed ${processedListings.length} Trade Me listings with enhanced details`);
 
-    // Stage 4: Save to database
+    // Stage 4: Save to database with enhanced fields
     const savedListings = [];
     
     for (const listing of processedListings) {
@@ -240,7 +248,14 @@ serve(async (req) => {
             console.error('Error saving listing:', error);
           } else {
             savedListings.push(saved);
-            console.log(`Saved listing: ${listing.address} with AI score: ${listing.ai_analysis?.flip_potential_score || 'N/A'}`);
+            console.log(`Saved enhanced listing: ${listing.address}`, {
+              hasTitle: !!listing.listing_title,
+              hasMethod: !!listing.listing_method,
+              hasType: !!listing.listing_type,
+              parkingSpaces: listing.parking_spaces,
+              hasFeatures: !!listing.other_features,
+              aiScore: listing.ai_analysis?.flip_potential_score || 'N/A'
+            });
           }
         } else {
           console.log('Listing already exists, skipping:', listing.source_url);
@@ -252,19 +267,20 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Scraped ${processedListings.length} listings with AgentQL, saved ${savedListings.length} new ones`,
+      message: `Scraped ${processedListings.length} listings with enhanced AgentQL details, saved ${savedListings.length} new ones`,
       total_processed: processedListings.length,
       total_saved: savedListings.length,
       search_url: searchUrl,
-      ai_analysis_enabled: !!openAIApiKey
+      ai_analysis_enabled: !!openAIApiKey,
+      enhanced_details_collected: true
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('Trade Me AgentQL scraping error:', error);
+    console.error('Trade Me enhanced AgentQL scraping error:', error);
     return new Response(JSON.stringify({
-      error: 'Scraping failed',
+      error: 'Enhanced scraping failed',
       details: error.message
     }), {
       status: 500,

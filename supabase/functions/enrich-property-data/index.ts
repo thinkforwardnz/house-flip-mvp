@@ -20,7 +20,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Property data enrichment started');
+    console.log('Property data enrichment started with enhanced listing details collection');
 
     // Check if AgentQL API key is configured
     const agentqlKey = Deno.env.get('AGENTQL_API_KEY');
@@ -53,12 +53,12 @@ serve(async (req) => {
       });
     }
 
-    // Find listings with missing or empty photos
+    // Find listings with missing details (not just photos)
     const { data: listingsToEnrich, error: queryError } = await supabase
       .from('scraped_listings')
-      .select('id, source_url, address, photos')
-      .or('photos.is.null,photos.eq.{}')
-      .limit(20); // Process in batches to avoid timeouts
+      .select('id, source_url, address, photos, summary, bedrooms, bathrooms, floor_area, land_area')
+      .or('photos.is.null,photos.eq.{},summary.is.null,bedrooms.is.null,bathrooms.is.null,floor_area.is.null')
+      .limit(15); // Reduced batch size for more detailed processing
 
     if (queryError) {
       console.error('Error querying listings to enrich:', queryError);
@@ -83,7 +83,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Found ${listingsToEnrich.length} listings to enrich`);
+    console.log(`Found ${listingsToEnrich.length} listings to enrich with detailed data`);
 
     let enriched = 0;
     let skipped = 0;
@@ -91,24 +91,59 @@ serve(async (req) => {
 
     for (const listing of listingsToEnrich) {
       try {
-        console.log(`Enriching listing: ${listing.address} (${listing.source_url})`);
+        console.log(`Enriching listing with enhanced details: ${listing.address} (${listing.source_url})`);
 
-        // Use AgentQL to scrape the individual property page
-        const propertyData = await agentqlClient.scrapePropertyPage(listing.source_url);
+        // Use AgentQL to scrape the individual property page with enhanced details
+        const enhancedData = await agentqlClient.scrapePropertyPage(listing.source_url);
         
-        if (!propertyData || !propertyData.photos || propertyData.photos.length === 0) {
+        if (!enhancedData) {
           skipped++;
-          console.log(`No additional data found for: ${listing.address}`);
+          console.log(`No enhanced data found for: ${listing.address}`);
           continue;
         }
 
-        // Update the listing with the new photo data
+        // Prepare update object with all available enhanced data
+        const updateData: any = {
+          updated_at: new Date().toISOString()
+        };
+
+        // Update photos if found
+        if (enhancedData.photos && enhancedData.photos.length > 0) {
+          updateData.photos = enhancedData.photos;
+        }
+
+        // Update description/summary if found
+        if (enhancedData.description && !listing.summary) {
+          updateData.summary = enhancedData.description;
+        }
+
+        // Update property details if missing
+        if (enhancedData.bedrooms && !listing.bedrooms) {
+          updateData.bedrooms = enhancedData.bedrooms;
+        }
+        if (enhancedData.bathrooms && !listing.bathrooms) {
+          updateData.bathrooms = enhancedData.bathrooms;
+        }
+        if (enhancedData.floor_area && !listing.floor_area) {
+          updateData.floor_area = enhancedData.floor_area;
+        }
+        if (enhancedData.land_area && !listing.land_area) {
+          updateData.land_area = enhancedData.land_area;
+        }
+
+        // Check if we have any meaningful updates
+        const hasUpdates = Object.keys(updateData).length > 1; // More than just updated_at
+        
+        if (!hasUpdates) {
+          skipped++;
+          console.log(`No meaningful updates found for: ${listing.address}`);
+          continue;
+        }
+
+        // Update the listing with the enhanced data
         const { error: updateError } = await supabase
           .from('scraped_listings')
-          .update({
-            photos: propertyData.photos,
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('id', listing.id);
 
         if (updateError) {
@@ -116,11 +151,18 @@ serve(async (req) => {
           errors.push(`Failed to update ${listing.address}: ${updateError.message}`);
         } else {
           enriched++;
-          console.log(`Successfully enriched listing: ${listing.address} with ${propertyData.photos.length} photos`);
+          console.log(`Successfully enriched listing: ${listing.address} with enhanced details`, {
+            photos: enhancedData.photos?.length || 0,
+            hasDescription: !!enhancedData.description,
+            bedrooms: enhancedData.bedrooms,
+            bathrooms: enhancedData.bathrooms,
+            floorArea: enhancedData.floor_area,
+            landArea: enhancedData.land_area
+          });
         }
 
         // Rate limiting to avoid overwhelming the target site
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
       } catch (error) {
         console.error('Error enriching listing:', error);
@@ -135,7 +177,7 @@ serve(async (req) => {
       success: enriched > 0 || (enriched === 0 && skipped > 0),
       enriched: enriched,
       skipped: skipped,
-      message: `Property enrichment complete: ${enriched} properties enriched, ${skipped} skipped`,
+      message: `Property enrichment complete: ${enriched} properties enriched with enhanced details, ${skipped} skipped`,
       errors: errors.length > 0 ? errors : undefined,
       totalProcessed: listingsToEnrich.length
     }), {
