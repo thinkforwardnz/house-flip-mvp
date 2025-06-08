@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, AlertTriangle } from 'lucide-react';
-import AIAnalysisCard from '@/components/AIAnalysisCard';
+import AIAnalysisSummary from '@/components/AIAnalysisSummary';
 import PropertyHeader from '@/components/analysis/PropertyHeader';
 import OverviewTab from '@/components/analysis/OverviewTab';
 import DataCollectionTab from '@/components/analysis/DataCollectionTab';
@@ -293,8 +293,8 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
         </CardContent>
       </Card>
 
-      {/* AI Analysis Summary Card */}
-      <AIAnalysisCard deal={deal} />
+      {/* AI Analysis Summary - Now Text-Based */}
+      <AIAnalysisSummary deal={deal} />
     </div>
   );
 };
