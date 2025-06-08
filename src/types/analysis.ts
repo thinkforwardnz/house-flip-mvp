@@ -1,3 +1,4 @@
+
 export interface RiskFactor {
   level: 'low' | 'medium' | 'high';
   score: number;
@@ -27,6 +28,7 @@ export interface MarketAnalysis {
   market_confidence?: number;
   rental_yield?: number;
   insights?: string;
+  location_score?: number;
 }
 
 export interface RenovationRoom {
@@ -35,9 +37,17 @@ export interface RenovationRoom {
   priority?: 'high' | 'medium' | 'low';
 }
 
+export interface RenovationItem {
+  id: string;
+  description: string;
+  cost: number;
+  priority?: 'high' | 'medium' | 'low';
+}
+
 export interface RenovationAnalysis {
   total_cost?: number;
   timeline_weeks?: number;
+  timeline?: number;
   kitchen?: RenovationRoom;
   bathrooms?: RenovationRoom;
   flooring?: RenovationRoom;
@@ -48,6 +58,8 @@ export interface RenovationAnalysis {
   landscaping?: RenovationRoom;
   confidence_level?: number;
   recommendations?: string[];
+  breakdown?: RenovationItem[];
+  complexity?: 'low' | 'medium' | 'high';
 }
 
 export interface ComparableSale {
@@ -63,6 +75,9 @@ export interface ComparableSale {
   listing_url?: string;
 }
 
+// Add alias for backward compatibility
+export interface Comparable extends ComparableSale {}
+
 export interface MarketData {
   comparables?: ComparableSale[];
   analysis?: MarketAnalysis;
@@ -72,6 +87,16 @@ export interface MarketData {
     projected_profit?: number;
     roi_percentage?: number;
   };
+}
+
+export interface ListingDetails {
+  title?: string;
+  method?: string;
+  type?: string;
+  parking?: string;
+  internet?: string;
+  other_features?: string;
+  date?: string;
 }
 
 export interface Deal {
@@ -97,35 +122,9 @@ export interface Deal {
     lat: number;
     lng: number;
   };
-  market_analysis?: {
-    analysis?: {
-      estimated_arv?: number;
-      market_confidence?: number;
-      price_per_sqm?: number;
-      market_trend?: string;
-      location_score?: number;
-    };
-    comparables?: Comparable[];
-  };
-  renovation_analysis?: {
-    total_cost?: number;
-    breakdown?: RenovationItem[];
-    timeline?: number;
-    complexity?: 'low' | 'medium' | 'high';
-  };
-  risk_assessment?: {
-    overall_risk_score?: number;
-    risk_factors?: RiskFactor[];
-    recommendations?: string[];
-  };
+  market_analysis?: MarketData;
+  renovation_analysis?: RenovationAnalysis;
+  risk_assessment?: RiskAssessment;
   analysis_data?: any;
-  listing_details?: {
-    title?: string;
-    method?: string;
-    type?: string;
-    parking?: string;
-    internet?: string;
-    other_features?: string;
-    date?: string;
-  };
+  listing_details?: ListingDetails;
 }
