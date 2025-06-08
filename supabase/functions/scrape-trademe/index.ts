@@ -47,7 +47,7 @@ serve(async (req) => {
 
     // Process each property with basic information only
     const processedListings = [];
-    const maxListings = 50; // Increased since we're only doing basic processing
+    const maxListings = 50;
     
     for (let i = 0; i < Math.min(searchResults.data.properties.length, maxListings); i++) {
       const property = searchResults.data.properties[i];
@@ -55,27 +55,13 @@ serve(async (req) => {
       try {
         console.log(`Processing basic property ${i + 1}/${Math.min(searchResults.data.properties.length, maxListings)}: ${property.listingaddress}`);
         
-        // Basic rate limiting between requests (reduced since less processing)
+        // Basic rate limiting between requests
         if (i > 0 && i % 10 === 0) {
           await agentqlClient.rateLimitDelay();
         }
 
-        // Create basic property data with only the 4 core fields
-        const basicData = {
-          listingid: property.listingid,
-          listingurl: property.listingurl,
-          listingaddress: property.listingaddress,
-          listingfeaturedimg: property.listingfeaturedimg,
-          // Add basic photos array
-          photos: property.listingfeaturedimg ? [property.listingfeaturedimg] : [],
-        };
-
-        // Process with basic data only - no detailed scraping or AI analysis
-        const processed = processTrademeListing({
-          ...basicData,
-          url: property.listingurl,
-          address: property.listingaddress
-        });
+        // Process with basic search data only
+        const processed = processTrademeListing(property);
 
         if (processed) {
           processedListings.push(processed);
@@ -99,7 +85,7 @@ serve(async (req) => {
           .from('scraped_listings')
           .select('id')
           .eq('source_url', listing.source_url)
-          .single();
+          .maybeSingle();
 
         if (!existing) {
           const { data: saved, error } = await supabase
@@ -111,7 +97,7 @@ serve(async (req) => {
               suburb: listing.suburb,
               city: listing.city,
               district: listing.district,
-              price: listing.price,
+              price: listing.price || 0,
               summary: listing.summary,
               bedrooms: listing.bedrooms,
               bathrooms: listing.bathrooms,
@@ -121,7 +107,7 @@ serve(async (req) => {
               listing_date: listing.listing_date,
               date_scraped: new Date().toISOString(),
               status: 'new',
-              // Basic defaults for AI fields - will be populated during analysis
+              // AI fields will be populated during analysis stage
               ai_score: null,
               ai_est_profit: null,
               ai_reno_cost: null,
