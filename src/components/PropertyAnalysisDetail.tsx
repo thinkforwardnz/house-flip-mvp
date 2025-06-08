@@ -1,30 +1,19 @@
+
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { CheckCircle, AlertTriangle } from 'lucide-react';
 import AIAnalysisCard from '@/components/AIAnalysisCard';
-import { 
-  MapPin, 
-  Home, 
-  TrendingUp, 
-  Calculator, 
-  AlertTriangle,
-  CheckCircle,
-  Download,
-  RefreshCw,
-  Eye,
-  Building,
-  DollarSign,
-  Target,
-  Wrench
-} from 'lucide-react';
-import type { Deal, RiskAssessment, MarketData, RenovationAnalysis } from '@/types/analysis';
+import PropertyHeader from '@/components/analysis/PropertyHeader';
+import OverviewTab from '@/components/analysis/OverviewTab';
+import DataCollectionTab from '@/components/analysis/DataCollectionTab';
+import CMATab from '@/components/analysis/CMATab';
+import RenovationTab from '@/components/analysis/RenovationTab';
+import OfferTab from '@/components/analysis/OfferTab';
+import RiskTab from '@/components/analysis/RiskTab';
+import type { Deal } from '@/types/analysis';
 
 interface PropertyAnalysisDetailProps {
   deal: Deal;
@@ -120,19 +109,6 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
   };
 
   const dataSourceStatus = getDataSourceStatus();
-
-  // Type-safe accessor functions
-  const getRiskLevel = (riskData: any): string => {
-    return riskData?.level || 'unknown';
-  };
-
-  const getRiskScore = (riskData: any): number => {
-    return riskData?.score || 0;
-  };
-
-  const getRiskFactors = (riskData: any): string[] => {
-    return riskData?.factors || [];
-  };
 
   const handleRunAnalysis = async () => {
     setIsAnalyzing(true);
@@ -249,84 +225,15 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
   return (
     <div className="space-y-6">
       {/* Property Header */}
-      <Card className="bg-white shadow-lg rounded-2xl border-0">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold text-navy-dark mb-2">{deal.address}</h1>
-              <div className="flex items-center text-navy mb-2">
-                <MapPin className="h-4 w-4 mr-1" />
-                {deal.suburb}, {deal.city}
-              </div>
-              <Badge className={`${
-                deal.current_risk === 'low' ? 'bg-green-100 text-green-800' :
-                deal.current_risk === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'
-              } rounded-lg`}>
-                {deal.current_risk} Risk
-              </Badge>
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleRunAnalysis}
-                disabled={isAnalyzing}
-                className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
-                {isAnalyzing ? 'Analyzing...' : 'Run Analysis'}
-              </Button>
-              <Button variant="outline" className="rounded-xl">
-                <Download className="h-4 w-4 mr-2" />
-                Export Report
-              </Button>
-            </div>
-          </div>
-
-          {/* Show analysis progress */}
-          {isAnalyzing && (
-            <div className="bg-blue-50 p-4 rounded-xl mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">{analysisStep}</span>
-              </div>
-              <Progress value={75} className="h-2" />
-            </div>
-          )}
-
-          {/* Progress Overview */}
-          <div className="bg-gray-50 p-4 rounded-xl">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-navy-dark">Analysis Progress</h3>
-              <span className="text-sm font-medium text-navy-dark">{Math.round(progress)}%</span>
-            </div>
-            <Progress value={progress} className="h-3 mb-3" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-medium text-green-600 mb-1">Completed ({completed.length})</p>
-                <ul className="space-y-1">
-                  {completed.map((item, index) => (
-                    <li key={index} className="flex items-center text-green-700">
-                      <CheckCircle className="h-3 w-3 mr-2" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="font-medium text-orange-600 mb-1">Pending ({pending.length})</p>
-                <ul className="space-y-1">
-                  {pending.map((item, index) => (
-                    <li key={index} className="flex items-center text-orange-700">
-                      <AlertTriangle className="h-3 w-3 mr-2" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <PropertyHeader
+        deal={deal}
+        isAnalyzing={isAnalyzing}
+        analysisStep={analysisStep}
+        progress={progress}
+        completed={completed}
+        pending={pending}
+        onRunAnalysis={handleRunAnalysis}
+      />
 
       {/* Analysis Tabs */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">
@@ -342,580 +249,45 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
             </TabsList>
 
             <TabsContent value="overview">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-blue-50 p-4 rounded-xl">
-                  <div className="flex items-center gap-3 mb-2">
-                    <DollarSign className="h-5 w-5 text-blue-600" />
-                    <p className="text-sm font-medium text-blue-900">Purchase Price</p>
-                  </div>
-                  <p className="text-xl font-bold text-blue-900">
-                    {deal.purchase_price ? formatCurrency(deal.purchase_price) : 'TBD'}
-                  </p>
-                </div>
-
-                <div className="bg-green-50 p-4 rounded-xl">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Target className="h-5 w-5 text-green-600" />
-                    <p className="text-sm font-medium text-green-900">Target ARV</p>
-                  </div>
-                  <p className="text-xl font-bold text-green-900">
-                    {deal.target_sale_price ? formatCurrency(deal.target_sale_price) : 
-                     deal.market_analysis?.analysis?.estimated_arv ? formatCurrency(deal.market_analysis.analysis.estimated_arv) : 'TBD'}
-                  </p>
-                </div>
-
-                <div className="bg-orange-50 p-4 rounded-xl">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Wrench className="h-5 w-5 text-orange-600" />
-                    <p className="text-sm font-medium text-orange-900">Est. Renovation</p>
-                  </div>
-                  <p className="text-xl font-bold text-orange-900">
-                    {formatCurrency(renovationEstimate)}
-                  </p>
-                </div>
-
-                <div className="bg-purple-50 p-4 rounded-xl">
-                  <div className="flex items-center gap-3 mb-2">
-                    <TrendingUp className="h-5 w-5 text-purple-600" />
-                    <p className="text-sm font-medium text-purple-900">Est. Profit</p>
-                  </div>
-                  <p className={`text-xl font-bold ${deal.current_profit && deal.current_profit > 0 ? 'text-purple-900' : 'text-gray-600'}`}>
-                    {deal.current_profit && deal.current_profit > 0 ? formatCurrency(deal.current_profit) : 'TBD'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Offer Scenarios */}
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold text-navy-dark mb-4">Offer Scenarios</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="border border-gray-200 rounded-xl p-4">
-                    <h4 className="font-medium text-green-600 mb-2">Conservative</h4>
-                    <p className="text-lg font-bold text-navy-dark">{formatCurrency(offerPrice * 0.9)}</p>
-                    <p className="text-xs text-navy mt-1">Low risk, lower returns</p>
-                  </div>
-                  <div className="border border-blue-200 rounded-xl p-4 bg-blue-50">
-                    <h4 className="font-medium text-blue-600 mb-2">Balanced</h4>
-                    <p className="text-lg font-bold text-navy-dark">{formatCurrency(offerPrice)}</p>
-                    <p className="text-xs text-navy mt-1">Recommended offer</p>
-                  </div>
-                  <div className="border border-orange-200 rounded-xl p-4">
-                    <h4 className="font-medium text-orange-600 mb-2">Aggressive</h4>
-                    <p className="text-lg font-bold text-navy-dark">{formatCurrency(offerPrice * 1.1)}</p>
-                    <p className="text-xs text-navy mt-1">Higher risk, higher returns</p>
-                  </div>
-                </div>
-              </div>
+              <OverviewTab
+                deal={deal}
+                formatCurrency={formatCurrency}
+                renovationEstimate={renovationEstimate}
+                offerPrice={offerPrice}
+              />
             </TabsContent>
 
             <TabsContent value="data">
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-navy-dark">Data Collection Status</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-navy-dark">Free Data Sources</h4>
-                    <div className="space-y-3">
-                      <div className={`flex items-center justify-between p-3 rounded-lg ${
-                        dataSourceStatus.linz.status === 'complete' ? 'bg-green-50' : 'bg-yellow-50'
-                      }`}>
-                        <span className="text-sm">LINZ Property Data</span>
-                        <dataSourceStatus.linz.icon className={`h-4 w-4 ${dataSourceStatus.linz.color}`} />
-                      </div>
-                      <div className={`flex items-center justify-between p-3 rounded-lg ${
-                        dataSourceStatus.trademe.status === 'complete' ? 'bg-green-50' : 'bg-yellow-50'
-                      }`}>
-                        <span className="text-sm">Trade Me Listing</span>
-                        <dataSourceStatus.trademe.icon className={`h-4 w-4 ${dataSourceStatus.trademe.color}`} />
-                      </div>
-                      <div className={`flex items-center justify-between p-3 rounded-lg ${
-                        dataSourceStatus.googleMaps.status === 'complete' ? 'bg-green-50' : 'bg-yellow-50'
-                      }`}>
-                        <span className="text-sm">Google Maps Data</span>
-                        <dataSourceStatus.googleMaps.icon className={`h-4 w-4 ${dataSourceStatus.googleMaps.color}`} />
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm">Council GIS Data</span>
-                        <AlertTriangle className="h-4 w-4 text-gray-600" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-navy-dark">Market Data Sources</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                        <span className="text-sm">homes.co.nz</span>
-                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                        <span className="text-sm">OneRoof.co.nz</span>
-                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                        <span className="text-sm">RealEstate.co.nz</span>
-                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <Button 
-                  onClick={handleRunAnalysis}
-                  disabled={isAnalyzing}
-                  className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
-                  Refresh Data Collection
-                </Button>
-              </div>
+              <DataCollectionTab
+                dataSourceStatus={dataSourceStatus}
+                isAnalyzing={isAnalyzing}
+                onRunAnalysis={handleRunAnalysis}
+              />
             </TabsContent>
 
             <TabsContent value="cma">
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-navy-dark">Comparative Market Analysis</h3>
-                
-                {deal.market_analysis?.analysis ? (
-                  <div className="bg-blue-50 p-4 rounded-xl">
-                    <h4 className="font-medium text-blue-900 mb-2">Market Analysis Results</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <p className="text-sm text-blue-700">Estimated ARV</p>
-                        <p className="text-lg font-bold text-blue-900">
-                          {deal.market_analysis.analysis.estimated_arv ? 
-                            formatCurrency(deal.market_analysis.analysis.estimated_arv) : 'TBD'}
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm text-blue-700">Market Trend</p>
-                        <p className="text-lg font-bold text-blue-900">
-                          {deal.market_analysis.analysis.market_trend || 'TBD'}
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm text-blue-700">Days on Market</p>
-                        <p className="text-lg font-bold text-blue-900">
-                          {deal.market_analysis.analysis.avg_days_on_market || 'TBD'}
-                        </p>
-                      </div>
-                    </div>
-                    {deal.market_analysis.analysis.insights && (
-                      <div className="mt-4">
-                        <p className="text-sm text-blue-700 font-medium">Market Insights:</p>
-                        <p className="text-sm text-blue-800 mt-1">{deal.market_analysis.analysis.insights}</p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-blue-50 p-4 rounded-xl">
-                    <h4 className="font-medium text-blue-900 mb-2">AVM Estimates</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <p className="text-sm text-blue-700">HomesEstimate</p>
-                        <p className="text-lg font-bold text-blue-900">TBD</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm text-blue-700">OneRoof AVM</p>
-                        <p className="text-lg font-bold text-blue-900">TBD</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm text-blue-700">Council CV</p>
-                        <p className="text-lg font-bold text-blue-900">TBD</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <h4 className="font-medium text-navy-dark mb-3">Recent Comparable Sales</h4>
-                  {deal.market_analysis?.comparables?.length > 0 ? (
-                    <div className="space-y-3">
-                      {deal.market_analysis.comparables.slice(0, 5).map((comp, index) => (
-                        <div key={index} className="border border-gray-200 rounded-lg p-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium text-navy-dark">{comp.address || 'Address not available'}</p>
-                              <p className="text-sm text-navy">
-                                {comp.bedrooms}br, {comp.bathrooms}ba
-                                {comp.floor_area && ` • ${comp.floor_area}m²`}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-navy-dark">
-                                {comp.sold_price ? formatCurrency(comp.sold_price) : 'Price not available'}
-                              </p>
-                              <p className="text-sm text-navy">{comp.sold_date || 'Date not available'}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Building className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                      <p>Comparable sales data will be collected automatically</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <CMATab deal={deal} formatCurrency={formatCurrency} />
             </TabsContent>
 
             <TabsContent value="renovation">
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-navy-dark">Renovation Cost Estimation</h3>
-                
-                {deal.renovation_analysis ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-medium text-navy-dark mb-3">Room-by-Room Analysis</h4>
-                      <div className="space-y-3">
-                        {deal.renovation_analysis.kitchen && (
-                          <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                            <div>
-                              <span className="font-medium">Kitchen Renovation</span>
-                              <p className="text-xs text-gray-600">{deal.renovation_analysis.kitchen.description}</p>
-                            </div>
-                            <span className="font-medium">{formatCurrency(deal.renovation_analysis.kitchen.cost)}</span>
-                          </div>
-                        )}
-                        {deal.renovation_analysis.bathrooms && (
-                          <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                            <div>
-                              <span className="font-medium">Bathroom Renovation</span>
-                              <p className="text-xs text-gray-600">{deal.renovation_analysis.bathrooms.description}</p>
-                            </div>
-                            <span className="font-medium">{formatCurrency(deal.renovation_analysis.bathrooms.cost)}</span>
-                          </div>
-                        )}
-                        {deal.renovation_analysis.flooring && (
-                          <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                            <div>
-                              <span className="font-medium">Flooring</span>
-                              <p className="text-xs text-gray-600">{deal.renovation_analysis.flooring.description}</p>
-                            </div>
-                            <span className="font-medium">{formatCurrency(deal.renovation_analysis.flooring.cost)}</span>
-                          </div>
-                        )}
-                        {deal.renovation_analysis.painting && (
-                          <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                            <div>
-                              <span className="font-medium">Painting</span>
-                              <p className="text-xs text-gray-600">{deal.renovation_analysis.painting.description}</p>
-                            </div>
-                            <span className="font-medium">{formatCurrency(deal.renovation_analysis.painting.cost)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-medium text-navy-dark mb-3">Cost Summary</h4>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="reno-estimate">Total Renovation Estimate</Label>
-                          <Input 
-                            id="reno-estimate"
-                            type="number" 
-                            value={renovationEstimate}
-                            readOnly
-                            className="mt-1"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="contingency">Contingency Buffer (15%)</Label>
-                          <Input 
-                            id="contingency"
-                            type="number" 
-                            value={Math.round(renovationEstimate * 0.15)}
-                            readOnly
-                            className="mt-1 bg-gray-50"
-                          />
-                        </div>
-                        <div className="p-3 bg-green-50 rounded-lg">
-                          <p className="text-sm text-green-700">Total with Contingency</p>
-                          <p className="text-lg font-bold text-green-900">
-                            {formatCurrency(renovationEstimate * 1.15)}
-                          </p>
-                        </div>
-                        {deal.renovation_analysis.timeline_weeks && (
-                          <div className="p-3 bg-blue-50 rounded-lg">
-                            <p className="text-sm text-blue-700">Estimated Timeline</p>
-                            <p className="text-lg font-bold text-blue-900">
-                              {deal.renovation_analysis.timeline_weeks} weeks
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-medium text-navy-dark mb-3">Room-by-Room Costs</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span>Kitchen Renovation</span>
-                          <span className="font-medium">$15,000 - $30,000</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span>Bathroom Renovation</span>
-                          <span className="font-medium">$8,000 - $15,000</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span>Flooring (entire house)</span>
-                          <span className="font-medium">$5,000 - $12,000</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span>Painting (interior/exterior)</span>
-                          <span className="font-medium">$3,000 - $8,000</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-medium text-navy-dark mb-3">Cost Estimation</h4>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="reno-estimate">Total Renovation Estimate</Label>
-                          <Input 
-                            id="reno-estimate"
-                            type="number" 
-                            value={renovationEstimate}
-                            className="mt-1"
-                            readOnly
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="contingency">Contingency Buffer (15%)</Label>
-                          <Input 
-                            id="contingency"
-                            type="number" 
-                            value={Math.round(renovationEstimate * 0.15)}
-                            readOnly
-                            className="mt-1 bg-gray-50"
-                          />
-                        </div>
-                        <div className="p-3 bg-green-50 rounded-lg">
-                          <p className="text-sm text-green-700">Total with Contingency</p>
-                          <p className="text-lg font-bold text-green-900">
-                            {formatCurrency(renovationEstimate * 1.15)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <RenovationTab
+                deal={deal}
+                formatCurrency={formatCurrency}
+                renovationEstimate={renovationEstimate}
+              />
             </TabsContent>
 
             <TabsContent value="offer">
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-navy-dark">Offer Price Calculation</h3>
-                
-                <div className="bg-gray-50 p-6 rounded-xl">
-                  <h4 className="font-medium text-navy-dark mb-4">Back-calculation from ARV</h4>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span>Target ARV:</span>
-                      <span className="font-medium">{deal.target_sale_price ? formatCurrency(deal.target_sale_price) : 'TBD'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Less: Renovation Costs:</span>
-                      <span className="font-medium text-red-600">-{formatCurrency(renovationEstimate)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Less: Transaction Costs (10%):</span>
-                      <span className="font-medium text-red-600">-{formatCurrency((deal.target_sale_price || 0) * 0.1)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Less: Target Profit (15%):</span>
-                      <span className="font-medium text-red-600">-{formatCurrency((deal.target_sale_price || 0) * 0.15)}</span>
-                    </div>
-                    <hr className="my-2" />
-                    <div className="flex justify-between text-lg font-bold">
-                      <span>Maximum Purchase Price:</span>
-                      <span className="text-green-600">{formatCurrency(offerPrice)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="border border-green-200 rounded-xl p-4 bg-green-50">
-                    <h4 className="font-medium text-green-600 mb-2">Conservative Strategy</h4>
-                    <p className="text-xl font-bold text-green-900">{formatCurrency(offerPrice * 0.9)}</p>
-                    <p className="text-xs text-green-700 mt-2">90% of calculated max price</p>
-                    <ul className="text-xs text-green-600 mt-2 space-y-1">
-                      <li>• Lower risk</li>
-                      <li>• Higher chance of acceptance</li>
-                      <li>• Buffer for unexpected costs</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="border border-blue-200 rounded-xl p-4 bg-blue-50">
-                    <h4 className="font-medium text-blue-600 mb-2">Balanced Strategy</h4>
-                    <p className="text-xl font-bold text-blue-900">{formatCurrency(offerPrice)}</p>
-                    <p className="text-xs text-blue-700 mt-2">100% of calculated max price</p>
-                    <ul className="text-xs text-blue-600 mt-2 space-y-1">
-                      <li>• Calculated max price</li>
-                      <li>• Target profit maintained</li>
-                      <li>• Recommended approach</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="border border-orange-200 rounded-xl p-4 bg-orange-50">
-                    <h4 className="font-medium text-orange-600 mb-2">Aggressive Strategy</h4>
-                    <p className="text-xl font-bold text-orange-900">{formatCurrency(offerPrice * 1.1)}</p>
-                    <p className="text-xs text-orange-700 mt-2">110% of calculated max price</p>
-                    <ul className="text-xs text-orange-600 mt-2 space-y-1">
-                      <li>• Higher risk</li>
-                      <li>• Reduced profit margin</li>
-                      <li>• Competitive market strategy</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+              <OfferTab
+                deal={deal}
+                formatCurrency={formatCurrency}
+                renovationEstimate={renovationEstimate}
+                offerPrice={offerPrice}
+              />
             </TabsContent>
 
             <TabsContent value="risk">
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-navy-dark">Risk Assessment</h3>
-                
-                {deal.risk_assessment ? (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-medium text-navy-dark mb-3">Risk Categories</h4>
-                        <div className="space-y-3">
-                          {Object.entries(deal.risk_assessment as RiskAssessment).filter(([key]) => key.endsWith('_risk')).map(([key, risk]) => (
-                            <div key={key} className="p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-medium capitalize">{key.replace('_risk', '').replace('_', ' ')} Risk</span>
-                                <Badge className={`${
-                                  getRiskLevel(risk) === 'low' ? 'bg-green-100 text-green-800' :
-                                  getRiskLevel(risk) === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-red-100 text-red-800'
-                                } text-xs`}>
-                                  {getRiskLevel(risk)}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-gray-600">Score: {getRiskScore(risk)}/100</p>
-                              {getRiskFactors(risk).length > 0 && (
-                                <p className="text-xs text-gray-600 mt-1">
-                                  Key factors: {getRiskFactors(risk).slice(0, 2).join(', ')}
-                                </p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium text-navy-dark mb-3">Risk Mitigation</h4>
-                        <div className="space-y-3">
-                          {deal.risk_assessment.recommendations?.map((rec, index) => (
-                            <div key={index} className="p-3 bg-blue-50 rounded-lg">
-                              <p className="text-sm text-blue-800">{rec}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-blue-50 p-4 rounded-xl">
-                      <h4 className="font-medium text-blue-900 mb-2">Overall Risk Assessment</h4>
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                          <Progress value={deal.risk_assessment.overall_risk_score || 50} className="h-3" />
-                        </div>
-                        <Badge className={`${
-                          deal.risk_assessment.overall_risk_level === 'low' ? 'bg-green-100 text-green-800' :
-                          deal.risk_assessment.overall_risk_level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {deal.risk_assessment.overall_risk_level} Risk
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-blue-700 mt-2">
-                        Risk Score: {deal.risk_assessment.overall_risk_score}/100
-                        {deal.risk_assessment.confidence_level && 
-                          ` • Confidence: ${deal.risk_assessment.confidence_level}%`
-                        }
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-medium text-navy-dark mb-3">Market Risks</h4>
-                        <div className="space-y-3">
-                          <div className="p-3 bg-yellow-50 rounded-lg">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">Market Trends</span>
-                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Medium</Badge>
-                            </div>
-                            <p className="text-xs text-yellow-700">Market analysis needed</p>
-                          </div>
-                          <div className="p-3 bg-green-50 rounded-lg">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">Days on Market</span>
-                              <Badge className="bg-green-100 text-green-800 text-xs">Low</Badge>
-                            </div>
-                            <p className="text-xs text-green-700">Good sales velocity in area</p>
-                          </div>
-                          <div className="p-3 bg-yellow-50 rounded-lg">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">Rental Yield</span>
-                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Medium</Badge>
-                            </div>
-                            <p className="text-xs text-yellow-700">Analysis in progress</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium text-navy-dark mb-3">Property Risks</h4>
-                        <div className="space-y-3">
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">Zoning Compliance</span>
-                              <Badge className="bg-gray-100 text-gray-800 text-xs">Unknown</Badge>
-                            </div>
-                            <p className="text-xs text-gray-600">Council data required</p>
-                          </div>
-                          <div className="p-3 bg-green-50 rounded-lg">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">Structural Condition</span>
-                              <Badge className="bg-green-100 text-green-800 text-xs">Low</Badge>
-                            </div>
-                            <p className="text-xs text-green-700">No obvious issues visible</p>
-                          </div>
-                          <div className="p-3 bg-yellow-50 rounded-lg">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">Renovation Complexity</span>
-                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Medium</Badge>
-                            </div>
-                            <p className="text-xs text-yellow-700">Standard renovation scope</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-blue-50 p-4 rounded-xl">
-                      <h4 className="font-medium text-blue-900 mb-2">Overall Risk Score</h4>
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                          <Progress value={60} className="h-3" />
-                        </div>
-                        <Badge className="bg-yellow-100 text-yellow-800">Medium Risk</Badge>
-                      </div>
-                      <p className="text-sm text-blue-700 mt-2">
-                        Overall risk is medium due to pending market analysis and zoning verification.
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
+              <RiskTab deal={deal} />
             </TabsContent>
           </Tabs>
         </CardContent>
