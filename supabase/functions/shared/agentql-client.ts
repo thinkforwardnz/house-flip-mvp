@@ -1,4 +1,3 @@
-
 export class AgentQLClient {
   private apiKey: string;
   private baseUrl = 'https://api.agentql.com/v1/query-data';
@@ -109,7 +108,7 @@ export class AgentQLClient {
       }
       `;
 
-      const response = await fetch(`${this.baseUrl}/query`, {
+      const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
