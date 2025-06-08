@@ -139,6 +139,33 @@ export class AgentQLClient {
   }
 
   /**
+   * TradeMe comparable sales query for market analysis.
+   * Captures nearby sold properties from the property insights section.
+   */
+  getTradeeMeComparablesQuery(): string {
+    return `{
+      nearby_sold_properties[] {
+        sold_price
+        sold_date
+        address
+        bedrooms
+        bathrooms
+        floor_area
+        land_area
+        property_type
+        days_on_market
+        listing_url
+      }
+      market_summary {
+        median_sold_price
+        average_days_on_market
+        total_sold_properties
+        price_trend
+      }
+    }`;
+  }
+
+  /**
    * Scrapes TradeMe search results to get comprehensive listing metadata with retry logic.
    */
   async scrapeSearchResults(searchUrl: string): Promise<any> {
@@ -156,6 +183,77 @@ export class AgentQLClient {
     // Process the result to extract and structure all property data
     const processedData = this.processPropertyPageData(result);
     return processedData;
+  }
+
+  /**
+   * Scrapes comparable sales data from TradeMe property insights page.
+   * This method finds the "Nearby Sold Properties" section for market analysis.
+   */
+  async scrapeComparableSales(address: string, suburb: string, city: string): Promise<any[]> {
+    try {
+      console.log(`Scraping comparable sales for: ${address}, ${suburb}, ${city}`);
+      
+      // Build the property insights URL - Trade Me uses a specific format for property insights
+      const searchTerm = `${address} ${suburb} ${city}`.replace(/\s+/g, '-').toLowerCase();
+      const insightsUrl = `https://www.trademe.co.nz/a/property/residential/sale/${searchTerm}`;
+      
+      console.log('Property insights URL:', insightsUrl);
+      
+      const query = this.getTradeeMeComparablesQuery();
+      const result = await this.queryDataWithRetry(insightsUrl, query, 5000);
+      
+      if (!result || !result.data) {
+        console.log('No comparable sales data found');
+        return [];
+      }
+      
+      // Process and return comparable sales
+      const comparables = this.processComparableSalesData(result.data);
+      console.log(`Found ${comparables.length} comparable sales`);
+      
+      return comparables;
+    } catch (error) {
+      console.error('Error scraping comparable sales:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Process comparable sales data from AgentQL response.
+   */
+  private processComparableSalesData(data: any): any[] {
+    console.log('Processing comparable sales data:', JSON.stringify(data, null, 2));
+    
+    try {
+      const comparables: any[] = [];
+      
+      if (Array.isArray(data.nearby_sold_properties)) {
+        for (const property of data.nearby_sold_properties) {
+          const comparable = {
+            sold_price: this.parseNumericValue(property.sold_price),
+            sold_date: property.sold_date || null,
+            address: property.address || null,
+            bedrooms: this.parseNumericValue(property.bedrooms),
+            bathrooms: this.parseNumericValue(property.bathrooms),
+            floor_area: this.parseNumericValue(property.floor_area),
+            land_area: this.parseNumericValue(property.land_area),
+            property_type: property.property_type || null,
+            days_on_market: this.parseNumericValue(property.days_on_market),
+            listing_url: property.listing_url || null
+          };
+          
+          // Only add if we have essential data
+          if (comparable.sold_price && comparable.address) {
+            comparables.push(comparable);
+          }
+        }
+      }
+      
+      return comparables;
+    } catch (error) {
+      console.error('Error processing comparable sales data:', error);
+      return [];
+    }
   }
 
   /**

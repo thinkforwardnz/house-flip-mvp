@@ -4,6 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
 import { corsHeaders } from '../shared/cors.ts';
+import { parseAIResponse } from '../shared/json-parser.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -112,7 +113,7 @@ Respond in JSON format:
         const analysisText = data.choices[0].message.content;
         
         try {
-          riskData = JSON.parse(analysisText);
+          riskData = parseAIResponse(analysisText);
           console.log('Risk assessment completed successfully');
         } catch (parseError) {
           console.error('Failed to parse risk assessment:', parseError);

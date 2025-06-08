@@ -70,31 +70,36 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
       pending.push('ARV Estimation');
     }
 
-    // Mock additional analysis steps
-    progress += 15; // Data Collection (assume complete)
-    completed.push('Data Collection');
-    
-    progress += 10; // CMA (assume partial)
-    completed.push('Market Analysis');
+    if (deal.market_analysis?.analysis) {
+      progress += 15;
+      completed.push('Market Analysis');
+    } else {
+      pending.push('Market Analysis');
+    }
 
-    if (deal.current_profit > 0) {
+    if (deal.renovation_analysis?.total_cost) {
       progress += 15;
       completed.push('Renovation Costing');
     } else {
       pending.push('Renovation Costing');
     }
 
-    progress += 10; // Risk Assessment (assume partial)
-    completed.push('Risk Assessment');
+    if (deal.risk_assessment?.overall_risk_score) {
+      progress += 20;
+      completed.push('Risk Assessment');
+    } else {
+      pending.push('Risk Assessment');
+    }
 
     return { progress, completed, pending };
   };
 
   const { progress, completed, pending } = getAnalysisProgress();
 
-  const renovationEstimate = deal.target_sale_price && deal.purchase_price 
-    ? Math.max(0, (deal.target_sale_price - deal.purchase_price) * 0.15) 
-    : 50000;
+  const renovationEstimate = deal.renovation_analysis?.total_cost || 
+    (deal.target_sale_price && deal.purchase_price 
+      ? Math.max(0, (deal.target_sale_price - deal.purchase_price) * 0.15) 
+      : 50000);
 
   const offerPrice = deal.target_sale_price 
     ? deal.target_sale_price - renovationEstimate - (deal.target_sale_price * 0.1) - (deal.target_sale_price * 0.15)
@@ -212,6 +217,21 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
     }
   };
 
+  const getDataSourceStatus = () => {
+    return {
+      linz: { status: 'complete', icon: CheckCircle, color: 'text-green-600' },
+      trademe: deal.photos?.length > 0 ? 
+        { status: 'complete', icon: CheckCircle, color: 'text-green-600' } :
+        { status: 'pending', icon: AlertTriangle, color: 'text-yellow-600' },
+      googleMaps: deal.coordinates ? 
+        { status: 'complete', icon: CheckCircle, color: 'text-green-600' } :
+        { status: 'pending', icon: AlertTriangle, color: 'text-yellow-600' },
+      council: { status: 'pending', icon: AlertTriangle, color: 'text-gray-600' }
+    };
+  };
+
+  const dataSourceStatus = getDataSourceStatus();
+
   return (
     <div className="space-y-6">
       {/* Property Header */}
@@ -325,7 +345,8 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
                     <p className="text-sm font-medium text-green-900">Target ARV</p>
                   </div>
                   <p className="text-xl font-bold text-green-900">
-                    {deal.target_sale_price ? formatCurrency(deal.target_sale_price) : 'TBD'}
+                    {deal.target_sale_price ? formatCurrency(deal.target_sale_price) : 
+                     deal.market_analysis?.analysis?.estimated_arv ? formatCurrency(deal.market_analysis.analysis.estimated_arv) : 'TBD'}
                   </p>
                 </div>
 
@@ -381,17 +402,23 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
                   <div className="space-y-4">
                     <h4 className="font-medium text-navy-dark">Free Data Sources</h4>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                      <div className={`flex items-center justify-between p-3 rounded-lg ${
+                        dataSourceStatus.linz.status === 'complete' ? 'bg-green-50' : 'bg-yellow-50'
+                      }`}>
                         <span className="text-sm">LINZ Property Data</span>
-                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <dataSourceStatus.linz.icon className={`h-4 w-4 ${dataSourceStatus.linz.color}`} />
                       </div>
-                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                      <div className={`flex items-center justify-between p-3 rounded-lg ${
+                        dataSourceStatus.trademe.status === 'complete' ? 'bg-green-50' : 'bg-yellow-50'
+                      }`}>
                         <span className="text-sm">Trade Me Listing</span>
-                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <dataSourceStatus.trademe.icon className={`h-4 w-4 ${dataSourceStatus.trademe.color}`} />
                       </div>
-                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                      <div className={`flex items-center justify-between p-3 rounded-lg ${
+                        dataSourceStatus.googleMaps.status === 'complete' ? 'bg-green-50' : 'bg-yellow-50'
+                      }`}>
                         <span className="text-sm">Google Maps Data</span>
-                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                        <dataSourceStatus.googleMaps.icon className={`h-4 w-4 ${dataSourceStatus.googleMaps.color}`} />
                       </div>
                       <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <span className="text-sm">Council GIS Data</span>
@@ -434,30 +461,87 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-navy-dark">Comparative Market Analysis</h3>
                 
-                <div className="bg-blue-50 p-4 rounded-xl">
-                  <h4 className="font-medium text-blue-900 mb-2">AVM Estimates</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <p className="text-sm text-blue-700">HomesEstimate</p>
-                      <p className="text-lg font-bold text-blue-900">TBD</p>
+                {deal.market_analysis?.analysis ? (
+                  <div className="bg-blue-50 p-4 rounded-xl">
+                    <h4 className="font-medium text-blue-900 mb-2">Market Analysis Results</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <p className="text-sm text-blue-700">Estimated ARV</p>
+                        <p className="text-lg font-bold text-blue-900">
+                          {deal.market_analysis.analysis.estimated_arv ? 
+                            formatCurrency(deal.market_analysis.analysis.estimated_arv) : 'TBD'}
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-blue-700">Market Trend</p>
+                        <p className="text-lg font-bold text-blue-900">
+                          {deal.market_analysis.analysis.market_trend || 'TBD'}
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-blue-700">Days on Market</p>
+                        <p className="text-lg font-bold text-blue-900">
+                          {deal.market_analysis.analysis.avg_days_on_market || 'TBD'}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <p className="text-sm text-blue-700">OneRoof AVM</p>
-                      <p className="text-lg font-bold text-blue-900">TBD</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm text-blue-700">Council CV</p>
-                      <p className="text-lg font-bold text-blue-900">TBD</p>
+                    {deal.market_analysis.analysis.insights && (
+                      <div className="mt-4">
+                        <p className="text-sm text-blue-700 font-medium">Market Insights:</p>
+                        <p className="text-sm text-blue-800 mt-1">{deal.market_analysis.analysis.insights}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-blue-50 p-4 rounded-xl">
+                    <h4 className="font-medium text-blue-900 mb-2">AVM Estimates</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <p className="text-sm text-blue-700">HomesEstimate</p>
+                        <p className="text-lg font-bold text-blue-900">TBD</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-blue-700">OneRoof AVM</p>
+                        <p className="text-lg font-bold text-blue-900">TBD</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-blue-700">Council CV</p>
+                        <p className="text-lg font-bold text-blue-900">TBD</p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <h4 className="font-medium text-navy-dark mb-3">Recent Comparable Sales</h4>
-                  <div className="text-center py-8 text-gray-500">
-                    <Building className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                    <p>Comparable sales data will be collected automatically</p>
-                  </div>
+                  {deal.market_analysis?.comparables?.length > 0 ? (
+                    <div className="space-y-3">
+                      {deal.market_analysis.comparables.slice(0, 5).map((comp, index) => (
+                        <div key={index} className="border border-gray-200 rounded-lg p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium text-navy-dark">{comp.address || 'Address not available'}</p>
+                              <p className="text-sm text-navy">
+                                {comp.bedrooms}br, {comp.bathrooms}ba
+                                {comp.floor_area && ` • ${comp.floor_area}m²`}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-navy-dark">
+                                {comp.sold_price ? formatCurrency(comp.sold_price) : 'Price not available'}
+                              </p>
+                              <p className="text-sm text-navy">{comp.sold_date || 'Date not available'}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Building className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                      <p>Comparable sales data will be collected automatically</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -466,60 +550,147 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-navy-dark">Renovation Cost Estimation</h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="font-medium text-navy-dark mb-3">Room-by-Room Costs</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <span>Kitchen Renovation</span>
-                        <span className="font-medium">$15,000 - $30,000</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <span>Bathroom Renovation</span>
-                        <span className="font-medium">$8,000 - $15,000</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <span>Flooring (entire house)</span>
-                        <span className="font-medium">$5,000 - $12,000</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <span>Painting (interior/exterior)</span>
-                        <span className="font-medium">$3,000 - $8,000</span>
+                {deal.renovation_analysis ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-medium text-navy-dark mb-3">Room-by-Room Analysis</h4>
+                      <div className="space-y-3">
+                        {deal.renovation_analysis.kitchen && (
+                          <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div>
+                              <span className="font-medium">Kitchen Renovation</span>
+                              <p className="text-xs text-gray-600">{deal.renovation_analysis.kitchen.description}</p>
+                            </div>
+                            <span className="font-medium">{formatCurrency(deal.renovation_analysis.kitchen.cost)}</span>
+                          </div>
+                        )}
+                        {deal.renovation_analysis.bathrooms && (
+                          <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div>
+                              <span className="font-medium">Bathroom Renovation</span>
+                              <p className="text-xs text-gray-600">{deal.renovation_analysis.bathrooms.description}</p>
+                            </div>
+                            <span className="font-medium">{formatCurrency(deal.renovation_analysis.bathrooms.cost)}</span>
+                          </div>
+                        )}
+                        {deal.renovation_analysis.flooring && (
+                          <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div>
+                              <span className="font-medium">Flooring</span>
+                              <p className="text-xs text-gray-600">{deal.renovation_analysis.flooring.description}</p>
+                            </div>
+                            <span className="font-medium">{formatCurrency(deal.renovation_analysis.flooring.cost)}</span>
+                          </div>
+                        )}
+                        {deal.renovation_analysis.painting && (
+                          <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div>
+                              <span className="font-medium">Painting</span>
+                              <p className="text-xs text-gray-600">{deal.renovation_analysis.painting.description}</p>
+                            </div>
+                            <span className="font-medium">{formatCurrency(deal.renovation_analysis.painting.cost)}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <h4 className="font-medium text-navy-dark mb-3">Cost Estimation</h4>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="reno-estimate">Total Renovation Estimate</Label>
-                        <Input 
-                          id="reno-estimate"
-                          type="number" 
-                          value={renovationEstimate}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="contingency">Contingency Buffer (15%)</Label>
-                        <Input 
-                          id="contingency"
-                          type="number" 
-                          value={renovationEstimate * 0.15}
-                          disabled
-                          className="mt-1 bg-gray-50"
-                        />
-                      </div>
-                      <div className="p-3 bg-green-50 rounded-lg">
-                        <p className="text-sm text-green-700">Total with Contingency</p>
-                        <p className="text-lg font-bold text-green-900">
-                          {formatCurrency(renovationEstimate * 1.15)}
-                        </p>
+                    <div>
+                      <h4 className="font-medium text-navy-dark mb-3">Cost Summary</h4>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="reno-estimate">Total Renovation Estimate</Label>
+                          <Input 
+                            id="reno-estimate"
+                            type="number" 
+                            value={renovationEstimate}
+                            readOnly
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="contingency">Contingency Buffer (15%)</Label>
+                          <Input 
+                            id="contingency"
+                            type="number" 
+                            value={Math.round(renovationEstimate * 0.15)}
+                            readOnly
+                            className="mt-1 bg-gray-50"
+                          />
+                        </div>
+                        <div className="p-3 bg-green-50 rounded-lg">
+                          <p className="text-sm text-green-700">Total with Contingency</p>
+                          <p className="text-lg font-bold text-green-900">
+                            {formatCurrency(renovationEstimate * 1.15)}
+                          </p>
+                        </div>
+                        {deal.renovation_analysis.timeline_weeks && (
+                          <div className="p-3 bg-blue-50 rounded-lg">
+                            <p className="text-sm text-blue-700">Estimated Timeline</p>
+                            <p className="text-lg font-bold text-blue-900">
+                              {deal.renovation_analysis.timeline_weeks} weeks
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-medium text-navy-dark mb-3">Room-by-Room Costs</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                          <span>Kitchen Renovation</span>
+                          <span className="font-medium">$15,000 - $30,000</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                          <span>Bathroom Renovation</span>
+                          <span className="font-medium">$8,000 - $15,000</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                          <span>Flooring (entire house)</span>
+                          <span className="font-medium">$5,000 - $12,000</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                          <span>Painting (interior/exterior)</span>
+                          <span className="font-medium">$3,000 - $8,000</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-navy-dark mb-3">Cost Estimation</h4>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="reno-estimate">Total Renovation Estimate</Label>
+                          <Input 
+                            id="reno-estimate"
+                            type="number" 
+                            value={renovationEstimate}
+                            className="mt-1"
+                            readOnly
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="contingency">Contingency Buffer (15%)</Label>
+                          <Input 
+                            id="contingency"
+                            type="number" 
+                            value={Math.round(renovationEstimate * 0.15)}
+                            readOnly
+                            className="mt-1 bg-gray-50"
+                          />
+                        </div>
+                        <div className="p-3 bg-green-50 rounded-lg">
+                          <p className="text-sm text-green-700">Total with Contingency</p>
+                          <p className="text-lg font-bold text-green-900">
+                            {formatCurrency(renovationEstimate * 1.15)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
 
@@ -595,74 +766,141 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-navy-dark">Risk Assessment</h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="font-medium text-navy-dark mb-3">Market Risks</h4>
-                    <div className="space-y-3">
-                      <div className="p-3 bg-yellow-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">Market Trends</span>
-                          <Badge className="bg-yellow-100 text-yellow-800 text-xs">Medium</Badge>
+                {deal.risk_assessment ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium text-navy-dark mb-3">Risk Categories</h4>
+                        <div className="space-y-3">
+                          {Object.entries(deal.risk_assessment).filter(([key]) => key.endsWith('_risk')).map(([key, risk]) => (
+                            <div key={key} className="p-3 bg-gray-50 rounded-lg">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm font-medium capitalize">{key.replace('_risk', '').replace('_', ' ')} Risk</span>
+                                <Badge className={`${
+                                  risk.level === 'low' ? 'bg-green-100 text-green-800' :
+                                  risk.level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                } text-xs`}>
+                                  {risk.level}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-gray-600">Score: {risk.score}/100</p>
+                              {risk.factors && risk.factors.length > 0 && (
+                                <p className="text-xs text-gray-600 mt-1">
+                                  Key factors: {risk.factors.slice(0, 2).join(', ')}
+                                </p>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                        <p className="text-xs text-yellow-700">Market analysis needed</p>
                       </div>
-                      <div className="p-3 bg-green-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">Days on Market</span>
-                          <Badge className="bg-green-100 text-green-800 text-xs">Low</Badge>
-                        </div>
-                        <p className="text-xs text-green-700">Good sales velocity in area</p>
-                      </div>
-                      <div className="p-3 bg-yellow-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">Rental Yield</span>
-                          <Badge className="bg-yellow-100 text-yellow-800 text-xs">Medium</Badge>
-                        </div>
-                        <p className="text-xs text-yellow-700">Analysis in progress</p>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div>
-                    <h4 className="font-medium text-navy-dark mb-3">Property Risks</h4>
-                    <div className="space-y-3">
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">Zoning Compliance</span>
-                          <Badge className="bg-gray-100 text-gray-800 text-xs">Unknown</Badge>
+                      <div>
+                        <h4 className="font-medium text-navy-dark mb-3">Risk Mitigation</h4>
+                        <div className="space-y-3">
+                          {deal.risk_assessment.recommendations?.map((rec, index) => (
+                            <div key={index} className="p-3 bg-blue-50 rounded-lg">
+                              <p className="text-sm text-blue-800">{rec}</p>
+                            </div>
+                          ))}
                         </div>
-                        <p className="text-xs text-gray-600">Council data required</p>
-                      </div>
-                      <div className="p-3 bg-green-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">Structural Condition</span>
-                          <Badge className="bg-green-100 text-green-800 text-xs">Low</Badge>
-                        </div>
-                        <p className="text-xs text-green-700">No obvious issues visible</p>
-                      </div>
-                      <div className="p-3 bg-yellow-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">Renovation Complexity</span>
-                          <Badge className="bg-yellow-100 text-yellow-800 text-xs">Medium</Badge>
-                        </div>
-                        <p className="text-xs text-yellow-700">Standard renovation scope</p>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                <div className="bg-blue-50 p-4 rounded-xl">
-                  <h4 className="font-medium text-blue-900 mb-2">Overall Risk Score</h4>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <Progress value={60} className="h-3" />
+                    <div className="bg-blue-50 p-4 rounded-xl">
+                      <h4 className="font-medium text-blue-900 mb-2">Overall Risk Assessment</h4>
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <Progress value={deal.risk_assessment.overall_risk_score || 50} className="h-3" />
+                        </div>
+                        <Badge className={`${
+                          deal.risk_assessment.overall_risk_level === 'low' ? 'bg-green-100 text-green-800' :
+                          deal.risk_assessment.overall_risk_level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {deal.risk_assessment.overall_risk_level} Risk
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-blue-700 mt-2">
+                        Risk Score: {deal.risk_assessment.overall_risk_score}/100
+                        {deal.risk_assessment.confidence_level && 
+                          ` • Confidence: ${deal.risk_assessment.confidence_level}%`
+                        }
+                      </p>
                     </div>
-                    <Badge className="bg-yellow-100 text-yellow-800">Medium Risk</Badge>
-                  </div>
-                  <p className="text-sm text-blue-700 mt-2">
-                    Overall risk is medium due to pending market analysis and zoning verification.
-                  </p>
-                </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium text-navy-dark mb-3">Market Risks</h4>
+                        <div className="space-y-3">
+                          <div className="p-3 bg-yellow-50 rounded-lg">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">Market Trends</span>
+                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Medium</Badge>
+                            </div>
+                            <p className="text-xs text-yellow-700">Market analysis needed</p>
+                          </div>
+                          <div className="p-3 bg-green-50 rounded-lg">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">Days on Market</span>
+                              <Badge className="bg-green-100 text-green-800 text-xs">Low</Badge>
+                            </div>
+                            <p className="text-xs text-green-700">Good sales velocity in area</p>
+                          </div>
+                          <div className="p-3 bg-yellow-50 rounded-lg">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">Rental Yield</span>
+                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Medium</Badge>
+                            </div>
+                            <p className="text-xs text-yellow-700">Analysis in progress</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-navy-dark mb-3">Property Risks</h4>
+                        <div className="space-y-3">
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">Zoning Compliance</span>
+                              <Badge className="bg-gray-100 text-gray-800 text-xs">Unknown</Badge>
+                            </div>
+                            <p className="text-xs text-gray-600">Council data required</p>
+                          </div>
+                          <div className="p-3 bg-green-50 rounded-lg">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">Structural Condition</span>
+                              <Badge className="bg-green-100 text-green-800 text-xs">Low</Badge>
+                            </div>
+                            <p className="text-xs text-green-700">No obvious issues visible</p>
+                          </div>
+                          <div className="p-3 bg-yellow-50 rounded-lg">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">Renovation Complexity</span>
+                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Medium</Badge>
+                            </div>
+                            <p className="text-xs text-yellow-700">Standard renovation scope</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50 p-4 rounded-xl">
+                      <h4 className="font-medium text-blue-900 mb-2">Overall Risk Score</h4>
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <Progress value={60} className="h-3" />
+                        </div>
+                        <Badge className="bg-yellow-100 text-yellow-800">Medium Risk</Badge>
+                      </div>
+                      <p className="text-sm text-blue-700 mt-2">
+                        Overall risk is medium due to pending market analysis and zoning verification.
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </TabsContent>
           </Tabs>

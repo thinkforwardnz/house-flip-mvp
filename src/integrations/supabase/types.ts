@@ -66,14 +66,26 @@ export type Database = {
       deals: {
         Row: {
           address: string
+          analysis_data: Json | null
+          bathrooms: number | null
+          bedrooms: number | null
           city: string | null
+          coordinates: unknown | null
           created_at: string | null
           current_profit: number | null
           current_risk: Database["public"]["Enums"]["risk_level"] | null
+          description: string | null
+          estimated_renovation_cost: number | null
+          floor_area: number | null
           id: string
+          land_area: number | null
+          market_analysis: Json | null
           notes: string | null
+          photos: string[] | null
           pipeline_stage: Database["public"]["Enums"]["pipeline_stage"] | null
           purchase_price: number | null
+          renovation_analysis: Json | null
+          risk_assessment: Json | null
           suburb: string | null
           target_sale_price: number | null
           team_id: string | null
@@ -82,14 +94,26 @@ export type Database = {
         }
         Insert: {
           address: string
+          analysis_data?: Json | null
+          bathrooms?: number | null
+          bedrooms?: number | null
           city?: string | null
+          coordinates?: unknown | null
           created_at?: string | null
           current_profit?: number | null
           current_risk?: Database["public"]["Enums"]["risk_level"] | null
+          description?: string | null
+          estimated_renovation_cost?: number | null
+          floor_area?: number | null
           id?: string
+          land_area?: number | null
+          market_analysis?: Json | null
           notes?: string | null
+          photos?: string[] | null
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           purchase_price?: number | null
+          renovation_analysis?: Json | null
+          risk_assessment?: Json | null
           suburb?: string | null
           target_sale_price?: number | null
           team_id?: string | null
@@ -98,14 +122,26 @@ export type Database = {
         }
         Update: {
           address?: string
+          analysis_data?: Json | null
+          bathrooms?: number | null
+          bedrooms?: number | null
           city?: string | null
+          coordinates?: unknown | null
           created_at?: string | null
           current_profit?: number | null
           current_risk?: Database["public"]["Enums"]["risk_level"] | null
+          description?: string | null
+          estimated_renovation_cost?: number | null
+          floor_area?: number | null
           id?: string
+          land_area?: number | null
+          market_analysis?: Json | null
           notes?: string | null
+          photos?: string[] | null
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           purchase_price?: number | null
+          renovation_analysis?: Json | null
+          risk_assessment?: Json | null
           suburb?: string | null
           target_sale_price?: number | null
           team_id?: string | null

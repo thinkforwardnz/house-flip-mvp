@@ -5,6 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
 import { corsHeaders } from '../shared/cors.ts';
 import { AgentQLClient } from '../shared/agentql-client.ts';
+import { parseAIResponse } from '../shared/json-parser.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -33,9 +34,8 @@ serve(async (req) => {
       console.log('Scraping comparable sales with AgentQL...');
       const agentqlClient = new AgentQLClient();
       
-      // Search for recent sales in the area
-      const searchQuery = `${suburb} ${city} ${bedrooms} bedroom recently sold`;
-      const comparables = await agentqlClient.scrapeComparableSales(searchQuery);
+      // Search for recent sales in the area using the new method
+      const comparables = await agentqlClient.scrapeComparableSales(address, suburb, city);
       
       marketData.comparables = comparables || [];
       console.log(`Found ${marketData.comparables.length} comparable sales`);
@@ -106,7 +106,7 @@ Respond in JSON format:
         const analysisText = data.choices[0].message.content;
         
         try {
-          marketData.analysis = JSON.parse(analysisText);
+          marketData.analysis = parseAIResponse(analysisText);
           console.log('Market analysis completed successfully');
         } catch (parseError) {
           console.error('Failed to parse market analysis:', parseError);
