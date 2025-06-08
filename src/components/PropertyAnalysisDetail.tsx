@@ -6,9 +6,9 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import AIAnalysisCard from '@/components/AIAnalysisCard';
 import { 
   MapPin, 
   Home, 
@@ -24,9 +24,10 @@ import {
   Target,
   Wrench
 } from 'lucide-react';
+import type { Deal, RiskAssessment, MarketData, RenovationAnalysis } from '@/types/analysis';
 
 interface PropertyAnalysisDetailProps {
-  deal: any;
+  deal: Deal;
   onUpdateDeal: (updates: any) => void;
 }
 
@@ -105,6 +106,34 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
     ? deal.target_sale_price - renovationEstimate - (deal.target_sale_price * 0.1) - (deal.target_sale_price * 0.15)
     : 0;
 
+  const getDataSourceStatus = () => {
+    return {
+      linz: { status: 'complete', icon: CheckCircle, color: 'text-green-600' },
+      trademe: deal.photos?.length > 0 ? 
+        { status: 'complete', icon: CheckCircle, color: 'text-green-600' } :
+        { status: 'pending', icon: AlertTriangle, color: 'text-yellow-600' },
+      googleMaps: deal.coordinates ? 
+        { status: 'complete', icon: CheckCircle, color: 'text-green-600' } :
+        { status: 'pending', icon: AlertTriangle, color: 'text-yellow-600' },
+      council: { status: 'pending', icon: AlertTriangle, color: 'text-gray-600' }
+    };
+  };
+
+  const dataSourceStatus = getDataSourceStatus();
+
+  // Type-safe accessor functions
+  const getRiskLevel = (riskData: any): string => {
+    return riskData?.level || 'unknown';
+  };
+
+  const getRiskScore = (riskData: any): number => {
+    return riskData?.score || 0;
+  };
+
+  const getRiskFactors = (riskData: any): string[] => {
+    return riskData?.factors || [];
+  };
+
   const handleRunAnalysis = async () => {
     setIsAnalyzing(true);
     
@@ -154,7 +183,7 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
         body: {
           dealId: deal.id,
           photos: deal.photos || [],
-          propertyDescription: deal.description || deal.summary,
+          propertyDescription: deal.description || '',
           bedrooms: deal.bedrooms,
           bathrooms: deal.bathrooms,
           floorArea: deal.floor_area
@@ -216,21 +245,6 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
       setAnalysisStep('');
     }
   };
-
-  const getDataSourceStatus = () => {
-    return {
-      linz: { status: 'complete', icon: CheckCircle, color: 'text-green-600' },
-      trademe: deal.photos?.length > 0 ? 
-        { status: 'complete', icon: CheckCircle, color: 'text-green-600' } :
-        { status: 'pending', icon: AlertTriangle, color: 'text-yellow-600' },
-      googleMaps: deal.coordinates ? 
-        { status: 'complete', icon: CheckCircle, color: 'text-green-600' } :
-        { status: 'pending', icon: AlertTriangle, color: 'text-yellow-600' },
-      council: { status: 'pending', icon: AlertTriangle, color: 'text-gray-600' }
-    };
-  };
-
-  const dataSourceStatus = getDataSourceStatus();
 
   return (
     <div className="space-y-6">
@@ -365,8 +379,8 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
                     <TrendingUp className="h-5 w-5 text-purple-600" />
                     <p className="text-sm font-medium text-purple-900">Est. Profit</p>
                   </div>
-                  <p className={`text-xl font-bold ${deal.current_profit > 0 ? 'text-purple-900' : 'text-gray-600'}`}>
-                    {deal.current_profit > 0 ? formatCurrency(deal.current_profit) : 'TBD'}
+                  <p className={`text-xl font-bold ${deal.current_profit && deal.current_profit > 0 ? 'text-purple-900' : 'text-gray-600'}`}>
+                    {deal.current_profit && deal.current_profit > 0 ? formatCurrency(deal.current_profit) : 'TBD'}
                   </p>
                 </div>
               </div>
@@ -772,22 +786,22 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
                       <div>
                         <h4 className="font-medium text-navy-dark mb-3">Risk Categories</h4>
                         <div className="space-y-3">
-                          {Object.entries(deal.risk_assessment).filter(([key]) => key.endsWith('_risk')).map(([key, risk]) => (
+                          {Object.entries(deal.risk_assessment as RiskAssessment).filter(([key]) => key.endsWith('_risk')).map(([key, risk]) => (
                             <div key={key} className="p-3 bg-gray-50 rounded-lg">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-sm font-medium capitalize">{key.replace('_risk', '').replace('_', ' ')} Risk</span>
                                 <Badge className={`${
-                                  risk.level === 'low' ? 'bg-green-100 text-green-800' :
-                                  risk.level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                  getRiskLevel(risk) === 'low' ? 'bg-green-100 text-green-800' :
+                                  getRiskLevel(risk) === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                                   'bg-red-100 text-red-800'
                                 } text-xs`}>
-                                  {risk.level}
+                                  {getRiskLevel(risk)}
                                 </Badge>
                               </div>
-                              <p className="text-xs text-gray-600">Score: {risk.score}/100</p>
-                              {risk.factors && risk.factors.length > 0 && (
+                              <p className="text-xs text-gray-600">Score: {getRiskScore(risk)}/100</p>
+                              {getRiskFactors(risk).length > 0 && (
                                 <p className="text-xs text-gray-600 mt-1">
-                                  Key factors: {risk.factors.slice(0, 2).join(', ')}
+                                  Key factors: {getRiskFactors(risk).slice(0, 2).join(', ')}
                                 </p>
                               )}
                             </div>
@@ -906,6 +920,9 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* AI Analysis Summary Card */}
+      <AIAnalysisCard deal={deal} />
     </div>
   );
 };
