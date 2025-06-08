@@ -56,6 +56,31 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
                   lat: (updatedDealData.coordinates as any).lat,
                   lng: (updatedDealData.coordinates as any).lng
                 }
+              : undefined,
+            market_analysis: updatedDealData.market_analysis && 
+              typeof updatedDealData.market_analysis === 'object' && 
+              updatedDealData.market_analysis !== null
+              ? (updatedDealData.market_analysis as any)
+              : undefined,
+            renovation_analysis: updatedDealData.renovation_analysis && 
+              typeof updatedDealData.renovation_analysis === 'object' && 
+              updatedDealData.renovation_analysis !== null
+              ? (updatedDealData.renovation_analysis as any)
+              : undefined,
+            risk_assessment: updatedDealData.risk_assessment && 
+              typeof updatedDealData.risk_assessment === 'object' && 
+              updatedDealData.risk_assessment !== null
+              ? (updatedDealData.risk_assessment as any)
+              : undefined,
+            analysis_data: updatedDealData.analysis_data && 
+              typeof updatedDealData.analysis_data === 'object' && 
+              updatedDealData.analysis_data !== null
+              ? (updatedDealData.analysis_data as any)
+              : undefined,
+            listing_details: updatedDealData.listing_details && 
+              typeof updatedDealData.listing_details === 'object' && 
+              updatedDealData.listing_details !== null
+              ? (updatedDealData.listing_details as any)
               : undefined
           };
           onDealUpdate(transformedDeal);
