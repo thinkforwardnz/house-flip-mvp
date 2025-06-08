@@ -16,19 +16,39 @@ export interface ProcessedListing {
   land_area: number | null;
   photos: string[] | null;
   listing_date: string | null;
+  ai_analysis?: any;
 }
 
 export function processTrademeListing(rawData: any): ProcessedListing | null {
   try {
-    console.log('Processing Trade Me listing:', rawData);
+    console.log('Processing Trade Me listing with enhanced data:', {
+      address: rawData.address,
+      hasDescription: !!rawData.description,
+      hasPhotos: Array.isArray(rawData.photos) ? rawData.photos.length : 0,
+      hasAiAnalysis: !!rawData.ai_analysis
+    });
 
     if (!rawData || !rawData.address) {
       console.log('Invalid listing data - missing address');
       return null;
     }
 
-    // Parse location information from address
-    const locationInfo = parseLocationFromAddress(rawData.address, rawData.city);
+    // Use enhanced address data if available from AgentQL
+    const address = rawData.full_address || rawData.address;
+    
+    // Parse location information, preferring AgentQL data
+    let locationInfo;
+    if (rawData.suburb && rawData.city) {
+      // Use AgentQL extracted location data
+      locationInfo = {
+        suburb: rawData.suburb,
+        city: rawData.city,
+        district: rawData.district
+      };
+    } else {
+      // Fall back to parsing from address
+      locationInfo = parseLocationFromAddress(address, rawData.city);
+    }
 
     // If we still don't have district, try to extract from suburb
     let district = locationInfo.district;
@@ -36,24 +56,69 @@ export function processTrademeListing(rawData: any): ProcessedListing | null {
       district = extractDistrictFromSuburb(locationInfo.suburb);
     }
 
+    // Process price - handle various formats
+    let price = 0;
+    if (rawData.price) {
+      price = parseFloat(rawData.price.toString().replace(/[^\d.]/g, '')) || 0;
+    } else if (rawData.listingprice) {
+      price = parseFloat(rawData.listingprice.toString().replace(/[^\d.]/g, '')) || 0;
+    }
+
+    // Process photos - ensure we have a valid array
+    let photos: string[] | null = null;
+    if (Array.isArray(rawData.photos) && rawData.photos.length > 0) {
+      photos = rawData.photos.filter(photo => typeof photo === 'string' && photo.trim().length > 0);
+    } else if (rawData.listingfeaturedimg) {
+      photos = [rawData.listingfeaturedimg];
+    }
+
+    // Process description/summary
+    let summary = null;
+    if (rawData.description) {
+      summary = cleanTextValue(rawData.description);
+    } else if (rawData.summary) {
+      summary = cleanTextValue(rawData.summary);
+    }
+
+    // Process property features if available
+    if (Array.isArray(rawData.property_features) && rawData.property_features.length > 0) {
+      const featuresText = rawData.property_features.join(', ');
+      if (summary) {
+        summary += `\n\nFeatures: ${featuresText}`;
+      } else {
+        summary = `Features: ${featuresText}`;
+      }
+    }
+
     const processed: ProcessedListing = {
-      source_url: rawData.url || rawData.source_url || '',
+      source_url: rawData.url || rawData.listingurl || rawData.source_url || '',
       source_site: 'Trade Me',
-      address: rawData.address,
+      address: address,
       suburb: locationInfo.suburb || rawData.suburb || null,
       city: locationInfo.city || rawData.city || 'Auckland',
       district: district,
-      price: parseFloat(rawData.price?.toString().replace(/[^\d.]/g, '') || '0') || 0,
-      summary: rawData.description || rawData.summary || null,
-      bedrooms: parseInt(rawData.bedrooms?.toString() || '0') || null,
-      bathrooms: parseFloat(rawData.bathrooms?.toString() || '0') || null,
-      floor_area: parseFloat(rawData.floor_area?.toString() || '0') || null,
-      land_area: parseFloat(rawData.land_area?.toString() || '0') || null,
-      photos: Array.isArray(rawData.photos) ? rawData.photos : null,
+      price: price,
+      summary: summary,
+      bedrooms: parseNumericValue(rawData.bedrooms || rawData.listingbeds),
+      bathrooms: parseNumericValue(rawData.bathrooms || rawData.listingbaths),
+      floor_area: parseNumericValue(rawData.floor_area),
+      land_area: parseNumericValue(rawData.land_area),
+      photos: photos,
       listing_date: rawData.listing_date || null,
+      ai_analysis: rawData.ai_analysis || null,
     };
 
-    console.log('Processed Trade Me listing:', processed);
+    console.log('Successfully processed Trade Me listing:', {
+      address: processed.address,
+      price: processed.price,
+      bedrooms: processed.bedrooms,
+      bathrooms: processed.bathrooms,
+      photos_count: processed.photos?.length || 0,
+      has_summary: !!processed.summary,
+      has_ai_analysis: !!processed.ai_analysis,
+      district: processed.district
+    });
+
     return processed;
   } catch (error) {
     console.error('Error processing Trade Me listing:', error);

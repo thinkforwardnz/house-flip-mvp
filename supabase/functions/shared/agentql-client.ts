@@ -4,9 +4,8 @@
 declare const Deno: any;
 
 /**
- * AgentQLClient for property data extraction via AgentQL API.
- * Stage 1: Simplified for search results only (ID, URL, Address, Featured Image).
- * Extended: Individual property page scraping for data enrichment.
+ * AgentQLClient for comprehensive property data extraction via AgentQL API.
+ * Enhanced for Trade Me with detailed property information including descriptions and features.
  */
 export class AgentQLClient {
   private apiKey: string;
@@ -79,8 +78,7 @@ export class AgentQLClient {
   }
 
   /**
-   * Gets the TradeMe search results query - Stage 1: Basic listing metadata including featured image.
-   * Updated to include listingfeaturedimg field.
+   * Enhanced TradeMe search results query - captures basic listing metadata including featured image.
    */
   getTradeeMeSearchQuery(): string {
     return `{
@@ -89,31 +87,59 @@ export class AgentQLClient {
         listingfeaturedimg
         listingurl
         listingaddress
+        listingprice
+        listingbeds
+        listingbaths
       }
     }`;
   }
 
   /**
-   * Gets the TradeMe individual property page query for data enrichment.
+   * Comprehensive TradeMe individual property page query for detailed data enrichment.
+   * Captures all property details, description, features, and comprehensive photo gallery.
    */
   getTradeeMePropertyQuery(): string {
     return `{
-      photos[] {
-        image_src
-      }
       property_details {
+        price
         bedrooms
         bathrooms
         floor_area
         land_area
-        price
+        property_type
+        year_built
+        parking_spaces
+      }
+      description
+      summary
+      property_features[]
+      auction_info {
+        auction_date
+        auction_time
+        tender_closes
+      }
+      agent_details {
+        agent_name
+        agency_name
+        agent_phone
+      }
+      photos[] {
+        image_src
+        image_alt
+      }
+      listing_date
+      listing_status
+      property_address {
+        full_address
+        suburb
+        city
+        district
       }
     }`;
   }
 
   /**
-   * Scrapes TradeMe search results to get basic listing metadata with retry logic.
-   * Stage 1: Search Results Only
+   * Scrapes TradeMe search results to get comprehensive listing metadata with retry logic.
    */
   async scrapeSearchResults(searchUrl: string): Promise<any> {
     const query = this.getTradeeMeSearchQuery();
@@ -121,27 +147,28 @@ export class AgentQLClient {
   }
 
   /**
-   * Scrapes individual TradeMe property page for data enrichment.
+   * Scrapes individual TradeMe property page for comprehensive data enrichment.
    */
   async scrapePropertyPage(propertyUrl: string): Promise<any> {
     const query = this.getTradeeMePropertyQuery();
     const result = await this.queryDataWithRetry(propertyUrl, query, 3000);
     
-    // Process the result to extract photos
+    // Process the result to extract and structure all property data
     const processedData = this.processPropertyPageData(result);
     return processedData;
   }
 
   /**
-   * Process individual property page data from AgentQL response.
+   * Process comprehensive property page data from AgentQL response.
    */
   private processPropertyPageData(response: any): any {
-    console.log('Processing property page data:', JSON.stringify(response, null, 2));
+    console.log('Processing comprehensive property page data:', JSON.stringify(response, null, 2));
     
     try {
       const data = response.data || response;
       const photos: string[] = [];
       
+      // Extract photos
       if (Array.isArray(data.photos)) {
         for (const photo of data.photos) {
           if (photo.image_src) {
@@ -155,20 +182,71 @@ export class AgentQLClient {
         }
       }
 
-      console.log(`Extracted ${photos.length} photos from property page`);
+      // Extract property details
+      const propertyDetails = data.property_details || {};
+      
+      // Extract address information
+      const addressInfo = data.property_address || {};
+      
+      // Extract agent information
+      const agentInfo = data.agent_details || {};
+      
+      // Extract auction information
+      const auctionInfo = data.auction_info || {};
+
+      console.log(`Extracted ${photos.length} photos and comprehensive property data`);
       
       return {
+        // Core property data
         photos: photos,
-        bedrooms: data.property_details?.bedrooms || null,
-        bathrooms: data.property_details?.bathrooms || null,
-        floor_area: data.property_details?.floor_area || null,
-        land_area: data.property_details?.land_area || null,
-        price: data.property_details?.price || null
+        bedrooms: this.parseNumericValue(propertyDetails.bedrooms),
+        bathrooms: this.parseNumericValue(propertyDetails.bathrooms),
+        floor_area: this.parseNumericValue(propertyDetails.floor_area),
+        land_area: this.parseNumericValue(propertyDetails.land_area),
+        price: this.parseNumericValue(propertyDetails.price),
+        property_type: propertyDetails.property_type || null,
+        year_built: this.parseNumericValue(propertyDetails.year_built),
+        parking_spaces: this.parseNumericValue(propertyDetails.parking_spaces),
+        
+        // Description and features
+        description: data.description || null,
+        summary: data.summary || null,
+        property_features: Array.isArray(data.property_features) ? data.property_features : [],
+        
+        // Address details
+        full_address: addressInfo.full_address || null,
+        suburb: addressInfo.suburb || null,
+        city: addressInfo.city || null,
+        district: addressInfo.district || null,
+        
+        // Agent information
+        agent_name: agentInfo.agent_name || null,
+        agency_name: agentInfo.agency_name || null,
+        agent_phone: agentInfo.agent_phone || null,
+        
+        // Auction/tender information
+        auction_date: auctionInfo.auction_date || null,
+        auction_time: auctionInfo.auction_time || null,
+        tender_closes: auctionInfo.tender_closes || null,
+        
+        // Listing metadata
+        listing_date: data.listing_date || null,
+        listing_status: data.listing_status || null
       };
     } catch (error) {
-      console.error('Error processing property page data:', error);
+      console.error('Error processing comprehensive property page data:', error);
       return { photos: [] };
     }
+  }
+
+  /**
+   * Helper function to parse numeric values safely
+   */
+  private parseNumericValue(value: any): number | null {
+    if (!value) return null;
+    const cleaned = value.toString().replace(/[^\d.]/g, '');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? null : parsed;
   }
 
   /**
