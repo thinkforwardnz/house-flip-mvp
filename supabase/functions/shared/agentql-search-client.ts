@@ -26,7 +26,7 @@ export class AgentQLSearchClient {
       }
       `;
 
-      const response = await fetch(`${this.baseUrl}/query`, {
+      const response = await fetch(`${this.baseUrl}/query-data`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
