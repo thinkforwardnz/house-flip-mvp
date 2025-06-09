@@ -8,6 +8,7 @@ import { useScrapedListings } from '@/hooks/useScrapedListings';
 import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
 import { useRefreshFeed } from '@/hooks/useRefreshFeed';
 import ScrapingProgress from '@/components/ScrapingProgress';
+import AgentQLTestButton from '@/components/AgentQLTestButton';
 import { SearchFilters } from '@/types/filters';
 
 interface PropertyFeedProps {
@@ -112,6 +113,9 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
 
   return (
     <div className="space-y-6">
+      {/* AgentQL Test Button - Add this for debugging */}
+      <AgentQLTestButton />
+
       {/* Scraping Progress */}
       <ScrapingProgress
         isActive={isScrapingActive}
