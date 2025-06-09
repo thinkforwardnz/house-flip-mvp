@@ -16,7 +16,7 @@ serve(async (req) => {
 
   try {
     const { location, propertyType, priceRange } = await req.json();
-    console.log('Starting market analysis for:', { location, propertyType, priceRange });
+    console.log('Starting market analysis with enhanced debugging for:', { location, propertyType, priceRange });
 
     if (!location) {
       return new Response(JSON.stringify({
@@ -28,8 +28,71 @@ serve(async (req) => {
       });
     }
 
-    // Initialize search client for market data
-    const searchClient = new AgentQLSearchClient();
+    // Check if AgentQL API key is configured with detailed logging
+    const agentqlKey = Deno.env.get('AGENTQL_API_KEY');
+    console.log('Market Analysis - AgentQL API key check:', {
+      exists: !!agentqlKey,
+      length: agentqlKey?.length || 0,
+      prefix: agentqlKey?.substring(0, 8) + '...' || 'N/A'
+    });
+
+    if (!agentqlKey) {
+      console.error('AGENTQL_API_KEY not configured for market analysis');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'AgentQL API key not configured',
+        message: 'Please add your AgentQL API key to Supabase Edge Function secrets',
+        troubleshooting: {
+          steps: [
+            '1. Go to Supabase Dashboard > Edge Functions > Settings',
+            '2. Add a new secret: AGENTQL_API_KEY',
+            '3. Enter your AgentQL API key value',
+            '4. Redeploy the function'
+          ]
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Initialize search client with enhanced error handling
+    let searchClient;
+    try {
+      searchClient = new AgentQLSearchClient();
+      console.log('Market Analysis - AgentQL search client initialized successfully');
+
+      // Test connection before proceeding
+      const connectionTest = await searchClient.testConnection();
+      if (!connectionTest.success) {
+        console.error('Market Analysis - AgentQL connection test failed:', connectionTest);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'AgentQL connection test failed',
+          message: connectionTest.message,
+          details: connectionTest.details
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      console.log('Market Analysis - AgentQL connection test passed');
+
+    } catch (error) {
+      console.error('Market Analysis - Failed to initialize AgentQL search client:', error);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to initialize AgentQL search client',
+        message: error.message,
+        troubleshooting: {
+          possibleCauses: [
+            'Invalid API key format',
+            'API key too short',
+            'Environment variable not set correctly'
+          ]
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
     
     // Build search URL for market analysis
     const baseUrl = 'https://www.trademe.co.nz/a/property/residential/sale';
@@ -41,22 +104,26 @@ serve(async (req) => {
     if (priceRange?.max) searchParams.append('price_max', priceRange.max.toString());
     
     const searchUrl = `${baseUrl}?${searchParams.toString()}`;
+    console.log('Market Analysis - Built search URL:', searchUrl);
     
-    // Get market data from search results
+    // Get market data from search results with enhanced error handling
     const marketData = await searchClient.scrapeSearchResults(searchUrl);
 
     if (!marketData?.success || !marketData?.data?.properties) {
+      console.error('Market Analysis - Could not retrieve market data:', marketData);
       return new Response(JSON.stringify({
         success: false,
         error: 'Could not retrieve market data',
-        message: 'No market data could be found for the specified criteria'
+        message: 'No market data could be found for the specified criteria',
+        details: marketData?.error || 'Unknown error',
+        searchUrl: searchUrl
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     const properties = marketData.data.properties || [];
-    console.log(`Market analysis found ${properties.length} properties`);
+    console.log(`Market analysis found ${properties.length} properties with enhanced debugging`);
 
     // Perform basic market analysis
     const analysis = {
@@ -65,22 +132,27 @@ serve(async (req) => {
       property_type: propertyType,
       price_range: priceRange,
       sample_properties: properties.slice(0, 10), // First 10 for analysis
-      search_url: searchUrl
+      search_url: searchUrl,
+      debugging: {
+        agentqlConfigured: true,
+        connectionTested: true
+      }
     };
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'Market analysis completed successfully',
+      message: 'Market analysis completed successfully with enhanced debugging',
       analysis: analysis
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('Market analysis error:', error);
+    console.error('Market analysis error with enhanced debugging:', error);
     return new Response(JSON.stringify({
       error: 'Market analysis failed',
-      details: error.message
+      details: error.message,
+      stack: error.stack
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
