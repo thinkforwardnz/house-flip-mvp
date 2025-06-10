@@ -74,4 +74,39 @@ This project aims to source, enrich, and analyze New Zealand property listings f
 - [ ] Test and validate
 - [ ] Repeat for other sites
 - [ ] Remove Apify code
-- [ ] Update documentation 
+- [ ] Update documentation
+
+---
+
+## Phase: Codebase Cleanup & Hardening
+
+### Tasks
+
+- **Standardize Error Handling & Logging**
+  - Review all `console.error` and thrown errors; ensure consistent logging and error reporting across backend and frontend.
+  - Implement a global error boundary or toast notification system in the frontend for user-facing errors.
+
+- **Type Safety Improvements**
+  - Audit all usages of `any`, `@ts-ignore`, `@ts-nocheck`, and similar suppressions. Refactor to use strict typing where possible.
+  - Ensure all arrays and function returns are explicitly typed, especially in edge functions.
+
+- **Environment Variable Management**
+  - Move hardcoded Supabase credentials in `src/integrations/supabase/client.ts` to a `.env` or `.env.local` file using Vite's `import.meta.env`.
+  - Document required environment variables for local and production environments.
+
+- **Deno/Node Compatibility Awareness**
+  - Clearly document which files/functions are Deno-only (Edge Functions) and which are Node.js/browser compatible.
+
+- **Security Review**
+  - Double-check that no secrets or sensitive keys are committed to the repo.
+  - Ensure all API keys and secrets are accessed via environment variables.
+
+- **Error Propagation & User Feedback**
+  - Ensure all errors that affect the user are surfaced in the UI (e.g., via toast notifications or error boundaries).
+  - Review hooks and components for proper error propagation.
+
+- **TODO/FIXME Audit**
+  - Search for and address any remaining TODO or FIXME comments in the codebase.
+
+- **Testing**
+  - Add or update unit and integration tests for any refactored or critical code paths. 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,9 +5,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, History, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useScrapingHistory } from '@/hooks/useScrapingHistory';
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 const ScrapingHistoryPanel = () => {
   const { history, isLoading } = useScrapingHistory();
+  const { toast } = useToast();
 
   if (isLoading) {
     return (

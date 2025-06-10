@@ -1,86 +1,126 @@
+// deno-lint-ignore-file
+// Use explicit Deno typing
+// Use explicit Deno typing
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+};
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8?dts';
 import { corsHeaders } from '../shared/cors.ts';
 import { AgentQLSearchClient } from '../shared/agentql-search-client.ts';
-import { processTrademeListing } from './data-processor.ts';
+import { processTrademeListing, ProcessedListing } from './data-processor.ts';
 import { buildTradeeMeSearchUrl } from './url-builder.ts';
+import { errorResponse } from '../shared/error-response.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
-const supabase = createClient(
+const supabase: SupabaseClient = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-serve(async (req) => {
+interface Filters {
+  [key: string]: string | number | boolean | undefined;
+}
+
+interface Property {
+  [key: string]: unknown;
+  listingaddress?: string;
+  source_url?: string;
+  source_site?: string;
+  address?: string;
+  suburb?: string | null;
+  city?: string | null;
+  district?: string | null;
+  price?: number | null;
+  summary?: string | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  floor_area?: number | null;
+  land_area?: number | null;
+  photos?: string[] | null;
+  listing_date?: string | null;
+}
+
+// Zod schema for incoming filters
+const FiltersSchema = z.record(z.union([z.string(), z.number(), z.boolean(), z.undefined()]));
+
+// Zod schema for processed listing (mirrors ProcessedListing interface)
+const ProcessedListingSchema = z.object({
+  source_url: z.string(),
+  source_site: z.string(),
+  address: z.string(),
+  suburb: z.string().nullable(),
+  city: z.string().nullable(),
+  district: z.string().nullable(),
+  price: z.number(),
+  summary: z.string().nullable(),
+  bedrooms: z.number().nullable(),
+  bathrooms: z.number().nullable(),
+  floor_area: z.number().nullable(),
+  land_area: z.number().nullable(),
+  photos: z.array(z.string()).nullable(),
+  listing_date: z.string().nullable(),
+});
+
+serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const { filters = {} } = await req.json();
+    const body = await req.json();
+    const filtersParse = FiltersSchema.safeParse(body.filters ?? {});
+    if (!filtersParse.success) {
+      return errorResponse('Invalid filters: ' + filtersParse.error.message, 400);
+    }
+    const filters = filtersParse.data;
     console.log('Starting Trade Me basic scraping with filters:', filters);
 
-    // Initialize search client only
     const searchClient = new AgentQLSearchClient();
-    
-    // Build search URL based on filters
     const searchUrl = buildTradeeMeSearchUrl(filters);
     console.log('Built search URL:', searchUrl);
 
-    // Scrape search results for basic property information only
-    console.log('Scraping search results for basic property information...');
     const searchResults = await searchClient.scrapeSearchResults(searchUrl);
-    
     if (!searchResults?.data?.properties || !Array.isArray(searchResults.data.properties)) {
       console.error('No properties found in search results');
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'No properties found in search results',
-        total_processed: 0,
-        total_saved: 0
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      return errorResponse('No properties found in search results', 404);
     }
 
     console.log(`Found ${searchResults.data.properties.length} properties in search results`);
 
-    // Process each property with basic information only
-    const processedListings = [];
+    const processedListings: ProcessedListing[] = [];
     const maxListings = 50;
-    
+
     for (let i = 0; i < Math.min(searchResults.data.properties.length, maxListings); i++) {
       const property = searchResults.data.properties[i];
-      
       try {
         console.log(`Processing basic property ${i + 1}/${Math.min(searchResults.data.properties.length, maxListings)}: ${property.listingaddress}`);
-        
-        // Basic rate limiting between requests
         if (i > 0 && i % 10 === 0) {
           await searchClient.rateLimitDelay();
         }
-
-        // Process with basic search data only
         const processed = processTrademeListing(property);
-
         if (processed) {
-          processedListings.push(processed);
+          // Validate processed listing before saving
+          const listingParse = ProcessedListingSchema.safeParse(processed);
+          if (!listingParse.success) {
+            console.error('Invalid processed listing:', listingParse.error);
+            continue; // Skip invalid listings
+          }
+          processedListings.push(listingParse.data);
         }
-
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(`Error processing basic property ${property.listingaddress}:`, error);
-        // Continue with next property
       }
     }
 
     console.log(`Successfully processed ${processedListings.length} Trade Me listings with basic information`);
 
-    // Save to database with basic fields only
-    const savedListings = [];
-    
+    const savedListings: ProcessedListing[] = [];
     for (const listing of processedListings) {
       try {
-        // Check if listing already exists
         const { data: existing } = await supabase
           .from('scraped_listings')
           .select('id')
@@ -120,7 +160,7 @@ serve(async (req) => {
         } else {
           console.log('Listing already exists, skipping:', listing.source_url);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error processing listing for database:', error);
       }
     }
@@ -135,14 +175,9 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Trade Me basic scraping error:', error);
-    return new Response(JSON.stringify({
-      error: 'Basic scraping failed',
-      details: error.message
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    const message = error instanceof Error ? error.message : 'Basic scraping failed';
+    return errorResponse(message, 500);
   }
 });

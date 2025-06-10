@@ -1,4 +1,3 @@
-
 export class AgentQLPropertyClient {
   private apiKey: string;
   private baseUrl = 'https://api.agentql.com/v1/query-data';
@@ -228,42 +227,57 @@ export class AgentQLPropertyClient {
     await new Promise(resolve => setTimeout(resolve, 2000));
   }
 
-  private parsePrice(priceStr: any): number {
+  /**
+   * Parse a price string or number to a number value.
+   *
+   * Args:
+   *     priceStr (unknown): The price value to parse.
+   *
+   * Returns:
+   *     number: The parsed price, or 0 if invalid.
+   */
+  private parsePrice(priceStr: unknown): number {
+    if (typeof priceStr === 'number') return priceStr;
     if (!priceStr) return 0;
-    console.log('Parsing price:', priceStr);
     const cleaned = priceStr.toString().replace(/[^\d.]/g, '');
     const parsed = parseFloat(cleaned);
-    const result = isNaN(parsed) ? 0 : parsed;
-    console.log('Parsed price result:', result);
-    return result;
+    return isNaN(parsed) ? 0 : parsed;
   }
 
-  private parseNumber(numStr: any): number | null {
+  /**
+   * Parse a string or number to a number value, or null if invalid.
+   *
+   * Args:
+   *     numStr (unknown): The value to parse.
+   *
+   * Returns:
+   *     number | null: The parsed number, or null if invalid.
+   */
+  private parseNumber(numStr: unknown): number | null {
+    if (typeof numStr === 'number') return numStr;
     if (!numStr) return null;
-    console.log('Parsing number:', numStr);
     const cleaned = numStr.toString().replace(/[^\d.]/g, '');
     const parsed = parseFloat(cleaned);
-    const result = isNaN(parsed) ? null : parsed;
-    console.log('Parsed number result:', result);
-    return result;
+    return isNaN(parsed) ? null : parsed;
   }
 
-  private processImages(images: any): string[] {
-    console.log('Processing images:', typeof images, Array.isArray(images) ? images.length : 'not array');
-    
+  /**
+   * Process images input to return an array of image URLs.
+   *
+   * Args:
+   *     images (unknown): The images value to process.
+   *
+   * Returns:
+   *     string[]: Array of image URLs.
+   */
+  private processImages(images: unknown): string[] {
     if (!images) return [];
-    
     if (Array.isArray(images)) {
-      const filtered = images.filter(img => typeof img === 'string' && img.trim().length > 0);
-      console.log('Filtered images count:', filtered.length);
-      return filtered;
+      return images.filter((img): img is string => typeof img === 'string' && img.trim().length > 0);
     }
-    
     if (typeof images === 'string' && images.trim().length > 0) {
-      console.log('Single image found');
       return [images];
     }
-    
     return [];
   }
 }

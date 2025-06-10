@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SearchFilters } from '@/types/filters';
 
-interface ScrapedListing {
+export interface ScrapedListing {
   id: string;
   source_url: string;
   source_site: string | null;

@@ -1,10 +1,10 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
 import { ApifyClient } from '../shared/apify-client.ts';
 import { REALESTATE_ACTOR_ID, buildRealestateApifyInput, processRealestateResults } from './apify-config.ts';
+import { errorResponse } from '../shared/error-response.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -113,13 +113,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in scrape-realestate function:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      success: false 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return errorResponse(error.message || 'scrape-realestate failed', 500);
   }
 });
 

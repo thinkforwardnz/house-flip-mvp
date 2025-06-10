@@ -1,10 +1,22 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Heart, Trash2, ExternalLink } from 'lucide-react';
 import { useSavedListings } from '@/hooks/useScrapedListings';
 import { Skeleton } from '@/components/ui/skeleton';
+
+interface ScrapedListing {
+  id: string;
+  address: string;
+  suburb: string | null;
+  city: string | null;
+  price: number;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  floor_area: number | null;
+  photos: string[] | null;
+  source_url: string;
+}
 
 const SavedProperties = () => {
   const { savedListings, isLoading } = useSavedListings();
@@ -59,7 +71,7 @@ const SavedProperties = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {savedListings.map((listing: any) => (
+          {savedListings.map((listing: ScrapedListing) => (
             <Card key={listing.id} className="bg-white shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="mb-3">

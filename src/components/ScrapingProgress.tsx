@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Loader2, Clock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface SourceProgress {
   name: string;
@@ -21,6 +21,8 @@ interface ScrapingProgressProps {
 }
 
 const ScrapingProgress = ({ isActive, sources, totalProgress, onCancel }: ScrapingProgressProps) => {
+  const { toast } = useToast();
+
   if (!isActive && sources.length === 0) return null;
 
   const getStatusIcon = (status: string) => {
@@ -57,6 +59,17 @@ const ScrapingProgress = ({ isActive, sources, totalProgress, onCancel }: Scrapi
       </Badge>
     );
   };
+
+  // Show a toast for any failed source
+  sources.forEach(source => {
+    if (source.status === 'failed' && source.error) {
+      toast({
+        title: `Scraping Failed: ${source.name}`,
+        description: source.error,
+        variant: 'destructive',
+      });
+    }
+  });
 
   return (
     <Card className="border-blue-200 bg-blue-50">

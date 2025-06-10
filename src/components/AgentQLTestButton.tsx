@@ -1,13 +1,22 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
+interface TestResult {
+  success: boolean;
+  message?: string;
+  connectionTest?: Record<string, unknown>;
+  troubleshooting?: {
+    possibleCauses?: string[];
+  };
+  error?: string;
+}
+
 const AgentQLTestButton = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
   const { toast } = useToast();
 
   const testAgentQL = async () => {
@@ -27,7 +36,7 @@ const AgentQLTestButton = () => {
         throw error;
       }
 
-      setTestResult(data);
+      setTestResult(data as TestResult);
       
       if (data?.success) {
         toast({
@@ -41,12 +50,13 @@ const AgentQLTestButton = () => {
           variant: "destructive",
         });
       }
-    } catch (error: any) {
-      console.error('AgentQL test error:', error);
-      setTestResult({ success: false, error: error.message });
+    } catch (error: unknown) {
+      let message = 'Unknown error';
+      if (error instanceof Error) message = error.message;
+      setTestResult({ success: false, error: message });
       toast({
         title: "Test Error",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {

@@ -1,15 +1,15 @@
-
 import React, { useState } from 'react';
 import PropertyListingCard from '@/components/PropertyListingCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw } from 'lucide-react';
-import { useScrapedListings } from '@/hooks/useScrapedListings';
+import { useScrapedListings, ScrapedListing } from '@/hooks/useScrapedListings';
 import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
 import { useRefreshFeed } from '@/hooks/useRefreshFeed';
 import ScrapingProgress from '@/components/ScrapingProgress';
 import AgentQLTestButton from '@/components/AgentQLTestButton';
 import { SearchFilters } from '@/types/filters';
+import { useToast } from '@/hooks/use-toast';
 
 interface PropertyFeedProps {
   filters: SearchFilters;
@@ -44,19 +44,21 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
     refreshFeed,
   } = useRefreshFeed();
 
-  const handleImportAsDeal = (listing: any) => {
+  const { toast } = useToast();
+
+  const handleImportAsDeal = (listing: ScrapedListing) => {
     importAsDeal(listing);
   };
 
-  const handleSaveForLater = (listing: any) => {
+  const handleSaveForLater = (listing: ScrapedListing) => {
     saveListing(listing.id);
   };
 
-  const handleDismiss = (listing: any) => {
+  const handleDismiss = (listing: ScrapedListing) => {
     dismissListing(listing.id);
   };
 
-  const handleAnalyse = (listing: any) => {
+  const handleAnalyse = (listing: ScrapedListing) => {
     importAsDeal(listing);
     // Switch to saved properties tab after analysis
     if (onSwitchToSavedTab) {
@@ -94,11 +96,20 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
       // Refetch the listings after refresh
       refetch();
     } catch (error) {
-      console.error('Error refreshing feed:', error);
+      toast({
+        title: 'Error refreshing feed',
+        description: error instanceof Error ? error.message : 'An error occurred while refreshing the feed.',
+        variant: 'destructive',
+      });
     }
   };
 
   if (error) {
+    toast({
+      title: 'Error loading properties',
+      description: error instanceof Error ? error.message : 'An error occurred while loading properties.',
+      variant: 'destructive',
+    });
     return (
       <div className="text-center py-8">
         <p className="text-red-600">Error loading properties. Please try again.</p>

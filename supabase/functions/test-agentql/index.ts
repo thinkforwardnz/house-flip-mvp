@@ -1,9 +1,15 @@
+// Use explicit Deno typing for Edge Function compatibility
+declare const Deno: { env: { get(key: string): string | undefined } };
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { corsHeaders } from '../shared/cors.ts';
 import { AgentQLPropertyClient } from '../shared/agentql-property-client.ts';
 
-serve(async (req) => {
+/**
+ * Supabase Edge Function to test AgentQL API key and connection.
+ * Handles CORS, API key presence, client instantiation, and connection test.
+ */
+serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -35,16 +41,17 @@ serve(async (req) => {
     }
 
     // Test client initialization
-    let client;
+    let client: AgentQLPropertyClient;
     try {
       client = new AgentQLPropertyClient();
       console.log('Client initialized successfully');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Client initialization failed:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
       return new Response(JSON.stringify({
         success: false,
         error: 'Client initialization failed',
-        message: error.message,
+        message,
         details: 'Failed to create AgentQL client instance'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -92,13 +99,14 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Test function error:', error);
+    const message = error instanceof Error ? error.message : 'Test function failed';
     return new Response(JSON.stringify({
       success: false,
       error: 'Test function failed',
-      message: error.message,
-      stack: error.stack
+      message,
+      stack: error instanceof Error ? error.stack : undefined
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

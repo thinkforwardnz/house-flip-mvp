@@ -1,12 +1,17 @@
-
 /**
  * Utility functions for parsing JSON responses from AI services
  */
 
 /**
  * Extracts and parses JSON from OpenAI responses that may be wrapped in markdown code blocks
+ *
+ * Args:
+ *     responseText (string): The response text to parse.
+ *
+ * Returns:
+ *     unknown: The parsed JSON object, or throws if parsing fails.
  */
-export function parseAIResponse(responseText: string): any {
+export function parseAIResponse(responseText: string): unknown {
   if (!responseText) {
     throw new Error('Empty response text');
   }
@@ -49,11 +54,18 @@ export function parseAIResponse(responseText: string): any {
 
 /**
  * Validates that a parsed object has required fields
+ *
+ * Args:
+ *     obj (unknown): The object to validate.
+ *     requiredFields (string[]): The required field names.
+ *
+ * Returns:
+ *     boolean: True if all required fields are present, false otherwise.
  */
-export function validateRequiredFields(obj: any, requiredFields: string[]): boolean {
+export function validateRequiredFields(obj: unknown, requiredFields: string[]): boolean {
   if (!obj || typeof obj !== 'object') {
     return false;
   }
   
-  return requiredFields.every(field => obj.hasOwnProperty(field));
+  return requiredFields.every(field => Object.prototype.hasOwnProperty.call(obj, field));
 }

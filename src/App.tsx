@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,7 @@ import Sold from "./pages/Sold";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import AIChatWidget from "./components/AIChatWidget";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -170,10 +170,12 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-          <AIChatWidget />
-        </BrowserRouter>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <AppRoutes />
+            <AIChatWidget />
+          </BrowserRouter>
+        </ErrorBoundary>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>

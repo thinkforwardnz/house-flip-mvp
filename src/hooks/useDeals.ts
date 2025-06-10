@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,16 +21,19 @@ export const useDeals = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: deals, isLoading, error } = useQuery({
+  const { data: deals, isLoading, error } = useQuery<Deal[]>({
     queryKey: ['deals'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('deals')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Deal[];
+      try {
+        const { data, error } = await supabase.from('deals').select('*');
+        if (error) throw error;
+        return data as Deal[];
+      } catch (error: unknown) {
+        let message = 'Failed to fetch deals';
+        if (error instanceof Error) message = error.message;
+        toast({ title: 'Error', description: message, variant: 'destructive' });
+        throw error;
+      }
     },
   });
 
@@ -62,12 +64,10 @@ export const useDeals = () => {
         description: "Your new deal has been added successfully.",
       });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (error: unknown) => {
+      let message = 'Failed to create deal';
+      if (error instanceof Error) message = error.message;
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     },
   });
 
@@ -90,12 +90,10 @@ export const useDeals = () => {
         description: "Your deal has been updated successfully.",
       });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (error: unknown) => {
+      let message = 'Failed to update deal';
+      if (error instanceof Error) message = error.message;
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     },
   });
 
@@ -115,12 +113,10 @@ export const useDeals = () => {
         description: "Your deal has been deleted successfully.",
       });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (error: unknown) => {
+      let message = 'Failed to delete deal';
+      if (error instanceof Error) message = error.message;
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     },
   });
 

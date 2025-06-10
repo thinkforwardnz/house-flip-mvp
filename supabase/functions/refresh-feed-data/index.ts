@@ -1,8 +1,8 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { corsHeaders } from '../shared/cors.ts';
 import { AgentQLPropertyClient } from '../shared/agentql-property-client.ts';
+import { errorResponse } from '../shared/error-response.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -100,12 +100,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Refresh feed data error:', error);
-    return new Response(JSON.stringify({
-      error: 'Feed refresh failed',
-      details: error.message
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return errorResponse(error.message || 'refresh-feed-data failed', 500);
   }
 });

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -49,6 +48,11 @@ export const useTasks = (dealId: string) => {
       setTemplates(data || []);
     } catch (error) {
       console.error('Error fetching templates:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load templates',
+        variant: 'destructive'
+      });
     }
   };
 
