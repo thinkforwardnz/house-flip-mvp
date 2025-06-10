@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +14,7 @@ interface UserProfile {
   last_name: string | null;
   phone: string | null;
   avatar_url: string | null;
-  role: string | null;
+  role: Database['public']['Enums']['user_role'] | null;
   team_id: string | null;
   created_at: string | null;
   updated_at: string | null;
