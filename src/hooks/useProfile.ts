@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +11,14 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 interface UserProfile {
   id: string;
   email: string;
-  // Add other fields as needed
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
+  role: string | null;
+  team_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export const useProfile = () => {
