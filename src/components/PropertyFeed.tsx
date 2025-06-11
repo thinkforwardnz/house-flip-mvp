@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useProspectingProperties } from '@/hooks/useUnifiedProperties';
 import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
@@ -25,6 +24,7 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
     isLoading,
     error,
     addTag,
+    removeTag,
     refetch
   } = useProspectingProperties(filters);
 
@@ -46,6 +46,7 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
 
   const { handleAnalyse, handleSaveForLater, handleDismiss } = usePropertyFeedActions({
     addTag,
+    removeTag,
     onSwitchToSavedTab,
   });
 

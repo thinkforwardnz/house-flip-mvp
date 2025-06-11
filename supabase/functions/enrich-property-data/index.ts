@@ -1,3 +1,4 @@
+
 // Use explicit Deno typing
 declare const Deno: { env: { get(key: string): string | undefined } };
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
@@ -13,12 +14,12 @@ const supabase: SupabaseClient = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-interface Listing {
+interface Property {
   id: string;
   source_url: string;
   address?: string;
   photos?: string[];
-  summary?: string;
+  description?: string;
   bedrooms?: number;
   bathrooms?: number;
   floor_area?: number;
@@ -34,13 +35,13 @@ interface EnhancedData {
   land_area?: number;
 }
 
-// Zod schema for Listing
-const ListingSchema = z.object({
+// Zod schema for Property
+const PropertySchema = z.object({
   id: z.string(),
   source_url: z.string(),
   address: z.string().optional(),
   photos: z.array(z.string()).optional(),
-  summary: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
   bedrooms: z.number().optional().nullable(),
   bathrooms: z.number().optional().nullable(),
   floor_area: z.number().optional().nullable(),
@@ -63,7 +64,7 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log('Property data enrichment started with enhanced error handling and debugging');
+    console.log('Property data enrichment started for unified properties');
 
     const agentqlKey = Deno.env.get('AGENTQL_API_KEY');
     console.log('AgentQL API key check:', {
@@ -78,14 +79,6 @@ serve(async (req: Request): Promise<Response> => {
         success: false,
         error: 'AgentQL API key not configured',
         message: 'Please add your AgentQL API key to Supabase Edge Function secrets',
-        troubleshooting: {
-          steps: [
-            '1. Go to Supabase Dashboard > Edge Functions > Settings',
-            '2. Add a new secret: AGENTQL_API_KEY',
-            '3. Enter your AgentQL API key value',
-            '4. Redeploy the function'
-          ]
-        },
         enriched: 0,
         skipped: 0
       }), {
@@ -119,13 +112,6 @@ serve(async (req: Request): Promise<Response> => {
         success: false,
         error: 'Failed to initialize AgentQL client',
         message,
-        troubleshooting: {
-          possibleCauses: [
-            'Invalid API key format',
-            'API key too short',
-            'Environment variable not set correctly'
-          ]
-        },
         enriched: 0,
         skipped: 0
       }), {
@@ -133,17 +119,19 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const { data: listingsToEnrich, error: queryError } = await supabase
-      .from('scraped_listings')
-      .select('id, source_url, address, photos, summary, bedrooms, bathrooms, floor_area, land_area')
-      .or('photos.is.null,photos.eq.{},summary.is.null,bedrooms.is.null,bathrooms.is.null,floor_area.is.null')
+    // Get unified properties that need enrichment (prospecting properties missing data)
+    const { data: propertiesToEnrich, error: queryError } = await supabase
+      .from('unified_properties')
+      .select('id, source_url, address, photos, description, bedrooms, bathrooms, floor_area, land_area')
+      .contains('tags', ['prospecting'])
+      .or('photos.is.null,photos.eq.{},description.is.null,bedrooms.is.null,bathrooms.is.null,floor_area.is.null')
       .limit(15);
 
     if (queryError) {
-      console.error('Error querying listings to enrich:', queryError);
+      console.error('Error querying properties to enrich:', queryError);
       return new Response(JSON.stringify({
         success: false,
-        error: 'Failed to query listings: ' + queryError.message,
+        error: 'Failed to query properties: ' + queryError.message,
         enriched: 0,
         skipped: 0
       }), {
@@ -151,35 +139,37 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    if (!listingsToEnrich || listingsToEnrich.length === 0) {
+    if (!propertiesToEnrich || propertiesToEnrich.length === 0) {
       return new Response(JSON.stringify({
         success: true,
         enriched: 0,
         skipped: 0,
-        message: 'No listings found that need enrichment'
+        message: 'No properties found that need enrichment'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`Found ${listingsToEnrich.length} listings to enrich with enhanced debugging`);
+    console.log(`Found ${propertiesToEnrich.length} properties to enrich`);
 
     let enriched = 0;
     let skipped = 0;
     const errors: string[] = [];
 
-    for (const rawListing of listingsToEnrich) {
-      // Validate listing before enrichment
-      const listingParse = ListingSchema.safeParse(rawListing);
-      if (!listingParse.success) {
-        console.error('Invalid listing to enrich:', listingParse.error);
+    for (const rawProperty of propertiesToEnrich) {
+      // Validate property before enrichment
+      const propertyParse = PropertySchema.safeParse(rawProperty);
+      if (!propertyParse.success) {
+        console.error('Invalid property to enrich:', propertyParse.error);
         skipped++;
         continue;
       }
-      const listing = listingParse.data;
+      const property = propertyParse.data;
+      
       try {
-        console.log(`Enriching listing with detailed debugging: ${listing.address} (${listing.source_url})`);
-        const enhancedDataRaw = await agentqlClient.scrapePropertyPage(listing.source_url);
+        console.log(`Enriching property: ${property.address} (${property.source_url})`);
+        const enhancedDataRaw = await agentqlClient.scrapePropertyPage(property.source_url);
+        
         // Validate enhanced data
         const enhancedDataParse = EnhancedDataSchema.safeParse(enhancedDataRaw);
         if (!enhancedDataParse.success) {
@@ -188,54 +178,52 @@ serve(async (req: Request): Promise<Response> => {
           continue;
         }
         const enhancedData = enhancedDataParse.data;
-        const updateData: Partial<typeof listing> & { updated_at: string } = {
+        
+        const updateData: Partial<typeof property> & { updated_at: string } = {
           updated_at: new Date().toISOString()
         };
+        
         if (enhancedData.photos && enhancedData.photos.length > 0) {
           updateData.photos = enhancedData.photos;
         }
-        if (enhancedData.description && !listing.summary) {
-          updateData.summary = enhancedData.description;
+        if (enhancedData.description && !property.description) {
+          updateData.description = enhancedData.description;
         }
-        if (enhancedData.bedrooms && !listing.bedrooms) {
+        if (enhancedData.bedrooms && !property.bedrooms) {
           updateData.bedrooms = enhancedData.bedrooms;
         }
-        if (enhancedData.bathrooms && !listing.bathrooms) {
+        if (enhancedData.bathrooms && !property.bathrooms) {
           updateData.bathrooms = enhancedData.bathrooms;
         }
-        if (enhancedData.floor_area && !listing.floor_area) {
+        if (enhancedData.floor_area && !property.floor_area) {
           updateData.floor_area = enhancedData.floor_area;
         }
-        if (enhancedData.land_area && !listing.land_area) {
+        if (enhancedData.land_area && !property.land_area) {
           updateData.land_area = enhancedData.land_area;
         }
+        
         const hasUpdates = Object.keys(updateData).length > 1;
         if (!hasUpdates) {
           skipped++;
-          console.log(`No meaningful updates found for: ${listing.address}`);
+          console.log(`No meaningful updates found for: ${property.address}`);
           continue;
         }
+        
         const { error: updateError } = await supabase
-          .from('scraped_listings')
+          .from('unified_properties')
           .update(updateData)
-          .eq('id', listing.id);
+          .eq('id', property.id);
+        
         if (updateError) {
-          console.error('Error updating listing:', updateError);
-          errors.push(`Failed to update ${listing.address}: ${updateError.message}`);
+          console.error('Error updating property:', updateError);
+          errors.push(`Failed to update ${property.address}: ${updateError.message}`);
         } else {
           enriched++;
-          console.log(`Successfully enriched listing: ${listing.address} with enhanced details`, {
-            photos: enhancedData.photos?.length || 0,
-            hasDescription: !!enhancedData.description,
-            bedrooms: enhancedData.bedrooms,
-            bathrooms: enhancedData.bathrooms,
-            floorArea: enhancedData.floor_area,
-            landArea: enhancedData.land_area
-          });
+          console.log(`Successfully enriched property: ${property.address}`);
         }
       } catch (error: unknown) {
-        console.error('Error enriching listing:', error);
-        errors.push(`Error enriching listing: ${listing.address} - ${error instanceof Error ? error.message : String(error)}`);
+        console.error('Error enriching property:', error);
+        errors.push(`Error enriching property: ${property.address} - ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 

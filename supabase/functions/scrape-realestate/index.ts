@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
@@ -50,9 +51,9 @@ serve(async (req) => {
 
     for (const property of properties) {
       try {
-        // Check if listing already exists
+        // Check if property already exists in unified_properties
         const { data: existing } = await supabase
-          .from('scraped_listings')
+          .from('unified_properties')
           .select('id')
           .eq('source_url', property.source_url)
           .single();
@@ -62,36 +63,38 @@ serve(async (req) => {
           continue;
         }
 
-        // Insert new listing
-        const { data: newListing, error: insertError } = await supabase
-          .from('scraped_listings')
+        // Insert into unified_properties with prospecting tag
+        const { data: newProperty, error: insertError } = await supabase
+          .from('unified_properties')
           .insert({
             source_site: 'Realestate.co.nz',
             source_url: property.source_url,
             address: property.address,
             suburb: property.suburb,
             city: 'Wellington',
-            price: property.price,
+            current_price: property.price,
             bedrooms: property.bedrooms,
             bathrooms: property.bathrooms,
             floor_area: property.floor_area,
             land_area: property.land_area,
-            summary: property.summary,
+            description: property.summary,
             photos: property.photos,
             listing_date: property.listing_date,
-            status: 'new'
+            date_scraped: new Date().toISOString(),
+            tags: ['prospecting'],
+            status: 'active'
           })
           .select()
           .single();
 
         if (insertError) {
-          console.error('Error inserting listing:', insertError);
+          console.error('Error inserting property:', insertError);
           continue;
         }
 
-        // Trigger AI analysis for new listing
-        if (newListing) {
-          analyzeListingInBackground(newListing);
+        // Trigger AI analysis for new property
+        if (newProperty) {
+          analyzePropertyInBackground(newProperty);
         }
         
         savedCount++;
@@ -117,7 +120,7 @@ serve(async (req) => {
   }
 });
 
-async function analyzeListingInBackground(listing: any) {
+async function analyzePropertyInBackground(property: any) {
   try {
     const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/analyze-property`, {
       method: 'POST',
@@ -126,15 +129,15 @@ async function analyzeListingInBackground(listing: any) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        listingId: listing.id,
-        listingData: listing
+        propertyId: property.id,
+        propertyData: property
       }),
     });
 
     if (!response.ok) {
-      console.error('Failed to analyze listing:', await response.text());
+      console.error('Failed to analyze property:', await response.text());
     } else {
-      console.log(`Successfully queued analysis for listing: ${listing.address}`);
+      console.log(`Successfully queued analysis for property: ${property.address}`);
     }
   } catch (error) {
     console.error('Error triggering AI analysis:', error);

@@ -1,120 +1,78 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Heart, Trash2, ExternalLink } from 'lucide-react';
-import { usePropertiesByTags, UnifiedProperty } from '@/hooks/useUnifiedProperties';
+import { usePropertiesByTags } from '@/hooks/useUnifiedProperties';
+import PropertyListingCard from '@/components/PropertyListingCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import PropertyTags from '@/components/PropertyTags';
 
 const SavedProperties = () => {
   const { data: savedProperties, isLoading } = usePropertiesByTags(['saved']);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NZ', {
-      style: 'currency',
-      currency: 'NZD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900">Saved Properties</h2>
-          <Skeleton className="h-8 w-20" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-48 w-full" />
-          ))}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="space-y-4">
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!savedProperties || savedProperties.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 mb-4">No saved properties found.</p>
+        <p className="text-sm text-gray-400">Properties you save from the feed will appear here.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">Saved Properties</h2>
-        <Button variant="outline" size="sm">
-          <Trash2 className="h-4 w-4 mr-2" />
-          Clear All
-        </Button>
-      </div>
-      
-      {!savedProperties || savedProperties.length === 0 ? (
-        <Card className="bg-white shadow-sm border border-gray-200">
-          <CardContent className="p-8 text-center">
-            <Heart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Saved Properties</h3>
-            <p className="text-gray-600 mb-4">
-              Properties you save for later will appear here for easy access.
-            </p>
-            <Button variant="outline">
-              Browse Properties
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {savedProperties.map((property: UnifiedProperty) => (
-            <Card key={property.id} className="bg-white shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="mb-3">
-                  <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-1">
-                    {property.address}
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    {property.suburb}, {property.city || 'Auckland'}
-                  </p>
-                </div>
-                
-                <div className="mb-3">
-                  <div className="text-lg font-bold text-gray-900 mb-1">
-                    {formatCurrency(Number(property.current_price || 0))}
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-gray-600">
-                    <span>{property.bedrooms || 0} beds</span>
-                    <span>{property.bathrooms || 0} baths</span>
-                    <span>{property.floor_area || 0}m²</span>
-                  </div>
-                </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {savedProperties.map((property) => {
+        const featuredImage = property.photos && property.photos.length > 0 
+          ? property.photos[0] 
+          : '/placeholder.svg';
 
-                <div className="mb-3">
-                  <PropertyTags 
-                    property={property}
-                    onAddTag={() => {}} // Add function if needed
-                    onRemoveTag={() => {}} // Add function if needed
-                    showAddTag={false}
-                  />
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="flex-1 text-xs"
-                    onClick={() => property.source_url && window.open(property.source_url, '_blank')}
-                  >
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    View Listing
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="text-xs px-2 text-gray-500 hover:text-red-600"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+        const transformedProperty = {
+          id: property.id,
+          address: property.address,
+          suburb: property.suburb || '',
+          city: property.city || 'Auckland',
+          price: Number(property.current_price || 0),
+          bedrooms: property.bedrooms || 0,
+          bathrooms: Number(property.bathrooms || 0),
+          floorArea: Number(property.floor_area || 0),
+          landArea: Number(property.land_area || 0),
+          imageUrl: featuredImage,
+          listingUrl: property.source_url || '',
+          description: property.description || 'No description available',
+          aiAnalysis: {
+            renovationCost: Number(property.ai_reno_cost || 0),
+            arv: Number(property.ai_arv || 0),
+            projectedProfit: Number(property.ai_est_profit || 0),
+            flipPotential: (property.flip_potential as 'High' | 'Medium' | 'Low') || 'Medium',
+            confidence: property.ai_confidence || 0,
+          },
+          source: property.source_site || 'Unknown',
+          listedDate: property.listing_date || property.date_scraped || property.created_at,
+        };
+
+        return (
+          <PropertyListingCard
+            key={property.id}
+            property={transformedProperty}
+            onAnalyse={() => {}}
+            onSaveForLater={() => {}}
+            onDismiss={() => {}}
+            isLoading={false}
+            userAction="saved"
+          />
+        );
+      })}
     </div>
   );
 };

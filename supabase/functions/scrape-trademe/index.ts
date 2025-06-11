@@ -1,5 +1,5 @@
+
 // deno-lint-ignore-file
-// Use explicit Deno typing
 // Use explicit Deno typing
 declare const Deno: {
   env: {
@@ -25,29 +25,10 @@ interface Filters {
   [key: string]: string | number | boolean | undefined;
 }
 
-interface Property {
-  [key: string]: unknown;
-  listingaddress?: string;
-  source_url?: string;
-  source_site?: string;
-  address?: string;
-  suburb?: string | null;
-  city?: string | null;
-  district?: string | null;
-  price?: number | null;
-  summary?: string | null;
-  bedrooms?: number | null;
-  bathrooms?: number | null;
-  floor_area?: number | null;
-  land_area?: number | null;
-  photos?: string[] | null;
-  listing_date?: string | null;
-}
-
 // Zod schema for incoming filters
 const FiltersSchema = z.record(z.union([z.string(), z.number(), z.boolean(), z.undefined()]));
 
-// Zod schema for processed listing (mirrors ProcessedListing interface)
+// Zod schema for processed listing
 const ProcessedListingSchema = z.object({
   source_url: z.string(),
   source_site: z.string(),
@@ -77,7 +58,7 @@ serve(async (req: Request): Promise<Response> => {
       return errorResponse('Invalid filters: ' + filtersParse.error.message, 400);
     }
     const filters = filtersParse.data;
-    console.log('Starting Trade Me basic scraping with filters:', filters);
+    console.log('Starting Trade Me scraping with filters:', filters);
 
     const searchClient = new AgentQLSearchClient();
     const searchUrl = buildTradeeMeSearchUrl(filters);
@@ -97,48 +78,49 @@ serve(async (req: Request): Promise<Response> => {
     for (let i = 0; i < Math.min(searchResults.data.properties.length, maxListings); i++) {
       const property = searchResults.data.properties[i];
       try {
-        console.log(`Processing basic property ${i + 1}/${Math.min(searchResults.data.properties.length, maxListings)}: ${property.listingaddress}`);
+        console.log(`Processing property ${i + 1}/${Math.min(searchResults.data.properties.length, maxListings)}: ${property.listingaddress}`);
         if (i > 0 && i % 10 === 0) {
           await searchClient.rateLimitDelay();
         }
         const processed = processTrademeListing(property);
         if (processed) {
-          // Validate processed listing before saving
           const listingParse = ProcessedListingSchema.safeParse(processed);
           if (!listingParse.success) {
             console.error('Invalid processed listing:', listingParse.error);
-            continue; // Skip invalid listings
+            continue;
           }
           processedListings.push(listingParse.data);
         }
       } catch (error: unknown) {
-        console.error(`Error processing basic property ${property.listingaddress}:`, error);
+        console.error(`Error processing property ${property.listingaddress}:`, error);
       }
     }
 
-    console.log(`Successfully processed ${processedListings.length} Trade Me listings with basic information`);
+    console.log(`Successfully processed ${processedListings.length} Trade Me listings`);
 
     const savedListings: ProcessedListing[] = [];
     for (const listing of processedListings) {
       try {
+        // Check if property already exists in unified_properties
         const { data: existing } = await supabase
-          .from('scraped_listings')
+          .from('unified_properties')
           .select('id')
           .eq('source_url', listing.source_url)
           .maybeSingle();
 
         if (!existing) {
+          // Insert into unified_properties with prospecting tag
           const { data: saved, error } = await supabase
-            .from('scraped_listings')
+            .from('unified_properties')
             .insert({
               source_url: listing.source_url,
               source_site: listing.source_site,
               address: listing.address,
               suburb: listing.suburb,
-              city: listing.city,
+              city: listing.city || 'Auckland',
               district: listing.district,
-              price: listing.price || 0,
-              summary: listing.summary,
+              current_price: listing.price || 0,
+              description: listing.summary,
               bedrooms: listing.bedrooms,
               bathrooms: listing.bathrooms,
               floor_area: listing.floor_area,
@@ -146,19 +128,23 @@ serve(async (req: Request): Promise<Response> => {
               photos: listing.photos,
               listing_date: listing.listing_date,
               date_scraped: new Date().toISOString(),
-              status: 'new'
+              tags: ['prospecting'],
+              status: 'active'
             })
             .select()
             .single();
 
           if (error) {
-            console.error('Error saving listing:', error);
+            console.error('Error saving listing to unified_properties:', error);
           } else {
             savedListings.push(saved);
-            console.log(`Saved basic listing: ${listing.address}`);
+            console.log(`Saved listing to unified_properties: ${listing.address}`);
+            
+            // Trigger AI analysis for new property
+            analyzePropertyInBackground(saved);
           }
         } else {
-          console.log('Listing already exists, skipping:', listing.source_url);
+          console.log('Property already exists in unified_properties, skipping:', listing.source_url);
         }
       } catch (error: unknown) {
         console.error('Error processing listing for database:', error);
@@ -167,17 +153,43 @@ serve(async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Basic scraping complete: found ${processedListings.length} listings, saved ${savedListings.length} new ones`,
-      total_processed: processedListings.length,
-      total_saved: savedListings.length,
+      message: `Trade Me scraping complete: found ${processedListings.length} listings, saved ${savedListings.length} new ones`,
+      scraped: savedListings.length,
+      skipped: processedListings.length - savedListings.length,
+      total: processedListings.length,
+      source: 'Trade Me',
       search_url: searchUrl
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error: unknown) {
-    console.error('Trade Me basic scraping error:', error);
-    const message = error instanceof Error ? error.message : 'Basic scraping failed';
+    console.error('Trade Me scraping error:', error);
+    const message = error instanceof Error ? error.message : 'Trade Me scraping failed';
     return errorResponse(message, 500);
   }
 });
+
+async function analyzePropertyInBackground(property: any) {
+  try {
+    const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/analyze-property`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        propertyId: property.id,
+        propertyData: property
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Failed to analyze property:', await response.text());
+    } else {
+      console.log(`Successfully queued analysis for property: ${property.address}`);
+    }
+  } catch (error) {
+    console.error('Error triggering AI analysis:', error);
+  }
+}
