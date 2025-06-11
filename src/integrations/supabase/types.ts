@@ -747,6 +747,129 @@ export type Database = {
           },
         ]
       }
+      unified_properties: {
+        Row: {
+          address: string
+          ai_analysis: Json | null
+          ai_arv: number | null
+          ai_confidence: number | null
+          ai_est_profit: number | null
+          ai_reno_cost: number | null
+          ai_score: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          city: string | null
+          coordinates: unknown | null
+          council_data: Json | null
+          created_at: string
+          current_price: number | null
+          date_scraped: string | null
+          deal_id: string | null
+          description: string | null
+          district: string | null
+          flip_potential: Database["public"]["Enums"]["flip_potential"] | null
+          floor_area: number | null
+          id: string
+          land_area: number | null
+          linz_data: Json | null
+          listing_date: string | null
+          market_analysis: Json | null
+          parking_spaces: number | null
+          photos: string[] | null
+          price_history: Json | null
+          property_type: string | null
+          sale_date: string | null
+          source_site: string | null
+          source_url: string | null
+          status: string | null
+          suburb: string | null
+          tags: string[] | null
+          updated_at: string
+          user_id: string | null
+          year_built: number | null
+        }
+        Insert: {
+          address: string
+          ai_analysis?: Json | null
+          ai_arv?: number | null
+          ai_confidence?: number | null
+          ai_est_profit?: number | null
+          ai_reno_cost?: number | null
+          ai_score?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          city?: string | null
+          coordinates?: unknown | null
+          council_data?: Json | null
+          created_at?: string
+          current_price?: number | null
+          date_scraped?: string | null
+          deal_id?: string | null
+          description?: string | null
+          district?: string | null
+          flip_potential?: Database["public"]["Enums"]["flip_potential"] | null
+          floor_area?: number | null
+          id?: string
+          land_area?: number | null
+          linz_data?: Json | null
+          listing_date?: string | null
+          market_analysis?: Json | null
+          parking_spaces?: number | null
+          photos?: string[] | null
+          price_history?: Json | null
+          property_type?: string | null
+          sale_date?: string | null
+          source_site?: string | null
+          source_url?: string | null
+          status?: string | null
+          suburb?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+          year_built?: number | null
+        }
+        Update: {
+          address?: string
+          ai_analysis?: Json | null
+          ai_arv?: number | null
+          ai_confidence?: number | null
+          ai_est_profit?: number | null
+          ai_reno_cost?: number | null
+          ai_score?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          city?: string | null
+          coordinates?: unknown | null
+          council_data?: Json | null
+          created_at?: string
+          current_price?: number | null
+          date_scraped?: string | null
+          deal_id?: string | null
+          description?: string | null
+          district?: string | null
+          flip_potential?: Database["public"]["Enums"]["flip_potential"] | null
+          floor_area?: number | null
+          id?: string
+          land_area?: number | null
+          linz_data?: Json | null
+          listing_date?: string | null
+          market_analysis?: Json | null
+          parking_spaces?: number | null
+          photos?: string[] | null
+          price_history?: Json | null
+          property_type?: string | null
+          sale_date?: string | null
+          source_site?: string | null
+          source_url?: string | null
+          status?: string | null
+          suburb?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+          year_built?: number | null
+        }
+        Relationships: []
+      }
       user_scraped_listing_actions: {
         Row: {
           action: Database["public"]["Enums"]["scraped_listing_status"]
@@ -794,6 +917,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_property_tag: {
+        Args: { property_id: string; new_tag: string }
+        Returns: undefined
+      }
       can_access_deal: {
         Args: { deal_uuid: string }
         Returns: boolean
@@ -806,9 +933,56 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_properties_by_tags: {
+        Args: { tag_filters: string[] }
+        Returns: {
+          address: string
+          ai_analysis: Json | null
+          ai_arv: number | null
+          ai_confidence: number | null
+          ai_est_profit: number | null
+          ai_reno_cost: number | null
+          ai_score: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          city: string | null
+          coordinates: unknown | null
+          council_data: Json | null
+          created_at: string
+          current_price: number | null
+          date_scraped: string | null
+          deal_id: string | null
+          description: string | null
+          district: string | null
+          flip_potential: Database["public"]["Enums"]["flip_potential"] | null
+          floor_area: number | null
+          id: string
+          land_area: number | null
+          linz_data: Json | null
+          listing_date: string | null
+          market_analysis: Json | null
+          parking_spaces: number | null
+          photos: string[] | null
+          price_history: Json | null
+          property_type: string | null
+          sale_date: string | null
+          source_site: string | null
+          source_url: string | null
+          status: string | null
+          suburb: string | null
+          tags: string[] | null
+          updated_at: string
+          user_id: string | null
+          year_built: number | null
+        }[]
+      }
       get_user_listing_status: {
         Args: { listing_id: string; user_uuid: string }
         Returns: Database["public"]["Enums"]["scraped_listing_status"]
+      }
+      remove_property_tag: {
+        Args: { property_id: string; tag_to_remove: string }
+        Returns: undefined
       }
     }
     Enums: {

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { useDeals } from '@/hooks/useDeals';
+import { useDealProperties } from '@/hooks/useUnifiedProperties';
 import CreateDealDialog from '@/components/CreateDealDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,31 +17,37 @@ import {
 } from 'lucide-react';
 
 const PropertyDashboard = () => {
-  const { deals, isLoading: dealsLoading } = useDeals();
+  const { properties: dealProperties, isLoading: dealsLoading } = useDealProperties();
   const navigate = useNavigate();
 
-  const getStageColor = (stage: string) => {
-    switch (stage) {
-      case 'Analysis': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Offer': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'Under Contract': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'Reno': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Listed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Sold': return 'bg-gray-100 text-gray-800 border-gray-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+  const getStageColor = (tags: string[]) => {
+    if (tags.includes('analysis')) return 'bg-blue-100 text-blue-800 border-blue-200';
+    if (tags.includes('offer')) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    if (tags.includes('under_contract')) return 'bg-orange-100 text-orange-800 border-orange-200';
+    if (tags.includes('renovation')) return 'bg-purple-100 text-purple-800 border-purple-200';
+    if (tags.includes('listed')) return 'bg-green-100 text-green-800 border-green-200';
+    if (tags.includes('sold')) return 'bg-gray-100 text-gray-800 border-gray-200';
+    return 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
-  const getStageRoute = (stage: string) => {
-    switch (stage) {
-      case 'Analysis': return '/analysis';
-      case 'Offer': return '/offer';
-      case 'Under Contract': return '/under-contract';
-      case 'Reno': return '/renovation';
-      case 'Listed': return '/listed';
-      case 'Sold': return '/sold';
-      default: return '/analysis';
-    }
+  const getStageLabel = (tags: string[]) => {
+    if (tags.includes('sold')) return 'Sold';
+    if (tags.includes('listed')) return 'Listed';
+    if (tags.includes('renovation')) return 'Reno';
+    if (tags.includes('under_contract')) return 'Under Contract';
+    if (tags.includes('offer')) return 'Offer';
+    if (tags.includes('analysis')) return 'Analysis';
+    return 'Unknown';
+  };
+
+  const getStageRoute = (tags: string[]) => {
+    if (tags.includes('sold')) return '/sold';
+    if (tags.includes('listed')) return '/listed';
+    if (tags.includes('renovation')) return '/renovation';
+    if (tags.includes('under_contract')) return '/under-contract';
+    if (tags.includes('offer')) return '/offer';
+    if (tags.includes('analysis')) return '/analysis';
+    return '/analysis';
   };
 
   const formatCurrency = (amount: number) => {
@@ -52,17 +58,20 @@ const PropertyDashboard = () => {
     }).format(amount);
   };
 
-  const handleDealClick = (deal: any) => {
-    const route = getStageRoute(deal.pipeline_stage);
-    navigate(`${route}?dealId=${deal.id}`);
+  const handleDealClick = (property: any) => {
+    const route = getStageRoute(property.tags);
+    navigate(`${route}?dealId=${property.deal_id || property.id}`);
   };
 
-  const totalValue = deals.reduce((sum, deal) => sum + (deal.target_sale_price || 0), 0);
-  const totalProfit = deals.reduce((sum, deal) => sum + (deal.current_profit || 0), 0);
+  // Calculate totals from unified properties with deal tags
+  const totalValue = dealProperties.reduce((sum, property) => sum + (property.current_price || 0), 0);
+  const totalProfit = dealProperties.reduce((sum, property) => sum + (property.ai_est_profit || 0), 0);
+  const highRiskCount = dealProperties.filter(property => 
+    property.ai_confidence && property.ai_confidence < 50
+  ).length;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Welcome Section */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">
           Welcome back!
@@ -72,7 +81,6 @@ const PropertyDashboard = () => {
         </p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card className="bg-white shadow-lg rounded-2xl border-0">
           <CardContent className="p-6">
@@ -82,7 +90,7 @@ const PropertyDashboard = () => {
               </div>
               <div>
                 <p className="text-sm text-navy font-medium">Total Deals</p>
-                <p className="text-2xl font-bold text-navy-dark">{deals.length}</p>
+                <p className="text-2xl font-bold text-navy-dark">{dealProperties.length}</p>
               </div>
             </div>
           </CardContent>
@@ -123,17 +131,14 @@ const PropertyDashboard = () => {
                 <AlertTriangle className="h-6 w-6 text-red-error" />
               </div>
               <div>
-                <p className="text-sm text-navy font-medium">High Risk</p>
-                <p className="text-2xl font-bold text-navy-dark">
-                  {deals.filter(deal => deal.current_risk === 'high').length}
-                </p>
+                <p className="text-sm text-navy font-medium">Low Confidence</p>
+                <p className="text-2xl font-bold text-navy-dark">{highRiskCount}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Deals List */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">
         <CardHeader className="p-6">
           <CardTitle className="flex items-center justify-between text-navy-dark">
@@ -154,7 +159,7 @@ const PropertyDashboard = () => {
                 </div>
               ))}
             </div>
-          ) : deals.length === 0 ? (
+          ) : dealProperties.length === 0 ? (
             <div className="text-center py-12">
               <Home className="h-16 w-16 text-gray-300 mx-auto mb-6" />
               <h3 className="text-lg font-semibold text-navy-dark mb-2">No deals yet</h3>
@@ -163,30 +168,27 @@ const PropertyDashboard = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {deals.map((deal) => (
+              {dealProperties.map((property) => (
                 <div 
-                  key={deal.id} 
+                  key={property.id} 
                   className="flex items-center justify-between p-6 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer group"
-                  onClick={() => handleDealClick(deal)}
+                  onClick={() => handleDealClick(property)}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-navy-dark">{deal.address}</h3>
-                      <Badge className={`${getStageColor(deal.pipeline_stage)} rounded-lg`}>
-                        {deal.pipeline_stage}
+                      <h3 className="font-semibold text-navy-dark">{property.address}</h3>
+                      <Badge className={`${getStageColor(property.tags)} rounded-lg`}>
+                        {getStageLabel(property.tags)}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-navy">
-                      <span>{deal.suburb}, {deal.city}</span>
-                      {deal.purchase_price && (
-                        <span>Purchase: {formatCurrency(deal.purchase_price)}</span>
+                      <span>{property.suburb}, {property.city}</span>
+                      {property.current_price && (
+                        <span>Price: {formatCurrency(property.current_price)}</span>
                       )}
-                      {deal.target_sale_price && (
-                        <span>Target: {formatCurrency(deal.target_sale_price)}</span>
-                      )}
-                      {deal.current_profit > 0 && (
+                      {property.ai_est_profit && property.ai_est_profit > 0 && (
                         <span className="text-green-600 font-medium">
-                          Profit: {formatCurrency(deal.current_profit)}
+                          Est. Profit: {formatCurrency(property.ai_est_profit)}
                         </span>
                       )}
                     </div>
@@ -194,7 +196,7 @@ const PropertyDashboard = () => {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <div className="text-sm text-navy">
-                        Created {new Date(deal.created_at).toLocaleDateString()}
+                        Created {new Date(property.created_at).toLocaleDateString()}
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-primary transition-colors" />

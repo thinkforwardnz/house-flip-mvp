@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import PropertyListingCard from '@/components/PropertyListingCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw } from 'lucide-react';
-import { useScrapedListings, ScrapedListing } from '@/hooks/useScrapedListings';
+import { useProspectingProperties, UnifiedProperty } from '@/hooks/useUnifiedProperties';
 import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
 import { useRefreshFeed } from '@/hooks/useRefreshFeed';
 import ScrapingProgress from '@/components/ScrapingProgress';
@@ -18,17 +19,13 @@ interface PropertyFeedProps {
 
 const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
   const {
-    listings,
+    properties,
     isLoading,
     error,
-    saveListing,
-    dismissListing,
-    importAsDeal,
-    isSaving,
-    isDismissing,
-    isImporting,
+    addTag,
+    removeTag,
     refetch
-  } = useScrapedListings(filters);
+  } = useProspectingProperties(filters);
 
   const {
     isScrapingActive,
@@ -46,25 +43,31 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
 
   const { toast } = useToast();
 
-  const handleImportAsDeal = (listing: ScrapedListing) => {
-    importAsDeal(listing);
+  const handleImportAsDeal = (property: UnifiedProperty) => {
+    // Add 'deal' and 'analysis' tags to convert to a deal
+    addTag({ propertyId: property.id, tag: 'deal' });
+    addTag({ propertyId: property.id, tag: 'analysis' });
+    
+    toast({
+      title: "Property Imported",
+      description: "Property has been added to your pipeline as a new deal.",
+    });
   };
 
-  const handleSaveForLater = (listing: ScrapedListing) => {
-    saveListing(listing.id);
+  const handleSaveForLater = (property: UnifiedProperty) => {
+    addTag({ propertyId: property.id, tag: 'saved' });
   };
 
-  const handleDismiss = (listing: ScrapedListing) => {
-    dismissListing(listing.id);
+  const handleDismiss = (property: UnifiedProperty) => {
+    addTag({ propertyId: property.id, tag: 'dismissed' });
   };
 
-  const handleAnalyse = (listing: ScrapedListing) => {
-    importAsDeal(listing);
-    // Switch to saved properties tab after analysis
+  const handleAnalyse = (property: UnifiedProperty) => {
+    handleImportAsDeal(property);
     if (onSwitchToSavedTab) {
       setTimeout(() => {
         onSwitchToSavedTab();
-      }, 1000); // Small delay to allow the import to complete
+      }, 1000);
     }
   };
 
@@ -93,7 +96,6 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
     
     try {
       await refreshFeed();
-      // Refetch the listings after refresh
       refetch();
     } catch (error) {
       toast({
@@ -117,17 +119,15 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
     );
   }
 
-  // Filter out dismissed listings from display
-  const visibleListings = listings.filter(listing => 
-    listing.user_action !== 'dismissed' && listing.user_action !== 'imported'
+  // Filter out dismissed and imported properties from display
+  const visibleProperties = properties.filter(property => 
+    !property.tags.includes('dismissed') && !property.tags.includes('deal')
   );
 
   return (
     <div className="space-y-6">
-      {/* AgentQL Test Button - For testing API key */}
       <AgentQLTestButton />
 
-      {/* Scraping Progress */}
       <ScrapingProgress
         isActive={isScrapingActive}
         sources={sourceProgress}
@@ -135,7 +135,6 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
         onCancel={cancelScraping}
       />
 
-      {/* Refresh Feed Progress */}
       {isRefreshing && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
@@ -159,7 +158,6 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
         </div>
       )}
 
-      {/* Property Listings */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
@@ -174,7 +172,7 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
         <>
           <div className="flex items-center justify-between mb-4">
             <p className="text-gray-600">
-              Found {visibleListings.length} properties matching your criteria
+              Found {visibleProperties.length} properties matching your criteria
             </p>
             <Button 
               variant="outline"
@@ -187,52 +185,56 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visibleListings.map((listing) => {
-              // Get the featured image from photos array
-              const featuredImage = listing.photos && listing.photos.length > 0 
-                ? listing.photos[0] 
+            {visibleProperties.map((property) => {
+              const featuredImage = property.photos && property.photos.length > 0 
+                ? property.photos[0] 
                 : '/placeholder.svg';
 
-              // Transform scraped listing to match PropertyListingCard props
-              const property = {
-                id: listing.id,
-                address: listing.address,
-                suburb: listing.suburb || '',
-                city: listing.city || 'Auckland',
-                price: Number(listing.price),
-                bedrooms: listing.bedrooms || 0,
-                bathrooms: Number(listing.bathrooms || 0),
-                floorArea: Number(listing.floor_area || 0),
-                landArea: Number(listing.land_area || 0),
+              const transformedProperty = {
+                id: property.id,
+                address: property.address,
+                suburb: property.suburb || '',
+                city: property.city || 'Auckland',
+                price: Number(property.current_price || 0),
+                bedrooms: property.bedrooms || 0,
+                bathrooms: Number(property.bathrooms || 0),
+                floorArea: Number(property.floor_area || 0),
+                landArea: Number(property.land_area || 0),
                 imageUrl: featuredImage,
-                listingUrl: listing.source_url,
-                description: listing.summary || 'No description available',
+                listingUrl: property.source_url || '',
+                description: property.description || 'No description available',
                 aiAnalysis: {
-                  renovationCost: Number(listing.ai_reno_cost || 0),
-                  arv: Number(listing.ai_arv || 0),
-                  projectedProfit: Number(listing.ai_est_profit || 0),
-                  flipPotential: (listing.flip_potential as 'High' | 'Medium' | 'Low') || 'Medium',
-                  confidence: listing.ai_confidence || 0,
+                  renovationCost: Number(property.ai_reno_cost || 0),
+                  arv: Number(property.ai_arv || 0),
+                  projectedProfit: Number(property.ai_est_profit || 0),
+                  flipPotential: (property.flip_potential as 'High' | 'Medium' | 'Low') || 'Medium',
+                  confidence: property.ai_confidence || 0,
                 },
-                source: listing.source_site || 'Unknown',
-                listedDate: listing.listing_date || listing.date_scraped,
+                source: property.source_site || 'Unknown',
+                listedDate: property.listing_date || property.date_scraped || property.created_at,
               };
+
+              // Determine user action based on tags
+              let userAction: 'new' | 'saved' | 'dismissed' | 'imported' = 'new';
+              if (property.tags.includes('saved')) userAction = 'saved';
+              if (property.tags.includes('dismissed')) userAction = 'dismissed';
+              if (property.tags.includes('deal')) userAction = 'imported';
 
               return (
                 <PropertyListingCard
-                  key={listing.id}
-                  property={property}
-                  onAnalyse={() => handleAnalyse(listing)}
-                  onSaveForLater={() => handleSaveForLater(listing)}
-                  onDismiss={() => handleDismiss(listing)}
-                  isLoading={isSaving || isDismissing || isImporting}
-                  userAction={listing.user_action}
+                  key={property.id}
+                  property={transformedProperty}
+                  onAnalyse={() => handleAnalyse(property)}
+                  onSaveForLater={() => handleSaveForLater(property)}
+                  onDismiss={() => handleDismiss(property)}
+                  isLoading={false}
+                  userAction={userAction}
                 />
               );
             })}
           </div>
           
-          {visibleListings.length === 0 && !isLoading && (
+          {visibleProperties.length === 0 && !isLoading && (
             <div className="text-center py-12">
               <p className="text-gray-500 mb-4">No properties found matching your criteria.</p>
               <Button 
