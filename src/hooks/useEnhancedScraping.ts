@@ -27,7 +27,7 @@ export const useEnhancedScraping = () => {
     filters: any = {},
     sources: string[] = ['trademe']
   ) => {
-    console.log('Starting scraping with filters:', filters);
+    console.log('Starting unified scraping with filters:', filters);
     
     try {
       setIsScrapingActive(true);
@@ -61,27 +61,31 @@ export const useEnhancedScraping = () => {
               })));
               setTotalProgress(25);
 
-              console.log('Calling TradeMe scraper with filters:', filters);
+              console.log('Calling unified data processor with filters:', filters);
               
-              // Call TradeMe scraper directly
-              const { data, error } = await supabase.functions.invoke('scrape-trademe', {
-                body: { filters }
+              // Call unified data processor
+              const { data, error } = await supabase.functions.invoke('unified-data-processor', {
+                body: {
+                  mode: 'scrape',
+                  filters: filters,
+                  sources: sources
+                }
               });
 
-              console.log('TradeMe scraper response:', { data, error });
+              console.log('Unified processor response:', { data, error });
 
               if (error) {
                 console.error('Scraper error:', error);
                 throw error;
               }
 
-              // Update progress based on TradeMe results
+              // Update progress based on results
               const updatedProgress = [{
                 name: 'TradeMe',
                 status: data.success ? 'completed' as const : 'failed' as const,
-                scraped: data.scraped || 0,
+                scraped: data.processed || 0,
                 skipped: data.skipped || 0,
-                error: !data.success ? data.error : undefined
+                error: !data.success ? data.errors?.[0] : undefined
               }];
               
               setSourceProgress(updatedProgress);
@@ -90,7 +94,7 @@ export const useEnhancedScraping = () => {
               console.log('Updating scraping session with results:', {
                 sessionId: session.id,
                 status: data.success ? 'completed' : 'failed',
-                totalScraped: data.scraped || 0,
+                totalScraped: data.processed || 0,
                 totalSkipped: data.skipped || 0
               });
 
@@ -100,15 +104,15 @@ export const useEnhancedScraping = () => {
                 status: data.success ? 'completed' : 'failed',
                 results: {
                   TradeMe: {
-                    scraped: data.scraped || 0,
+                    scraped: data.processed || 0,
                     skipped: data.skipped || 0,
                     success: data.success,
-                    error: data.error
+                    error: data.errors?.[0]
                   }
                 },
-                totalScraped: data.scraped || 0,
+                totalScraped: data.processed || 0,
                 totalSkipped: data.skipped || 0,
-                errors: data.error ? [data.error] : []
+                errors: data.errors || []
               });
 
               // Invalidate queries to refresh the property feed
@@ -120,10 +124,10 @@ export const useEnhancedScraping = () => {
               if (data.success) {
                 toast({
                   title: "Scraping Completed",
-                  description: `Found ${data.scraped || 0} new properties, skipped ${data.skipped || 0} duplicates.`,
+                  description: `Found ${data.processed || 0} new properties, skipped ${data.skipped || 0} duplicates.`,
                 });
               } else {
-                throw new Error(data.error || 'Scraping failed');
+                throw new Error(data.errors?.[0] || 'Scraping failed');
               }
             } catch (error: any) {
               console.error('Scraping error:', error);

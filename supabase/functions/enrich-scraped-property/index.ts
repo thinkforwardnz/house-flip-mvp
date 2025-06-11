@@ -2,7 +2,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { corsHeaders } from '../shared/cors.ts';
-import { CustomScraperClient } from '../shared/custom-scraper-client.ts';
+import { errorResponse } from '../shared/error-response.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -18,18 +18,12 @@ serve(async (req) => {
     const { listingId } = await req.json();
 
     if (!listingId) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Listing ID is required'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      return errorResponse('Listing ID is required', 400);
     }
 
-    console.log(`Starting full enrichment for listing: ${listingId}`);
+    console.log('Scraped property enrichment request redirected to unified processor');
 
-    // Get the listing to enrich
+    // Get the listing from scraped_listings table
     const { data: listing, error: fetchError } = await supabase
       .from('scraped_listings')
       .select('id, source_url, address')
@@ -37,88 +31,46 @@ serve(async (req) => {
       .single();
 
     if (fetchError || !listing) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Listing not found'
-      }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      return errorResponse('Listing not found', 404);
     }
 
-    console.log(`Enriching listing: ${listing.address} (${listing.source_url})`);
+    // Check if this property exists in unified_properties
+    const { data: unifiedProperty } = await supabase
+      .from('unified_properties')
+      .select('id')
+      .eq('source_url', listing.source_url)
+      .maybeSingle();
 
-    // Initialize property client for detailed scraping
-    const propertyClient = new CustomScraperClient();
-    
-    // Scrape the individual property page for full details
-    const propertyDataResponse = await propertyClient.scrapeProperty(listing.source_url);
-
-    if (!propertyDataResponse || !propertyDataResponse.structured) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Could not scrape property details',
-        message: 'No detailed data could be retrieved from the property page'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    if (unifiedProperty) {
+      // Use unified data processor for enrichment
+      const { data, error } = await supabase.functions.invoke('unified-data-processor', {
+        body: {
+          mode: 'enrich',
+          propertyId: unifiedProperty.id
+        }
       });
-    }
 
-    const propertyData = propertyDataResponse.structured;
-
-    // Update the listing with all detailed information
-    const { error: updateError } = await supabase
-      .from('scraped_listings')
-      .update({
-        summary: propertyData.description,
-        bedrooms: propertyData.bedrooms ? parseInt(propertyData.bedrooms) : undefined,
-        bathrooms: propertyData.bathrooms ? parseInt(propertyData.bathrooms) : undefined,
-        floor_area: propertyData.floor_area ? parseFloat(propertyData.floor_area) : undefined,
-        land_area: propertyData.land_area ? parseFloat(propertyData.land_area) : undefined,
-        photos: propertyData.images,
-        listing_date: propertyData.listing_date,
-        price: propertyData.price ? parseFloat(propertyData.price) : undefined,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', listingId);
-
-    if (updateError) {
-      console.error(`Error updating enriched listing:`, updateError);
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Failed to update listing with enriched data'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    console.log(`Successfully enriched listing: ${listing.address}`);
-
-    return new Response(JSON.stringify({
-      success: true,
-      message: `Property enriched successfully with detailed information`,
-      listingId: listingId,
-      enriched_data: {
-        bedrooms: propertyData.bedrooms ? parseInt(propertyData.bedrooms) : undefined,
-        bathrooms: propertyData.bathrooms ? parseInt(propertyData.bathrooms) : undefined,
-        floor_area: propertyData.floor_area ? parseFloat(propertyData.floor_area) : undefined,
-        land_area: propertyData.land_area ? parseFloat(propertyData.land_area) : undefined,
-        photos_count: propertyData.images?.length || 0,
-        has_description: !!propertyData.description
+      if (error) {
+        throw error;
       }
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+
+      return new Response(JSON.stringify({
+        success: data.success,
+        message: data.message,
+        listingId: listingId,
+        enriched_data: {
+          has_description: true,
+          photos_count: 0
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    } else {
+      return errorResponse('Property not found in unified properties', 404);
+    }
 
   } catch (error) {
     console.error('Property enrichment error:', error);
-    return new Response(JSON.stringify({
-      error: 'Property enrichment failed',
-      details: error.message
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return errorResponse(error.message || 'Property enrichment failed', 500);
   }
 });

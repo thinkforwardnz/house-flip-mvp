@@ -22,66 +22,33 @@ serve(async (req) => {
   try {
     const { filters = {}, sources = ['trademe'] } = await req.json();
 
-    console.log('Manual refresh triggered with filters:', filters, 'sources:', sources);
+    console.log('Manual refresh triggered, redirecting to unified processor');
 
-    // Trigger scraping from multiple sources in parallel
-    const scrapingPromises = [];
-
-    if (sources.includes('trademe')) {
-      scrapingPromises.push(
-        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/scrape-trademe`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filters }),
-        })
-      );
-    }
-
-    // Note: Other sources (realestate, oneroof) would need similar updates
-    // For now, focusing on Trade Me as the primary implementation
-
-    // Wait for all scraping jobs to complete
-    const results = await Promise.allSettled(scrapingPromises);
-    
-    let totalScraped = 0;
-    let totalSkipped = 0;
-    const errors = [];
-    const sourceResults = [];
-
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        try {
-          const data = await result.value.json();
-          if (data.success) {
-            totalScraped += data.scraped;
-            totalSkipped += data.skipped;
-            sourceResults.push({
-              source: data.source,
-              scraped: data.scraped,
-              skipped: data.skipped,
-              total: data.total
-            });
-          } else {
-            errors.push(data.error);
-          }
-        } catch (parseError) {
-          errors.push('Failed to parse scraping response');
-        }
-      } else {
-        errors.push(result.reason?.message || 'Scraping job failed');
+    // Use unified data processor for scraping
+    const { data, error } = await supabase.functions.invoke('unified-data-processor', {
+      body: {
+        mode: 'scrape',
+        filters: filters,
+        sources: sources
       }
+    });
+
+    if (error) {
+      throw error;
     }
 
     return new Response(JSON.stringify({
       success: true,
       results: {
-        scraped: totalScraped,
-        skipped: totalSkipped,
-        errors: errors,
-        sources: sourceResults
+        scraped: data.processed,
+        skipped: data.skipped,
+        errors: data.errors,
+        sources: [{
+          source: 'Trade Me',
+          scraped: data.processed,
+          skipped: data.skipped,
+          total: data.processed + data.skipped
+        }]
       },
       timestamp: new Date().toISOString()
     }), {

@@ -26,24 +26,12 @@ export const usePropertyEnrichment = () => {
     setIsEnriching(true);
 
     try {
-      console.log('Starting property enrichment for unified property:', propertyId);
+      console.log('Starting unified property enrichment for property:', propertyId);
 
-      // Get the property from unified_properties table
-      const { data: property, error: fetchError } = await supabase
-        .from('unified_properties')
-        .select('*')
-        .eq('id', propertyId)
-        .single();
-
-      if (fetchError || !property) {
-        throw new Error('Property not found in unified properties');
-      }
-
-      // Call the enrichment function with the property data
-      const { data, error } = await supabase.functions.invoke('enrich-property-data', {
+      const { data, error } = await supabase.functions.invoke('unified-data-processor', {
         body: { 
-          propertyId: property.id,
-          propertyData: property
+          mode: 'enrich',
+          propertyId: propertyId
         }
       });
 
@@ -62,12 +50,20 @@ export const usePropertyEnrichment = () => {
       } else {
         toast({
           title: "Enrichment Failed",
-          description: data.error || "Failed to enrich property data",
+          description: data.errors?.[0] || "Failed to enrich property data",
           variant: "destructive",
         });
       }
 
-      return data;
+      return {
+        success: data.success,
+        propertyId: propertyId,
+        message: data.message,
+        enriched_data: {
+          photos_count: 0,
+          has_description: data.processed > 0
+        }
+      };
     } catch (error: any) {
       console.error('Error during property enrichment:', error);
       const errorResult: EnrichmentResult = {

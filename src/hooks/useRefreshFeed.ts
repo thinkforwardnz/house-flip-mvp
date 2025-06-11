@@ -23,10 +23,12 @@ export const useRefreshFeed = () => {
     setProgress({ completed: 0, skipped: 0, total: 0 });
 
     try {
-      console.log('Starting feed refresh for unified properties...');
+      console.log('Starting unified feed refresh...');
 
-      const { data, error } = await supabase.functions.invoke('refresh-feed-data', {
-        body: {}
+      const { data, error } = await supabase.functions.invoke('unified-data-processor', {
+        body: {
+          mode: 'refresh'
+        }
       });
 
       if (error) {
@@ -37,20 +39,20 @@ export const useRefreshFeed = () => {
       console.log('Feed refresh response:', data);
 
       setProgress({
-        completed: data.completed || 0,
+        completed: data.processed || 0,
         skipped: data.skipped || 0,
-        total: data.total_processed || 0
+        total: (data.processed || 0) + (data.skipped || 0)
       });
 
       if (data.success) {
         toast({
           title: "Feed Refreshed",
-          description: data.message || `Updated ${data.completed} properties with missing data`,
+          description: data.message || `Updated ${data.processed} properties with missing data`,
         });
       } else {
         toast({
           title: "Refresh Failed",
-          description: data.error || "Failed to refresh feed data",
+          description: data.errors?.[0] || "Failed to refresh feed data",
           variant: "destructive",
         });
       }
