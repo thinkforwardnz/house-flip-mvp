@@ -72,7 +72,7 @@ export const useDeals = () => {
                     lng: (property.coordinates as any).x
                   }
                 : undefined,
-            },
+            } : undefined,
             // Flatten property data for backward compatibility
             address: property?.address,
             suburb: property?.suburb || '',
@@ -168,7 +168,7 @@ export const useDeals = () => {
                 lng: (property.coordinates as any).x
               }
             : undefined,
-        },
+        } : undefined,
         // Flatten for backward compatibility
         address: property?.address,
         suburb: property?.suburb || '',
