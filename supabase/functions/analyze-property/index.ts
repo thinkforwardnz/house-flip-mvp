@@ -2,7 +2,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { corsHeaders } from '../shared/cors.ts';
-import { AgentQLPropertyClient } from '../shared/agentql-property-client.ts';
+import { CustomScraperClient } from '../shared/custom-scraper-client.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -28,13 +28,13 @@ serve(async (req) => {
       });
     }
 
-    // Initialize property client for detailed scraping
-    const propertyClient = new AgentQLPropertyClient();
+    // Initialize custom scraper client for detailed scraping
+    const scraperClient = new CustomScraperClient();
     
     // Scrape the property page for analysis
-    const propertyData = await propertyClient.scrapePropertyPage(propertyUrl);
+    const propertyData = await scraperClient.scrapeProperty(propertyUrl);
 
-    if (!propertyData) {
+    if (!propertyData || !propertyData.structured) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Could not analyze property',
@@ -44,26 +44,27 @@ serve(async (req) => {
       });
     }
 
+    const structured = propertyData.structured;
     console.log('Property analysis complete:', {
-      title: propertyData.title,
-      price: propertyData.price,
-      bedrooms: propertyData.bedrooms,
-      bathrooms: propertyData.bathrooms
+      title: structured.title,
+      price: structured.price,
+      bedrooms: structured.bedrooms,
+      bathrooms: structured.bathrooms
     });
 
     return new Response(JSON.stringify({
       success: true,
       message: 'Property analyzed successfully',
       analysis: {
-        title: propertyData.title,
-        address: propertyData.address,
-        price: propertyData.price,
-        bedrooms: propertyData.bedrooms,
-        bathrooms: propertyData.bathrooms,
-        floor_area: propertyData.floor_area,
-        land_area: propertyData.land_area,
-        description: propertyData.description,
-        photos_count: propertyData.photos?.length || 0,
+        title: structured.title,
+        address: structured.address,
+        price: structured.price,
+        bedrooms: structured.bedrooms,
+        bathrooms: structured.bathrooms,
+        floor_area: structured.floor_area,
+        land_area: structured.land_area,
+        description: structured.description,
+        photos_count: structured.images?.length || 0,
         source_url: propertyUrl
       }
     }), {
