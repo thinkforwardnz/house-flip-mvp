@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { corsHeaders } from '../shared/cors.ts';
@@ -62,22 +61,31 @@ async function handleScraping(request: ProcessingRequest): Promise<Response> {
   if (sources.includes('trademe')) {
     try {
       const searchUrl = buildTradeeMeSearchUrl(filters);
+      console.log(`Scraping search results from: ${searchUrl}`);
+      
       const searchResults = await scraperClient.scrapeSearchResults(searchUrl);
       
       if (searchResults?.data?.properties) {
-        for (const property of searchResults.data.properties.slice(0, 50)) {
-          const result = await processAndSaveProperty(property, 'Trade Me');
+        console.log(`Found ${searchResults.data.properties.length} properties to process`);
+        
+        // Process ALL properties, not just first 50
+        for (const property of searchResults.data.properties) {
+          const result = await processAndSaveBasicProperty(property, 'Trade Me');
           if (result.success) {
             totalScraped++;
-            // Immediately enrich the new property
-            await enrichPropertyData(result.propertyId);
           } else {
             totalSkipped++;
             if (result.error) errors.push(result.error);
           }
+          
+          // Small delay to avoid overwhelming the database
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
+      } else {
+        console.log('No properties found in search results');
       }
     } catch (error) {
+      console.error('TradeMe scraping error:', error);
       errors.push(`TradeMe scraping failed: ${error.message}`);
     }
   }
@@ -87,7 +95,7 @@ async function handleScraping(request: ProcessingRequest): Promise<Response> {
     processed: totalScraped,
     skipped: totalSkipped,
     errors,
-    message: `Scraping complete: ${totalScraped} new properties found and enriched`
+    message: `Search complete: ${totalScraped} properties found and saved to feed`
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
@@ -119,7 +127,7 @@ async function handleRefresh(request: ProcessingRequest): Promise<Response> {
   });
 }
 
-async function processAndSaveProperty(property: any, sourceSite: string) {
+async function processAndSaveBasicProperty(property: any, sourceSite: string) {
   try {
     const addressParts = parseAddress(property.address);
     const fullUrl = property.url.startsWith('http') 
@@ -137,7 +145,7 @@ async function processAndSaveProperty(property: any, sourceSite: string) {
       return { success: false, error: 'Property already exists' };
     }
 
-    // Insert new property
+    // Insert new property with BASIC information only
     const { data: newProperty, error } = await supabase
       .from('unified_properties')
       .insert({
@@ -152,18 +160,21 @@ async function processAndSaveProperty(property: any, sourceSite: string) {
         bathrooms: getPropertyFeatureValue(property.property_features, 'bathroom') ? parseInt(getPropertyFeatureValue(property.property_features, 'bathroom')) : null,
         photos: property.main_img ? [property.main_img] : null,
         date_scraped: new Date().toISOString(),
-        tags: ['prospecting'],
+        tags: ['prospecting'], // Only prospecting tag, no enrichment yet
         status: 'active'
       })
       .select()
       .single();
 
     if (error) {
+      console.error('Error saving property:', error);
       return { success: false, error: error.message };
     }
 
+    console.log(`Saved basic property data: ${property.address}`);
     return { success: true, propertyId: newProperty.id };
   } catch (error) {
+    console.error('Error processing property:', error);
     return { success: false, error: error.message };
   }
 }
@@ -186,6 +197,8 @@ async function enrichPropertyData(propertyId: string): Promise<ProcessingResult>
         message: 'Property not found'
       };
     }
+
+    console.log(`Starting enrichment for property: ${property.address}`);
 
     const scraperClient = new CustomScraperClient();
     let hasUpdates = false;
@@ -255,6 +268,7 @@ async function enrichPropertyData(propertyId: string): Promise<ProcessingResult>
     // Trigger AI analysis in background
     analyzePropertyInBackground(property);
 
+    console.log(`Enrichment completed for: ${property.address}`);
     return {
       success: true,
       processed: hasUpdates ? 1 : 0,
@@ -274,7 +288,7 @@ async function enrichPropertyData(propertyId: string): Promise<ProcessingResult>
 }
 
 async function enrichPropertiesNeedingData(): Promise<ProcessingResult> {
-  // Get properties that need enrichment
+  // Get properties that need enrichment (missing key data)
   const { data: properties, error } = await supabase
     .from('unified_properties')
     .select('id, source_url, address, photos, description, bedrooms, bathrooms, floor_area, land_area')

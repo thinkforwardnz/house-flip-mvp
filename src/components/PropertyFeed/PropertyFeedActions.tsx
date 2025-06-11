@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { UnifiedProperty } from '@/hooks/useUnifiedProperties';
 import { useToast } from '@/hooks/use-toast';
+import { usePropertyEnrichment } from '@/hooks/usePropertyEnrichment';
 
 interface PropertyFeedActionsProps {
   addTag: (params: { propertyId: string; tag: string }) => void;
@@ -10,17 +12,44 @@ interface PropertyFeedActionsProps {
 
 export const usePropertyFeedActions = ({ addTag, removeTag, onSwitchToSavedTab }: PropertyFeedActionsProps) => {
   const { toast } = useToast();
+  const { enrichProperty } = usePropertyEnrichment();
 
-  const handleImportAsDeal = (property: UnifiedProperty) => {
-    // Remove prospecting tag and add deal and analysis tags
-    removeTag({ propertyId: property.id, tag: 'prospecting' });
-    addTag({ propertyId: property.id, tag: 'deal' });
-    addTag({ propertyId: property.id, tag: 'analysis' });
-    
-    toast({
-      title: "Property Imported",
-      description: "Property has been added to your pipeline as a new deal.",
-    });
+  const handleImportAsDeal = async (property: UnifiedProperty) => {
+    try {
+      // First enrich the property with detailed data
+      console.log('Starting property enrichment for analysis...');
+      const enrichmentResult = await enrichProperty(property.id);
+      
+      if (enrichmentResult.success) {
+        // Remove prospecting tag and add deal and analysis tags
+        removeTag({ propertyId: property.id, tag: 'prospecting' });
+        addTag({ propertyId: property.id, tag: 'deal' });
+        addTag({ propertyId: property.id, tag: 'analysis' });
+        
+        toast({
+          title: "Property Imported",
+          description: "Property has been enriched and added to your pipeline as a new deal.",
+        });
+      } else {
+        // Still import but note enrichment failed
+        removeTag({ propertyId: property.id, tag: 'prospecting' });
+        addTag({ propertyId: property.id, tag: 'deal' });
+        addTag({ propertyId: property.id, tag: 'analysis' });
+        
+        toast({
+          title: "Property Imported",
+          description: "Property added to pipeline, but enrichment failed. You may need to add details manually.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error during property import:', error);
+      toast({
+        title: "Import Error",
+        description: "Failed to import property. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSaveForLater = (property: UnifiedProperty) => {
@@ -44,8 +73,8 @@ export const usePropertyFeedActions = ({ addTag, removeTag, onSwitchToSavedTab }
     });
   };
 
-  const handleAnalyse = (property: UnifiedProperty) => {
-    handleImportAsDeal(property);
+  const handleAnalyse = async (property: UnifiedProperty) => {
+    await handleImportAsDeal(property);
     if (onSwitchToSavedTab) {
       setTimeout(() => {
         onSwitchToSavedTab();
