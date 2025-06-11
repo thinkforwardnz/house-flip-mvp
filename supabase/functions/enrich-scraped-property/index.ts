@@ -2,7 +2,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { corsHeaders } from '../shared/cors.ts';
-import { AgentQLPropertyClient } from '../shared/agentql-property-client.ts';
+import { CustomScraperClient } from '../shared/custom-scraper-client.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -49,12 +49,12 @@ serve(async (req) => {
     console.log(`Enriching listing: ${listing.address} (${listing.source_url})`);
 
     // Initialize property client for detailed scraping
-    const propertyClient = new AgentQLPropertyClient();
+    const propertyClient = new CustomScraperClient();
     
     // Scrape the individual property page for full details
-    const propertyData = await propertyClient.scrapePropertyPage(listing.source_url);
+    const propertyDataResponse = await propertyClient.scrapeProperty(listing.source_url);
 
-    if (!propertyData) {
+    if (!propertyDataResponse || !propertyDataResponse.structured) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Could not scrape property details',
@@ -64,18 +64,20 @@ serve(async (req) => {
       });
     }
 
+    const propertyData = propertyDataResponse.structured;
+
     // Update the listing with all detailed information
     const { error: updateError } = await supabase
       .from('scraped_listings')
       .update({
         summary: propertyData.description,
-        bedrooms: propertyData.bedrooms,
-        bathrooms: propertyData.bathrooms,
-        floor_area: propertyData.floor_area,
-        land_area: propertyData.land_area,
-        photos: propertyData.photos,
-        listing_date: propertyData.date,
-        price: propertyData.price > 0 ? propertyData.price : undefined,
+        bedrooms: propertyData.bedrooms ? parseInt(propertyData.bedrooms) : undefined,
+        bathrooms: propertyData.bathrooms ? parseInt(propertyData.bathrooms) : undefined,
+        floor_area: propertyData.floor_area ? parseFloat(propertyData.floor_area) : undefined,
+        land_area: propertyData.land_area ? parseFloat(propertyData.land_area) : undefined,
+        photos: propertyData.images,
+        listing_date: propertyData.listing_date,
+        price: propertyData.price ? parseFloat(propertyData.price) : undefined,
         updated_at: new Date().toISOString()
       })
       .eq('id', listingId);
@@ -98,11 +100,11 @@ serve(async (req) => {
       message: `Property enriched successfully with detailed information`,
       listingId: listingId,
       enriched_data: {
-        bedrooms: propertyData.bedrooms,
-        bathrooms: propertyData.bathrooms,
-        floor_area: propertyData.floor_area,
-        land_area: propertyData.land_area,
-        photos_count: propertyData.photos?.length || 0,
+        bedrooms: propertyData.bedrooms ? parseInt(propertyData.bedrooms) : undefined,
+        bathrooms: propertyData.bathrooms ? parseInt(propertyData.bathrooms) : undefined,
+        floor_area: propertyData.floor_area ? parseFloat(propertyData.floor_area) : undefined,
+        land_area: propertyData.land_area ? parseFloat(propertyData.land_area) : undefined,
+        photos_count: propertyData.images?.length || 0,
         has_description: !!propertyData.description
       }
     }), {
