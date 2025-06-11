@@ -4,7 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
 import { corsHeaders } from '../shared/cors.ts';
-import { AgentQLPropertyClient } from '../shared/agentql-property-client.ts';
+import { CustomScraperClient } from '../shared/custom-scraper-client.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -57,26 +57,26 @@ serve(async (req) => {
     // If we have a source URL, scrape it for enhanced data
     if (sourceUrl) {
       try {
-        const agentqlClient = new AgentQLPropertyClient();
-        const propertyData = await agentqlClient.scrapePropertyPage(sourceUrl);
+        const scraperClient = new CustomScraperClient();
+        const propertyData = await scraperClient.scrapeProperty(sourceUrl);
         
-        if (propertyData) {
+        if (propertyData && propertyData.structured) {
+          const structured = propertyData.structured;
           enrichedData = {
-            bedrooms: propertyData.bedrooms || deal.bedrooms,
-            bathrooms: propertyData.bathrooms || deal.bathrooms,
-            floor_area: propertyData.floor_area || deal.floor_area,
-            land_area: propertyData.land_area || deal.land_area,
-            photos: propertyData.photos?.length > 0 ? propertyData.photos : deal.photos,
-            description: propertyData.description || deal.description,
+            bedrooms: structured.bedrooms ? parseInt(structured.bedrooms) : deal.bedrooms,
+            bathrooms: structured.bathrooms ? parseInt(structured.bathrooms) : deal.bathrooms,
+            floor_area: structured.floor_area || deal.floor_area,
+            land_area: structured.land_area || deal.land_area,
+            photos: structured.images?.length > 0 ? structured.images : deal.photos,
+            description: structured.description || deal.description,
             // Store detailed listing details in the new JSONB column
             listing_details: {
-              title: propertyData.title,
-              method: propertyData.method,
-              type: propertyData.type,
-              parking: propertyData.parking,
-              internet: propertyData.internet,
-              other_features: propertyData.other_features,
-              date: propertyData.date
+              title: structured.title,
+              property_type: structured.property_type,
+              parking: structured.parking,
+              broadband: structured.broadband,
+              other_features: structured.other_features,
+              listing_date: structured.listing_date
             }
           };
           console.log('Enhanced data extracted from property page:', {
