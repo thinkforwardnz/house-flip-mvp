@@ -7,7 +7,7 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 import { corsHeaders } from '../shared/cors.ts';
-import { AgentQLPropertyClient } from '../shared/agentql-property-client.ts';
+import { CustomScraperClient } from '../shared/custom-scraper-client.ts';
 
 const supabase: SupabaseClient = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -66,19 +66,18 @@ serve(async (req: Request): Promise<Response> => {
   try {
     console.log('Property data enrichment started for unified properties');
 
-    const agentqlKey = Deno.env.get('AGENTQL_API_KEY');
-    console.log('AgentQL API key check:', {
-      exists: !!agentqlKey,
-      length: agentqlKey?.length || 0,
-      prefix: agentqlKey?.substring(0, 8) + '...' || 'N/A'
+    const customScraperUrl = Deno.env.get('CUSTOM_SCRAPER_BASE_URL');
+    console.log('Custom Scraper URL check:', {
+      exists: !!customScraperUrl,
+      url: customScraperUrl || 'N/A'
     });
 
-    if (!agentqlKey) {
-      console.error('AGENTQL_API_KEY not configured in environment');
+    if (!customScraperUrl) {
+      console.error('CUSTOM_SCRAPER_BASE_URL not configured in environment');
       return new Response(JSON.stringify({
         success: false,
-        error: 'AgentQL API key not configured',
-        message: 'Please add your AgentQL API key to Supabase Edge Function secrets',
+        error: 'Custom Scraper URL not configured',
+        message: 'Please add your Custom Scraper base URL to Supabase Edge Function secrets',
         enriched: 0,
         skipped: 0
       }), {
@@ -86,31 +85,16 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    let agentqlClient: AgentQLPropertyClient;
+    let scraperClient: CustomScraperClient;
     try {
-      agentqlClient = new AgentQLPropertyClient();
-      console.log('AgentQL client initialized successfully');
-      const connectionTest = await agentqlClient.testConnection();
-      if (!connectionTest.success) {
-        console.error('AgentQL connection test failed:', connectionTest);
-        return new Response(JSON.stringify({
-          success: false,
-          error: 'AgentQL connection test failed',
-          message: connectionTest.message,
-          details: connectionTest.details,
-          enriched: 0,
-          skipped: 0
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      console.log('AgentQL connection test passed');
+      scraperClient = new CustomScraperClient();
+      console.log('Custom Scraper client initialized successfully');
     } catch (error: unknown) {
-      console.error('Failed to initialize AgentQL client:', error);
+      console.error('Failed to initialize Custom Scraper client:', error);
       const message = error instanceof Error ? error.message : 'Unknown error';
       return new Response(JSON.stringify({
         success: false,
-        error: 'Failed to initialize AgentQL client',
+        error: 'Failed to initialize Custom Scraper client',
         message,
         enriched: 0,
         skipped: 0
@@ -168,7 +152,23 @@ serve(async (req: Request): Promise<Response> => {
       
       try {
         console.log(`Enriching property: ${property.address} (${property.source_url})`);
-        const enhancedDataRaw = await agentqlClient.scrapePropertyPage(property.source_url);
+        const propertyDataResponse = await scraperClient.scrapeProperty(property.source_url);
+        
+        if (!propertyDataResponse || !propertyDataResponse.structured) {
+          console.log(`No enhanced data found for: ${property.address}`);
+          skipped++;
+          continue;
+        }
+
+        const structured = propertyDataResponse.structured;
+        const enhancedDataRaw = {
+          photos: structured.images || [],
+          description: structured.description,
+          bedrooms: structured.bedrooms ? parseInt(structured.bedrooms) : undefined,
+          bathrooms: structured.bathrooms ? parseInt(structured.bathrooms) : undefined,
+          floor_area: structured.floor_area ? parseFloat(structured.floor_area) : undefined,
+          land_area: structured.land_area ? parseFloat(structured.land_area) : undefined,
+        };
         
         // Validate enhanced data
         const enhancedDataParse = EnhancedDataSchema.safeParse(enhancedDataRaw);
