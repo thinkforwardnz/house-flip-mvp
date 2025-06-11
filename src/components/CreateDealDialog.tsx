@@ -6,16 +6,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { useDeals } from '@/hooks/useDeals';
+import { useUnifiedProperties } from '@/hooks/useUnifiedProperties';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const CreateDealDialog = () => {
   const { createDeal, isCreating } = useDeals();
+  const { properties } = useUnifiedProperties();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [searchAddress, setSearchAddress] = useState('');
+  const [selectedPropertyId, setSelectedPropertyId] = useState('');
+  const [isCreatingProperty, setIsCreatingProperty] = useState(false);
   const [formData, setFormData] = useState({
-    address: '',
-    suburb: '',
-    city: 'Auckland',
     pipeline_stage: 'Analysis' as const,
     purchase_price: 0,
     target_sale_price: 0,
@@ -24,16 +29,75 @@ const CreateDealDialog = () => {
     notes: '',
   });
 
+  // Filter properties based on search
+  const filteredProperties = properties.filter(property =>
+    property.address.toLowerCase().includes(searchAddress.toLowerCase()) ||
+    property.suburb?.toLowerCase().includes(searchAddress.toLowerCase()) ||
+    property.city?.toLowerCase().includes(searchAddress.toLowerCase())
+  );
+
+  const handleCreateNewProperty = async () => {
+    if (!searchAddress.trim()) {
+      toast({
+        title: "Address Required",
+        description: "Please enter an address to create a new property",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreatingProperty(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('unified_properties')
+        .insert({
+          address: searchAddress.trim(),
+          city: 'Auckland',
+          user_id: user?.id,
+          tags: ['deal']
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSelectedPropertyId(data.id);
+      toast({
+        title: "Property Created",
+        description: "New property has been created and selected",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create property",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingProperty(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    createDeal(formData);
+    if (!selectedPropertyId) {
+      toast({
+        title: "Property Required",
+        description: "Please select or create a property for this deal",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    createDeal({
+      propertyId: selectedPropertyId,
+      ...formData
+    });
     
     setOpen(false);
     setFormData({
-      address: '',
-      suburb: '',
-      city: 'Auckland',
       pipeline_stage: 'Analysis',
       purchase_price: 0,
       target_sale_price: 0,
@@ -41,6 +105,8 @@ const CreateDealDialog = () => {
       current_risk: 'medium',
       notes: '',
     });
+    setSearchAddress('');
+    setSelectedPropertyId('');
   };
 
   return (
@@ -57,47 +123,68 @@ const CreateDealDialog = () => {
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="address">Property Address</Label>
-              <Input
-                id="address"
-                placeholder="123 Queen Street"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                required
-              />
+          {/* Property Selection */}
+          <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+            <Label htmlFor="property-search">Property Address</Label>
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="property-search"
+                  placeholder="Search existing properties or enter new address..."
+                  value={searchAddress}
+                  onChange={(e) => setSearchAddress(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                type="button"
+                onClick={handleCreateNewProperty}
+                disabled={!searchAddress.trim() || isCreatingProperty}
+                variant="outline"
+              >
+                {isCreatingProperty ? "Creating..." : "Create New"}
+              </Button>
             </div>
             
-            <div>
-              <Label htmlFor="suburb">Suburb</Label>
-              <Input
-                id="suburb"
-                placeholder="Ponsonby"
-                value={formData.suburb}
-                onChange={(e) => setFormData({ ...formData, suburb: e.target.value })}
-              />
-            </div>
+            {/* Property Selection */}
+            {filteredProperties.length > 0 && (
+              <div className="space-y-2">
+                <Label>Select Property:</Label>
+                <div className="max-h-40 overflow-y-auto space-y-2">
+                  {filteredProperties.map((property) => (
+                    <div
+                      key={property.id}
+                      className={`p-3 border rounded cursor-pointer transition-colors ${
+                        selectedPropertyId === property.id
+                          ? 'bg-blue-50 border-blue-200'
+                          : 'bg-white border-gray-200 hover:bg-gray-50'
+                      }`}
+                      onClick={() => setSelectedPropertyId(property.id)}
+                    >
+                      <div className="font-medium">{property.address}</div>
+                      <div className="text-sm text-gray-600">
+                        {property.suburb && `${property.suburb}, `}{property.city}
+                      </div>
+                      {property.bedrooms && property.bathrooms && (
+                        <div className="text-sm text-gray-500">
+                          {property.bedrooms} bed, {property.bathrooms} bath
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedPropertyId && (
+              <div className="p-2 bg-green-50 border border-green-200 rounded text-sm text-green-800">
+                ✓ Property selected for this deal
+              </div>
+            )}
           </div>
           
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="city">City</Label>
-              <Select value={formData.city} onValueChange={(value) => setFormData({ ...formData, city: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Auckland">Auckland</SelectItem>
-                  <SelectItem value="Wellington">Wellington</SelectItem>
-                  <SelectItem value="Christchurch">Christchurch</SelectItem>
-                  <SelectItem value="Hamilton">Hamilton</SelectItem>
-                  <SelectItem value="Tauranga">Tauranga</SelectItem>
-                  <SelectItem value="Dunedin">Dunedin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
             <div>
               <Label htmlFor="pipeline_stage">Pipeline Stage</Label>
               <Select value={formData.pipeline_stage} onValueChange={(value: any) => setFormData({ ...formData, pipeline_stage: value })}>
@@ -111,6 +198,20 @@ const CreateDealDialog = () => {
                   <SelectItem value="Reno">Renovation</SelectItem>
                   <SelectItem value="Listed">Listed</SelectItem>
                   <SelectItem value="Sold">Sold</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="current_risk">Risk Level</Label>
+              <Select value={formData.current_risk} onValueChange={(value: any) => setFormData({ ...formData, current_risk: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low Risk</SelectItem>
+                  <SelectItem value="medium">Medium Risk</SelectItem>
+                  <SelectItem value="high">High Risk</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -144,7 +245,7 @@ const CreateDealDialog = () => {
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
-              placeholder="Add any notes about this property..."
+              placeholder="Add any notes about this deal..."
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
@@ -155,7 +256,7 @@ const CreateDealDialog = () => {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isCreating} className="bg-[#1B5E20] hover:bg-[#1B5E20]/90">
+            <Button type="submit" disabled={isCreating || !selectedPropertyId} className="bg-[#1B5E20] hover:bg-[#1B5E20]/90">
               {isCreating ? "Creating..." : "Create Deal"}
             </Button>
           </div>

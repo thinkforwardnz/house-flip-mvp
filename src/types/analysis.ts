@@ -101,17 +101,43 @@ export interface ListingDetails {
 
 export interface Deal {
   id: string;
-  address: string;
-  suburb: string;
-  city: string;
+  property_id: string;
   pipeline_stage: 'Analysis' | 'Offer' | 'Under Contract' | 'Reno' | 'Listed' | 'Sold';
   current_profit: number;
   current_risk: 'low' | 'medium' | 'high';
   notes: string;
   purchase_price: number;
   target_sale_price: number;
+  estimated_renovation_cost?: number;
   created_at: string;
   updated_at: string;
+  user_id: string;
+  team_id?: string;
+  market_analysis?: MarketData;
+  renovation_analysis?: RenovationAnalysis;
+  risk_assessment?: RiskAssessment;
+  analysis_data?: any;
+  listing_details?: ListingDetails;
+  // Property data from unified_properties (joined)
+  property?: {
+    address: string;
+    suburb: string;
+    city: string;
+    bedrooms?: number;
+    bathrooms?: number;
+    floor_area?: number;
+    land_area?: number;
+    photos?: string[];
+    description?: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
+  };
+  // Flattened property fields for backward compatibility
+  address?: string;
+  suburb?: string;
+  city?: string;
   bedrooms?: number;
   bathrooms?: number;
   floor_area?: number;
@@ -122,9 +148,4 @@ export interface Deal {
     lat: number;
     lng: number;
   };
-  market_analysis?: MarketData;
-  renovation_analysis?: RenovationAnalysis;
-  risk_assessment?: RiskAssessment;
-  analysis_data?: any;
-  listing_details?: ListingDetails;
 }

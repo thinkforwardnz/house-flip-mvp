@@ -21,29 +21,21 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
     try {
       console.log('Starting property analysis and enrichment for deal:', deal.id);
       
-      // First, try to find a unified property for this address
-      const { data: unifiedProperty } = await supabase
-        .from('unified_properties')
-        .select('id, source_url')
-        .eq('address', deal.address)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (!unifiedProperty) {
+      // Get the property from the deal's property_id
+      if (!deal.property_id) {
         toast({
           title: "No Property Found",
-          description: "No property found for this address to analyze",
+          description: "This deal is not linked to a property",
           variant: "destructive",
         });
         return;
       }
 
-      // Call the property enrichment function instead of the old analyze-and-enrich
+      // Call the property enrichment function
       const { data, error } = await supabase.functions.invoke('enrich-property-data', {
         body: { 
-          propertyId: unifiedProperty.id,
-          propertyData: unifiedProperty
+          propertyId: deal.property_id,
+          propertyData: { id: deal.property_id }
         }
       });
 
@@ -61,22 +53,68 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
         // Fetch the updated deal data
         const { data: updatedDealData, error: fetchError } = await supabase
           .from('deals')
-          .select('*')
+          .select(`
+            *,
+            unified_properties (
+              address,
+              suburb,
+              city,
+              bedrooms,
+              bathrooms,
+              floor_area,
+              land_area,
+              photos,
+              description,
+              coordinates
+            )
+          `)
           .eq('id', deal.id)
           .single();
 
         if (!fetchError && updatedDealData && onDealUpdate) {
           // Transform the Supabase data to match our Deal interface
+          const property = updatedDealData.unified_properties;
           const transformedDeal: Deal = {
             ...updatedDealData,
-            coordinates: updatedDealData.coordinates && 
-              typeof updatedDealData.coordinates === 'object' && 
-              updatedDealData.coordinates !== null &&
-              'lat' in updatedDealData.coordinates && 
-              'lng' in updatedDealData.coordinates
+            property: property ? {
+              address: property.address,
+              suburb: property.suburb || '',
+              city: property.city || 'Auckland',
+              bedrooms: property.bedrooms || undefined,
+              bathrooms: property.bathrooms || undefined,
+              floor_area: property.floor_area || undefined,
+              land_area: property.land_area || undefined,
+              photos: property.photos || undefined,
+              description: property.description || undefined,
+              coordinates: property.coordinates && 
+                typeof property.coordinates === 'object' && 
+                property.coordinates !== null &&
+                'x' in property.coordinates && 
+                'y' in property.coordinates
+                ? {
+                    lat: (property.coordinates as any).y,
+                    lng: (property.coordinates as any).x
+                  }
+                : undefined,
+            } : undefined,
+            // Flatten for backward compatibility
+            address: property?.address,
+            suburb: property?.suburb || '',
+            city: property?.city || 'Auckland',
+            bedrooms: property?.bedrooms || undefined,
+            bathrooms: property?.bathrooms || undefined,
+            floor_area: property?.floor_area || undefined,
+            land_area: property?.land_area || undefined,
+            photos: property?.photos || undefined,
+            description: property?.description || undefined,
+            coordinates: property?.coordinates && 
+              typeof property.coordinates === 'object' && 
+              property.coordinates !== null &&
+              'x' in property.coordinates && 
+              'y' in property.coordinates
               ? {
-                  lat: (updatedDealData.coordinates as any).lat,
-                  lng: (updatedDealData.coordinates as any).lng
+                  lat: (property.coordinates as any).y,
+                  lng: (property.coordinates as any).x
                 }
               : undefined,
             market_analysis: updatedDealData.market_analysis && 
