@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface EnrichmentResult {
   success: boolean;
-  listingId?: string;
+  propertyId?: string;
   enriched_data?: {
     bedrooms?: number;
     bathrooms?: number;
@@ -22,14 +22,29 @@ export const usePropertyEnrichment = () => {
   const [isEnriching, setIsEnriching] = useState(false);
   const { toast } = useToast();
 
-  const enrichProperty = async (listingId: string): Promise<EnrichmentResult> => {
+  const enrichProperty = async (propertyId: string): Promise<EnrichmentResult> => {
     setIsEnriching(true);
 
     try {
-      console.log('Starting property enrichment for listing:', listingId);
+      console.log('Starting property enrichment for unified property:', propertyId);
 
-      const { data, error } = await supabase.functions.invoke('enrich-scraped-property', {
-        body: { listingId }
+      // Get the property from unified_properties table
+      const { data: property, error: fetchError } = await supabase
+        .from('unified_properties')
+        .select('*')
+        .eq('id', propertyId)
+        .single();
+
+      if (fetchError || !property) {
+        throw new Error('Property not found in unified properties');
+      }
+
+      // Call the enrichment function with the property data
+      const { data, error } = await supabase.functions.invoke('enrich-property-data', {
+        body: { 
+          propertyId: property.id,
+          propertyData: property
+        }
       });
 
       if (error) {

@@ -363,62 +363,6 @@ export type Database = {
           },
         ]
       }
-      properties: {
-        Row: {
-          bathrooms: number | null
-          bedrooms: number | null
-          created_at: string | null
-          deal_id: string
-          floor_area: number | null
-          id: string
-          land_area: number | null
-          listing_photos: string[] | null
-          listing_url: string | null
-          parking_spaces: number | null
-          property_type: string | null
-          updated_at: string | null
-          year_built: number | null
-        }
-        Insert: {
-          bathrooms?: number | null
-          bedrooms?: number | null
-          created_at?: string | null
-          deal_id: string
-          floor_area?: number | null
-          id?: string
-          land_area?: number | null
-          listing_photos?: string[] | null
-          listing_url?: string | null
-          parking_spaces?: number | null
-          property_type?: string | null
-          updated_at?: string | null
-          year_built?: number | null
-        }
-        Update: {
-          bathrooms?: number | null
-          bedrooms?: number | null
-          created_at?: string | null
-          deal_id?: string
-          floor_area?: number | null
-          id?: string
-          land_area?: number | null
-          listing_photos?: string[] | null
-          listing_url?: string | null
-          parking_spaces?: number | null
-          property_type?: string | null
-          updated_at?: string | null
-          year_built?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "properties_deal_id_fkey"
-            columns: ["deal_id"]
-            isOneToOne: false
-            referencedRelation: "deals"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       renovations: {
         Row: {
           category: string | null
@@ -477,90 +421,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      scraped_listings: {
-        Row: {
-          address: string
-          ai_arv: number | null
-          ai_confidence: number | null
-          ai_est_profit: number | null
-          ai_reno_cost: number | null
-          ai_score: number | null
-          bathrooms: number | null
-          bedrooms: number | null
-          city: string | null
-          created_at: string
-          date_scraped: string
-          district: string | null
-          flip_potential: Database["public"]["Enums"]["flip_potential"] | null
-          floor_area: number | null
-          id: string
-          land_area: number | null
-          listing_date: string | null
-          photos: string[] | null
-          price: number
-          source_site: string | null
-          source_url: string
-          status: Database["public"]["Enums"]["scraped_listing_status"]
-          suburb: string | null
-          summary: string | null
-          updated_at: string
-        }
-        Insert: {
-          address: string
-          ai_arv?: number | null
-          ai_confidence?: number | null
-          ai_est_profit?: number | null
-          ai_reno_cost?: number | null
-          ai_score?: number | null
-          bathrooms?: number | null
-          bedrooms?: number | null
-          city?: string | null
-          created_at?: string
-          date_scraped?: string
-          district?: string | null
-          flip_potential?: Database["public"]["Enums"]["flip_potential"] | null
-          floor_area?: number | null
-          id?: string
-          land_area?: number | null
-          listing_date?: string | null
-          photos?: string[] | null
-          price: number
-          source_site?: string | null
-          source_url: string
-          status?: Database["public"]["Enums"]["scraped_listing_status"]
-          suburb?: string | null
-          summary?: string | null
-          updated_at?: string
-        }
-        Update: {
-          address?: string
-          ai_arv?: number | null
-          ai_confidence?: number | null
-          ai_est_profit?: number | null
-          ai_reno_cost?: number | null
-          ai_score?: number | null
-          bathrooms?: number | null
-          bedrooms?: number | null
-          city?: string | null
-          created_at?: string
-          date_scraped?: string
-          district?: string | null
-          flip_potential?: Database["public"]["Enums"]["flip_potential"] | null
-          floor_area?: number | null
-          id?: string
-          land_area?: number | null
-          listing_date?: string | null
-          photos?: string[] | null
-          price?: number
-          source_site?: string | null
-          source_url?: string
-          status?: Database["public"]["Enums"]["scraped_listing_status"]
-          suburb?: string | null
-          summary?: string | null
-          updated_at?: string
-        }
-        Relationships: []
       }
       scraping_history: {
         Row: {
@@ -870,48 +730,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_scraped_listing_actions: {
-        Row: {
-          action: Database["public"]["Enums"]["scraped_listing_status"]
-          created_at: string
-          deal_id: string | null
-          id: string
-          scraped_listing_id: string
-          user_id: string
-        }
-        Insert: {
-          action: Database["public"]["Enums"]["scraped_listing_status"]
-          created_at?: string
-          deal_id?: string | null
-          id?: string
-          scraped_listing_id: string
-          user_id: string
-        }
-        Update: {
-          action?: Database["public"]["Enums"]["scraped_listing_status"]
-          created_at?: string
-          deal_id?: string | null
-          id?: string
-          scraped_listing_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_scraped_listing_actions_deal_id_fkey"
-            columns: ["deal_id"]
-            isOneToOne: false
-            referencedRelation: "deals"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_scraped_listing_actions_scraped_listing_id_fkey"
-            columns: ["scraped_listing_id"]
-            isOneToOne: false
-            referencedRelation: "scraped_listings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
@@ -975,10 +793,6 @@ export type Database = {
           user_id: string | null
           year_built: number | null
         }[]
-      }
-      get_user_listing_status: {
-        Args: { listing_id: string; user_uuid: string }
-        Returns: Database["public"]["Enums"]["scraped_listing_status"]
       }
       remove_property_tag: {
         Args: { property_id: string; tag_to_remove: string }

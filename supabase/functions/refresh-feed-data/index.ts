@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { corsHeaders } from '../shared/cors.ts';
@@ -15,11 +16,11 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting refresh feed data process for missing basic information...');
+    console.log('Starting refresh feed data process for unified properties with missing basic information...');
 
-    // Get listings that need basic data completion (missing photos or other basic info)
-    const { data: incompleteListings, error: fetchError } = await supabase
-      .from('scraped_listings')
+    // Get properties that need basic data completion (missing photos or other basic info)
+    const { data: incompleteProperties, error: fetchError } = await supabase
+      .from('unified_properties')
       .select('id, source_url, address, photos')
       .or('photos.is.null,photos.eq.{}')
       .order('date_scraped', { ascending: false })
@@ -29,10 +30,10 @@ serve(async (req) => {
       throw fetchError;
     }
 
-    if (!incompleteListings || incompleteListings.length === 0) {
+    if (!incompleteProperties || incompleteProperties.length === 0) {
       return new Response(JSON.stringify({
         success: true,
-        message: 'No listings need basic data completion',
+        message: 'No properties need basic data completion',
         completed: 0,
         skipped: 0
       }), {
@@ -40,7 +41,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Found ${incompleteListings.length} listings needing basic data completion`);
+    console.log(`Found ${incompleteProperties.length} properties needing basic data completion`);
 
     // Initialize property client for individual page scraping
     const propertyClient = new AgentQLPropertyClient();
@@ -48,32 +49,32 @@ serve(async (req) => {
     let completed = 0;
     let skipped = 0;
 
-    for (const listing of incompleteListings) {
+    for (const property of incompleteProperties) {
       try {
-        console.log(`Completing basic data for: ${listing.address}`);
+        console.log(`Completing basic data for: ${property.address}`);
 
         // Scrape the individual property page for missing basic data
-        const propertyData = await propertyClient.scrapePropertyPage(listing.source_url);
+        const propertyData = await propertyClient.scrapePropertyPage(property.source_url);
 
         if (propertyData && propertyData.photos && propertyData.photos.length > 0) {
           // Update only the missing basic fields
           const { error: updateError } = await supabase
-            .from('scraped_listings')
+            .from('unified_properties')
             .update({
               photos: propertyData.photos,
               updated_at: new Date().toISOString()
             })
-            .eq('id', listing.id);
+            .eq('id', property.id);
 
           if (updateError) {
-            console.error(`Error updating listing ${listing.id}:`, updateError);
+            console.error(`Error updating property ${property.id}:`, updateError);
             skipped++;
           } else {
-            console.log(`Completed basic data for: ${listing.address}`);
+            console.log(`Completed basic data for: ${property.address}`);
             completed++;
           }
         } else {
-          console.log(`No additional basic data found for: ${listing.address}`);
+          console.log(`No additional basic data found for: ${property.address}`);
           skipped++;
         }
 
@@ -81,7 +82,7 @@ serve(async (req) => {
         await propertyClient.rateLimitDelay();
 
       } catch (error) {
-        console.error(`Error completing basic data for ${listing.address}:`, error);
+        console.error(`Error completing basic data for ${property.address}:`, error);
         skipped++;
       }
     }
@@ -90,10 +91,10 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Feed refresh complete: ${completed} listings updated with missing basic data`,
+      message: `Feed refresh complete: ${completed} properties updated with missing basic data`,
       completed,
       skipped,
-      total_processed: incompleteListings.length
+      total_processed: incompleteProperties.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

@@ -23,7 +23,7 @@ export const useRefreshFeed = () => {
     setProgress({ completed: 0, skipped: 0, total: 0 });
 
     try {
-      console.log('Starting feed refresh to complete missing basic data...');
+      console.log('Starting feed refresh for unified properties...');
 
       const { data, error } = await supabase.functions.invoke('refresh-feed-data', {
         body: {}
@@ -45,7 +45,7 @@ export const useRefreshFeed = () => {
       if (data.success) {
         toast({
           title: "Feed Refreshed",
-          description: data.message || `Updated ${data.completed} listings with missing data`,
+          description: data.message || `Updated ${data.completed} properties with missing data`,
         });
       } else {
         toast({
