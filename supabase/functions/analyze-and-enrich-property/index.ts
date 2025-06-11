@@ -2,7 +2,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { corsHeaders } from '../shared/cors.ts';
-import { AgentQLPropertyClient } from '../shared/agentql-property-client.ts';
+import { CustomScraperClient } from '../shared/custom-scraper-client.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -28,13 +28,13 @@ serve(async (req) => {
       });
     }
 
-    // Initialize property client for detailed scraping
-    const propertyClient = new AgentQLPropertyClient();
+    // Initialize custom scraper client for detailed scraping
+    const scraperClient = new CustomScraperClient();
     
     // Scrape the property page for detailed information
-    const propertyData = await propertyClient.scrapePropertyPage(propertyUrl);
+    const propertyData = await scraperClient.scrapeProperty(propertyUrl);
 
-    if (!propertyData) {
+    if (!propertyData || !propertyData.structured) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Could not scrape property details',
@@ -44,29 +44,37 @@ serve(async (req) => {
       });
     }
 
+    const structured = propertyData.structured;
     console.log('Property data scraped successfully:', {
-      title: propertyData.title,
-      price: propertyData.price,
-      bedrooms: propertyData.bedrooms,
-      bathrooms: propertyData.bathrooms
+      title: structured.title,
+      price: structured.price,
+      bedrooms: structured.bedrooms,
+      bathrooms: structured.bathrooms
     });
 
     // Update deal with enriched property data if dealId provided
     if (dealId) {
+      // Parse price to numeric value
+      const priceMatch = structured.price.match(/[\d,]+/);
+      const numericPrice = priceMatch ? parseInt(priceMatch[0].replace(/,/g, '')) : 0;
+
       const { error: updateError } = await supabase
         .from('deals')
         .update({
           property_data: {
-            address: propertyData.address,
-            bedrooms: propertyData.bedrooms,
-            bathrooms: propertyData.bathrooms,
-            floor_area: propertyData.floor_area,
-            land_area: propertyData.land_area,
-            photos: propertyData.photos,
-            description: propertyData.description,
-            source_url: propertyUrl
+            address: structured.address,
+            bedrooms: parseInt(structured.bedrooms) || 0,
+            bathrooms: parseInt(structured.bathrooms) || 0,
+            floor_area: structured.floor_area,
+            land_area: structured.land_area,
+            photos: structured.images || [],
+            description: structured.description,
+            source_url: propertyUrl,
+            property_estimates: structured.property_estimates,
+            capital_values: structured.capital_values,
+            market_trends: structured.market_trends
           },
-          purchase_price: propertyData.price > 0 ? propertyData.price : undefined,
+          purchase_price: numericPrice > 0 ? numericPrice : undefined,
           updated_at: new Date().toISOString()
         })
         .eq('id', dealId);
@@ -89,15 +97,16 @@ serve(async (req) => {
       success: true,
       message: 'Property analyzed and enriched successfully',
       propertyData: {
-        title: propertyData.title,
-        address: propertyData.address,
-        price: propertyData.price,
-        bedrooms: propertyData.bedrooms,
-        bathrooms: propertyData.bathrooms,
-        floor_area: propertyData.floor_area,
-        land_area: propertyData.land_area,
-        photos_count: propertyData.photos?.length || 0,
-        has_description: !!propertyData.description
+        title: structured.title,
+        address: structured.address,
+        price: structured.price,
+        bedrooms: structured.bedrooms,
+        bathrooms: structured.bathrooms,
+        floor_area: structured.floor_area,
+        land_area: structured.land_area,
+        photos_count: structured.images?.length || 0,
+        has_description: !!structured.description,
+        has_estimates: !!structured.property_estimates
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
