@@ -186,7 +186,7 @@ export const useUnifiedProperties = (filters?: SearchFilters, tags?: string[]) =
   });
 
   const createPropertyMutation = useMutation({
-    mutationFn: async (propertyData: Partial<UnifiedProperty>) => {
+    mutationFn: async (propertyData: Omit<UnifiedProperty, 'id' | 'created_at' | 'updated_at'> & { address: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { data, error } = await supabase

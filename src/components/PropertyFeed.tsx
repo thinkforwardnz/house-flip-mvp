@@ -1,16 +1,18 @@
 
-import React, { useState } from 'react';
-import PropertyListingCard from '@/components/PropertyListingCard';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { RefreshCw } from 'lucide-react';
-import { useProspectingProperties, UnifiedProperty } from '@/hooks/useUnifiedProperties';
+import React from 'react';
+import { useProspectingProperties } from '@/hooks/useUnifiedProperties';
 import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
 import { useRefreshFeed } from '@/hooks/useRefreshFeed';
+import { useToast } from '@/hooks/use-toast';
+import { SearchFilters } from '@/types/filters';
+
 import ScrapingProgress from '@/components/ScrapingProgress';
 import AgentQLTestButton from '@/components/AgentQLTestButton';
-import { SearchFilters } from '@/types/filters';
-import { useToast } from '@/hooks/use-toast';
+import PropertyFeedHeader from '@/components/PropertyFeed/PropertyFeedHeader';
+import PropertyFeedGrid from '@/components/PropertyFeed/PropertyFeedGrid';
+import PropertyFeedEmpty from '@/components/PropertyFeed/PropertyFeedEmpty';
+import PropertyFeedLoading from '@/components/PropertyFeed/PropertyFeedLoading';
+import { usePropertyFeedActions } from '@/components/PropertyFeed/PropertyFeedActions';
 
 interface PropertyFeedProps {
   filters: SearchFilters;
@@ -23,7 +25,6 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
     isLoading,
     error,
     addTag,
-    removeTag,
     refetch
   } = useProspectingProperties(filters);
 
@@ -43,53 +44,10 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
 
   const { toast } = useToast();
 
-  const handleImportAsDeal = (property: UnifiedProperty) => {
-    // Add 'deal' and 'analysis' tags to convert to a deal
-    addTag({ propertyId: property.id, tag: 'deal' });
-    addTag({ propertyId: property.id, tag: 'analysis' });
-    
-    toast({
-      title: "Property Imported",
-      description: "Property has been added to your pipeline as a new deal.",
-    });
-  };
-
-  const handleSaveForLater = (property: UnifiedProperty) => {
-    addTag({ propertyId: property.id, tag: 'saved' });
-  };
-
-  const handleDismiss = (property: UnifiedProperty) => {
-    addTag({ propertyId: property.id, tag: 'dismissed' });
-  };
-
-  const handleAnalyse = (property: UnifiedProperty) => {
-    handleImportAsDeal(property);
-    if (onSwitchToSavedTab) {
-      setTimeout(() => {
-        onSwitchToSavedTab();
-      }, 1000);
-    }
-  };
-
-  const handleSearchProperties = () => {
-    if (isScrapingActive || isRefreshing) return;
-    
-    const scrapingFilters = {
-      region: filters.region,
-      district: filters.district,
-      suburb: filters.suburb,
-      minPrice: filters.minPrice,
-      maxPrice: filters.maxPrice,
-      minBeds: filters.minBeds,
-      propertyType: filters.propertyType,
-      keywords: filters.keywords,
-      searchNearbySuburbs: filters.searchNearbySuburbs,
-      openHomesOnly: filters.openHomesOnly,
-      newHomesOnly: filters.newHomesOnly
-    };
-    
-    startScraping(scrapingFilters, filters.selectedSources);
-  };
+  const { handleAnalyse, handleSaveForLater, handleDismiss } = usePropertyFeedActions({
+    addTag,
+    onSwitchToSavedTab,
+  });
 
   const handleRefreshFeed = async () => {
     if (isScrapingActive || isRefreshing) return;
@@ -159,93 +117,29 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
       )}
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="space-y-4">
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          ))}
-        </div>
+        <PropertyFeedLoading />
       ) : (
         <>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-gray-600">
-              Found {visibleProperties.length} properties matching your criteria
-            </p>
-            <Button 
-              variant="outline"
-              onClick={handleRefreshFeed}
-              disabled={isRefreshing || isScrapingActive}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Refreshing...' : 'Refresh Feed'}
-            </Button>
-          </div>
+          <PropertyFeedHeader
+            propertyCount={visibleProperties.length}
+            isRefreshing={isRefreshing}
+            isScrapingActive={isScrapingActive}
+            onRefreshFeed={handleRefreshFeed}
+          />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visibleProperties.map((property) => {
-              const featuredImage = property.photos && property.photos.length > 0 
-                ? property.photos[0] 
-                : '/placeholder.svg';
-
-              const transformedProperty = {
-                id: property.id,
-                address: property.address,
-                suburb: property.suburb || '',
-                city: property.city || 'Auckland',
-                price: Number(property.current_price || 0),
-                bedrooms: property.bedrooms || 0,
-                bathrooms: Number(property.bathrooms || 0),
-                floorArea: Number(property.floor_area || 0),
-                landArea: Number(property.land_area || 0),
-                imageUrl: featuredImage,
-                listingUrl: property.source_url || '',
-                description: property.description || 'No description available',
-                aiAnalysis: {
-                  renovationCost: Number(property.ai_reno_cost || 0),
-                  arv: Number(property.ai_arv || 0),
-                  projectedProfit: Number(property.ai_est_profit || 0),
-                  flipPotential: (property.flip_potential as 'High' | 'Medium' | 'Low') || 'Medium',
-                  confidence: property.ai_confidence || 0,
-                },
-                source: property.source_site || 'Unknown',
-                listedDate: property.listing_date || property.date_scraped || property.created_at,
-              };
-
-              // Determine user action based on tags
-              let userAction: 'new' | 'saved' | 'dismissed' | 'imported' = 'new';
-              if (property.tags.includes('saved')) userAction = 'saved';
-              if (property.tags.includes('dismissed')) userAction = 'dismissed';
-              if (property.tags.includes('deal')) userAction = 'imported';
-
-              return (
-                <PropertyListingCard
-                  key={property.id}
-                  property={transformedProperty}
-                  onAnalyse={() => handleAnalyse(property)}
-                  onSaveForLater={() => handleSaveForLater(property)}
-                  onDismiss={() => handleDismiss(property)}
-                  isLoading={false}
-                  userAction={userAction}
-                />
-              );
-            })}
-          </div>
-          
-          {visibleProperties.length === 0 && !isLoading && (
-            <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">No properties found matching your criteria.</p>
-              <Button 
-                variant="outline" 
-                onClick={handleRefreshFeed}
-                disabled={isRefreshing || isScrapingActive}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? 'Refreshing...' : 'Refresh Feed'}
-              </Button>
-            </div>
+          {visibleProperties.length === 0 ? (
+            <PropertyFeedEmpty
+              isRefreshing={isRefreshing}
+              isScrapingActive={isScrapingActive}
+              onRefreshFeed={handleRefreshFeed}
+            />
+          ) : (
+            <PropertyFeedGrid
+              properties={visibleProperties}
+              onAnalyse={handleAnalyse}
+              onSaveForLater={handleSaveForLater}
+              onDismiss={handleDismiss}
+            />
           )}
         </>
       )}
