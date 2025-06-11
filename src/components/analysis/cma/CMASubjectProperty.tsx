@@ -21,31 +21,34 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
     try {
       console.log('Starting property analysis and enrichment for deal:', deal.id);
       
-      // First, try to find a scraped listing for this address
-      const { data: scrapedListing } = await supabase
-        .from('scraped_listings')
+      // First, try to find a unified property for this address
+      const { data: unifiedProperty } = await supabase
+        .from('unified_properties')
         .select('id, source_url')
         .eq('address', deal.address)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
 
-      if (!scrapedListing) {
+      if (!unifiedProperty) {
         toast({
-          title: "No Listing Found",
-          description: "No scraped listing found for this property address to analyze",
+          title: "No Property Found",
+          description: "No property found for this address to analyze",
           variant: "destructive",
         });
         return;
       }
 
-      // Call the new analysis and enrichment function
-      const { data, error } = await supabase.functions.invoke('analyze-and-enrich-property', {
-        body: { listingId: scrapedListing.id }
+      // Call the property enrichment function instead of the old analyze-and-enrich
+      const { data, error } = await supabase.functions.invoke('enrich-property-data', {
+        body: { 
+          propertyId: unifiedProperty.id,
+          propertyData: unifiedProperty
+        }
       });
 
       if (error) {
-        console.error('Analysis and enrichment error:', error);
+        console.error('Property enrichment error:', error);
         throw error;
       }
 
