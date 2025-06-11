@@ -131,11 +131,6 @@ export const useDeals = () => {
           ...dealFields,
           property_id: propertyId,
           user_id: user.id,
-          listing_details: dealFields.listing_details ? JSON.parse(JSON.stringify(dealFields.listing_details)) : null,
-          market_analysis: dealFields.market_analysis ? JSON.parse(JSON.stringify(dealFields.market_analysis)) : null,
-          renovation_analysis: dealFields.renovation_analysis ? JSON.parse(JSON.stringify(dealFields.renovation_analysis)) : null,
-          risk_assessment: dealFields.risk_assessment ? JSON.parse(JSON.stringify(dealFields.risk_assessment)) : null,
-          analysis_data: dealFields.analysis_data ? JSON.parse(JSON.stringify(dealFields.analysis_data)) : null,
         } as any)
         .select(`
           *,
