@@ -107,7 +107,16 @@ export const useDeals = () => {
   });
 
   const createDealMutation = useMutation({
-    mutationFn: async (dealData: { propertyId: string } & Omit<Deal, 'id' | 'created_at' | 'updated_at' | 'property_id' | 'property' | 'address' | 'suburb' | 'city' | 'bedrooms' | 'bathrooms' | 'floor_area' | 'land_area' | 'photos' | 'description' | 'coordinates'>) => {
+    mutationFn: async (dealData: { 
+      propertyId: string;
+      pipeline_stage: Deal['pipeline_stage'];
+      current_profit: number;
+      current_risk: Deal['current_risk'];
+      notes: string;
+      purchase_price: number;
+      target_sale_price: number;
+      estimated_renovation_cost?: number;
+    }) => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
@@ -121,8 +130,13 @@ export const useDeals = () => {
         .insert({
           ...dealFields,
           property_id: propertyId,
-          user_id: user.id
-        })
+          user_id: user.id,
+          listing_details: dealFields.listing_details ? JSON.parse(JSON.stringify(dealFields.listing_details)) : null,
+          market_analysis: dealFields.market_analysis ? JSON.parse(JSON.stringify(dealFields.market_analysis)) : null,
+          renovation_analysis: dealFields.renovation_analysis ? JSON.parse(JSON.stringify(dealFields.renovation_analysis)) : null,
+          risk_assessment: dealFields.risk_assessment ? JSON.parse(JSON.stringify(dealFields.risk_assessment)) : null,
+          analysis_data: dealFields.analysis_data ? JSON.parse(JSON.stringify(dealFields.analysis_data)) : null,
+        } as any)
         .select(`
           *,
           unified_properties (
@@ -194,9 +208,19 @@ export const useDeals = () => {
       // Remove property fields from updates as they should be updated in unified_properties
       const { property, address, suburb, city, bedrooms, bathrooms, floor_area, land_area, photos, description, coordinates, ...dealUpdates } = updates;
       
+      // Convert complex objects to JSON for database storage
+      const processedUpdates = {
+        ...dealUpdates,
+        listing_details: dealUpdates.listing_details ? JSON.parse(JSON.stringify(dealUpdates.listing_details)) : undefined,
+        market_analysis: dealUpdates.market_analysis ? JSON.parse(JSON.stringify(dealUpdates.market_analysis)) : undefined,
+        renovation_analysis: dealUpdates.renovation_analysis ? JSON.parse(JSON.stringify(dealUpdates.renovation_analysis)) : undefined,
+        risk_assessment: dealUpdates.risk_assessment ? JSON.parse(JSON.stringify(dealUpdates.risk_assessment)) : undefined,
+        analysis_data: dealUpdates.analysis_data ? JSON.parse(JSON.stringify(dealUpdates.analysis_data)) : undefined,
+      };
+      
       const { data, error } = await supabase
         .from('deals')
-        .update(dealUpdates)
+        .update(processedUpdates as any)
         .eq('id', id)
         .select(`
           *,
