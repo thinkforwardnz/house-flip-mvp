@@ -2,7 +2,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { corsHeaders } from '../shared/cors.ts';
-import { AgentQLPropertyClient } from '../shared/agentql-property-client.ts';
+import { CustomScraperClient } from '../shared/custom-scraper-client.ts';
 import { errorResponse } from '../shared/error-response.ts';
 
 const supabase = createClient(
@@ -44,7 +44,7 @@ serve(async (req) => {
     console.log(`Found ${incompleteProperties.length} properties needing basic data completion`);
 
     // Initialize property client for individual page scraping
-    const propertyClient = new AgentQLPropertyClient();
+    const propertyClient = new CustomScraperClient();
     
     let completed = 0;
     let skipped = 0;
@@ -54,14 +54,14 @@ serve(async (req) => {
         console.log(`Completing basic data for: ${property.address}`);
 
         // Scrape the individual property page for missing basic data
-        const propertyData = await propertyClient.scrapePropertyPage(property.source_url);
+        const propertyDataResponse = await propertyClient.scrapeProperty(property.source_url);
 
-        if (propertyData && propertyData.photos && propertyData.photos.length > 0) {
+        if (propertyDataResponse && propertyDataResponse.structured && propertyDataResponse.structured.images && propertyDataResponse.structured.images.length > 0) {
           // Update only the missing basic fields
           const { error: updateError } = await supabase
             .from('unified_properties')
             .update({
-              photos: propertyData.photos,
+              photos: propertyDataResponse.structured.images,
               updated_at: new Date().toISOString()
             })
             .eq('id', property.id);
