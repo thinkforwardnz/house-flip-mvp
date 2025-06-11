@@ -10,8 +10,8 @@ declare const Deno: {
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8?dts';
 import { corsHeaders } from '../shared/cors.ts';
-import { AgentQLSearchClient } from '../shared/agentql-search-client.ts';
-import { processTrademeListing, ProcessedListing } from './data-processor.ts';
+import { CustomScraperClient } from '../shared/custom-scraper-client.ts';
+import { processSearchListing, processFullProperty, ProcessedListing } from './custom-data-processor.ts';
 import { buildTradeeMeSearchUrl } from './url-builder.ts';
 import { errorResponse } from '../shared/error-response.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
@@ -60,11 +60,11 @@ serve(async (req: Request): Promise<Response> => {
     const filters = filtersParse.data;
     console.log('Starting Trade Me scraping with filters:', filters);
 
-    const searchClient = new AgentQLSearchClient();
+    const scraperClient = new CustomScraperClient();
     const searchUrl = buildTradeeMeSearchUrl(filters);
     console.log('Built search URL:', searchUrl);
 
-    const searchResults = await searchClient.scrapeSearchResults(searchUrl);
+    const searchResults = await scraperClient.scrapeSearchResults(searchUrl);
     if (!searchResults?.data?.properties || !Array.isArray(searchResults.data.properties)) {
       console.error('No properties found in search results');
       return errorResponse('No properties found in search results', 404);
@@ -78,11 +78,11 @@ serve(async (req: Request): Promise<Response> => {
     for (let i = 0; i < Math.min(searchResults.data.properties.length, maxListings); i++) {
       const property = searchResults.data.properties[i];
       try {
-        console.log(`Processing property ${i + 1}/${Math.min(searchResults.data.properties.length, maxListings)}: ${property.listingaddress}`);
+        console.log(`Processing property ${i + 1}/${Math.min(searchResults.data.properties.length, maxListings)}: ${property.address}`);
         if (i > 0 && i % 10 === 0) {
-          await searchClient.rateLimitDelay();
+          await scraperClient.rateLimitDelay();
         }
-        const processed = processTrademeListing(property);
+        const processed = processSearchListing(property);
         if (processed) {
           const listingParse = ProcessedListingSchema.safeParse(processed);
           if (!listingParse.success) {
@@ -92,7 +92,7 @@ serve(async (req: Request): Promise<Response> => {
           processedListings.push(listingParse.data);
         }
       } catch (error: unknown) {
-        console.error(`Error processing property ${property.listingaddress}:`, error);
+        console.error(`Error processing property ${property.address}:`, error);
       }
     }
 
@@ -117,7 +117,7 @@ serve(async (req: Request): Promise<Response> => {
               source_site: listing.source_site,
               address: listing.address,
               suburb: listing.suburb,
-              city: listing.city || 'Auckland',
+              city: listing.city || 'Wellington',
               district: listing.district,
               current_price: listing.price || 0,
               description: listing.summary,
@@ -127,9 +127,13 @@ serve(async (req: Request): Promise<Response> => {
               land_area: listing.land_area,
               photos: listing.photos,
               listing_date: listing.listing_date,
+              property_type: listing.property_type,
+              parking_spaces: listing.parking_spaces,
               date_scraped: new Date().toISOString(),
-              tags: ['prospecting'],
-              status: 'active'
+              tags: listing.tags || ['prospecting'],
+              status: 'active',
+              market_analysis: listing.market_analysis || null,
+              sale_date: listing.sale_date || null
             })
             .select()
             .single();

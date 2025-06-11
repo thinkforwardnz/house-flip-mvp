@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
@@ -19,7 +20,7 @@ serve(async (req) => {
   }
 
   try {
-    const { filters = {}, sources = ['trademe', 'realestate', 'oneroof'] } = await req.json();
+    const { filters = {}, sources = ['trademe'] } = await req.json();
 
     console.log('Manual refresh triggered with filters:', filters, 'sources:', sources);
 
@@ -39,31 +40,8 @@ serve(async (req) => {
       );
     }
 
-    if (sources.includes('realestate')) {
-      scrapingPromises.push(
-        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/scrape-realestate`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filters }),
-        })
-      );
-    }
-
-    if (sources.includes('oneroof')) {
-      scrapingPromises.push(
-        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/scrape-oneroof`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filters }),
-        })
-      );
-    }
+    // Note: Other sources (realestate, oneroof) would need similar updates
+    // For now, focusing on Trade Me as the primary implementation
 
     // Wait for all scraping jobs to complete
     const results = await Promise.allSettled(scrapingPromises);

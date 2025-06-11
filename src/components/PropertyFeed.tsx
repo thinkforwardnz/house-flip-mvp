@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useProspectingProperties } from '@/hooks/useUnifiedProperties';
 import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
@@ -6,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SearchFilters } from '@/types/filters';
 
 import ScrapingProgress from '@/components/ScrapingProgress';
-import AgentQLTestButton from '@/components/AgentQLTestButton';
+import CustomScraperTestButton from '@/components/CustomScraperTestButton';
 import PropertyFeedHeader from '@/components/PropertyFeed/PropertyFeedHeader';
 import PropertyFeedGrid from '@/components/PropertyFeed/PropertyFeedGrid';
 import PropertyFeedEmpty from '@/components/PropertyFeed/PropertyFeedEmpty';
@@ -85,7 +86,7 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
 
   return (
     <div className="space-y-6">
-      <AgentQLTestButton />
+      <CustomScraperTestButton />
 
       <ScrapingProgress
         isActive={isScrapingActive}
