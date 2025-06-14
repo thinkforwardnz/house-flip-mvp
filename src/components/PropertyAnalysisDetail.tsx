@@ -1,9 +1,8 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, AlertTriangle } from 'lucide-react';
+// Removed supabase, useToast, CheckCircle, AlertTriangle as they are now in the hook
 import AIAnalysisSummary from '@/components/AIAnalysisSummary';
 import PropertyHeader from '@/components/analysis/PropertyHeader';
 import OverviewTab from '@/components/analysis/OverviewTab';
@@ -13,6 +12,7 @@ import RenovationTab from '@/components/analysis/RenovationTab';
 import OfferTab from '@/components/analysis/OfferTab';
 import RiskTab from '@/components/analysis/RiskTab';
 import type { Deal } from '@/types/analysis';
+import { usePropertyAnalysis } from '@/hooks/usePropertyAnalysis'; // Import the new hook
 
 interface PropertyAnalysisDetailProps {
   deal: Deal;
@@ -21,213 +21,34 @@ interface PropertyAnalysisDetailProps {
 
 const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailProps) => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisStep, setAnalysisStep] = useState('');
-  const { toast } = useToast();
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NZ', {
-      style: 'currency',
-      currency: 'NZD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+  const {
+    isAnalyzing,
+    analysisStep,
+    handleRunAnalysis,
+    formatCurrency,
+    progress,
+    completed,
+    pending,
+    renovationEstimate,
+    offerPrice,
+    dataSourceStatus,
+  } = usePropertyAnalysis(deal, onUpdateDeal);
 
-  const getAnalysisProgress = () => {
-    let progress = 0;
-    let completed = [];
-    let pending = [];
-
-    if (deal.address) {
-      progress += 15;
-      completed.push('Property Identification');
-    } else {
-      pending.push('Property Identification');
-    }
-
-    if (deal.purchase_price) {
-      progress += 15;
-      completed.push('Initial Pricing');
-    } else {
-      pending.push('Initial Pricing');
-    }
-
-    if (deal.target_sale_price) {
-      progress += 20;
-      completed.push('ARV Estimation');
-    } else {
-      pending.push('ARV Estimation');
-    }
-
-    if (deal.market_analysis?.analysis) {
-      progress += 15;
-      completed.push('Market Analysis');
-    } else {
-      pending.push('Market Analysis');
-    }
-
-    if (deal.renovation_analysis?.total_cost) {
-      progress += 15;
-      completed.push('Renovation Costing');
-    } else {
-      pending.push('Renovation Costing');
-    }
-
-    if (deal.risk_assessment?.overall_risk_score) {
-      progress += 20;
-      completed.push('Risk Assessment');
-    } else {
-      pending.push('Risk Assessment');
-    }
-
-    return { progress, completed, pending };
-  };
-
-  const { progress, completed, pending } = getAnalysisProgress();
-
-  const renovationEstimate = deal.renovation_analysis?.total_cost || 
-    (deal.target_sale_price && deal.purchase_price 
-      ? Math.max(0, (deal.target_sale_price - deal.purchase_price) * 0.15) 
-      : 50000);
-
-  const offerPrice = deal.target_sale_price 
-    ? deal.target_sale_price - renovationEstimate - (deal.target_sale_price * 0.1) - (deal.target_sale_price * 0.15)
-    : 0;
-
-  const getDataSourceStatus = () => {
-    return {
-      linz: { status: 'complete', icon: CheckCircle, color: 'text-green-600' },
-      trademe: deal.photos?.length > 0 ? 
-        { status: 'complete', icon: CheckCircle, color: 'text-green-600' } :
-        { status: 'pending', icon: AlertTriangle, color: 'text-yellow-600' },
-      googleMaps: deal.coordinates ? 
-        { status: 'complete', icon: CheckCircle, color: 'text-green-600' } :
-        { status: 'pending', icon: AlertTriangle, color: 'text-yellow-600' },
-      council: { status: 'pending', icon: AlertTriangle, color: 'text-gray-600' }
-    };
-  };
-
-  const dataSourceStatus = getDataSourceStatus();
-
-  const handleRunAnalysis = async () => {
-    setIsAnalyzing(true);
-    
-    try {
-      // Step 1: Market Analysis
-      setAnalysisStep('Running market analysis...');
-      console.log('Starting market analysis for deal:', deal.id);
-      
-      const marketResponse = await supabase.functions.invoke('market-analysis', {
-        body: {
-          dealId: deal.id,
-          address: deal.address,
-          suburb: deal.suburb,
-          city: deal.city,
-          bedrooms: deal.bedrooms,
-          bathrooms: deal.bathrooms
-        }
-      });
-
-      if (marketResponse.error) {
-        console.error('Market analysis error:', marketResponse.error);
-        throw new Error(`Market analysis failed: ${marketResponse.error.message}`);
-      }
-
-      // Step 2: Property Enrichment
-      setAnalysisStep('Enriching property data...');
-      console.log('Starting property enrichment for deal:', deal.id);
-      
-      const enrichResponse = await supabase.functions.invoke('enrich-property-analysis', {
-        body: {
-          dealId: deal.id,
-          address: deal.address,
-          coordinates: deal.coordinates
-        }
-      });
-
-      if (enrichResponse.error) {
-        console.error('Property enrichment error:', enrichResponse.error);
-        // Continue with analysis even if enrichment fails
-      }
-
-      // Step 3: Renovation Analysis
-      setAnalysisStep('Analyzing renovation requirements...');
-      console.log('Starting renovation analysis for deal:', deal.id);
-      
-      const renovationResponse = await supabase.functions.invoke('renovation-analysis', {
-        body: {
-          dealId: deal.id,
-          photos: deal.photos || [],
-          propertyDescription: deal.description || '',
-          bedrooms: deal.bedrooms,
-          bathrooms: deal.bathrooms,
-          floorArea: deal.floor_area
-        }
-      });
-
-      if (renovationResponse.error) {
-        console.error('Renovation analysis error:', renovationResponse.error);
-        throw new Error(`Renovation analysis failed: ${renovationResponse.error.message}`);
-      }
-
-      // Step 4: Risk Assessment
-      setAnalysisStep('Performing risk assessment...');
-      console.log('Starting risk assessment for deal:', deal.id);
-      
-      const riskResponse = await supabase.functions.invoke('risk-assessment', {
-        body: {
-          dealId: deal.id
-        }
-      });
-
-      if (riskResponse.error) {
-        console.error('Risk assessment error:', riskResponse.error);
-        throw new Error(`Risk assessment failed: ${riskResponse.error.message}`);
-      }
-
-      // Fetch updated deal data
-      setAnalysisStep('Finalizing analysis...');
-      const { data: updatedDeal, error: fetchError } = await supabase
-        .from('deals')
-        .select('*')
-        .eq('id', deal.id)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching updated deal:', fetchError);
-        throw new Error('Failed to fetch updated deal data');
-      }
-
-      // Update the deal in the parent component
-      onUpdateDeal(updatedDeal);
-
-      toast({
-        title: "Analysis Complete",
-        description: "Property analysis has been completed successfully.",
-      });
-
-      console.log('Analysis completed successfully for deal:', deal.id);
-      
-    } catch (error) {
-      console.error('Analysis failed:', error);
-      toast({
-        title: "Analysis Failed",
-        description: error.message || "An error occurred during analysis.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAnalyzing(false);
-      setAnalysisStep('');
-    }
-  };
-
-  const handleDealUpdate = (updatedDeal: Deal) => {
-    onUpdateDeal(updatedDeal);
+  // These handlers are simple wrappers and can stay in the component
+  // or be passed directly if preferred, but this is clear.
+  const handleDealUpdate = (updatedDealData: Deal) => {
+    onUpdateDeal(updatedDealData);
   };
 
   const handlePartialDealUpdate = (updates: Partial<Deal>) => {
+    // The hook's onUpdateDeal will likely fetch the full new deal,
+    // but if a component needs to optimistically update or provide partial updates
+    // before a full refresh, this pattern can be useful.
+    // For now, it merges locally and calls the main updater.
+    // The hook itself calls onUpdateDeal with the full updated deal from Supabase.
     const updatedDeal = { ...deal, ...updates };
-    onUpdateDeal(updatedDeal);
+    onUpdateDeal(updatedDeal); 
   };
 
   return (
@@ -277,7 +98,7 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
               <CMATab 
                 deal={deal} 
                 formatCurrency={formatCurrency}
-                onDealUpdate={handleDealUpdate}
+                onDealUpdate={handleDealUpdate} // Used for full deal object updates from CMATab
               />
             </TabsContent>
 
@@ -285,8 +106,8 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
               <RenovationTab
                 deal={deal}
                 formatCurrency={formatCurrency}
-                renovationEstimate={renovationEstimate}
-                onDealUpdate={handlePartialDealUpdate}
+                renovationEstimate={renovationEstimate} // renovationEstimate prop is still passed
+                onDealUpdate={handlePartialDealUpdate} // Used for partial updates like renovation_selections
               />
             </TabsContent>
 
@@ -306,10 +127,11 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
         </CardContent>
       </Card>
 
-      {/* AI Analysis Summary - Now Text-Based */}
+      {/* AI Analysis Summary */}
       <AIAnalysisSummary deal={deal} />
     </div>
   );
 };
 
 export default PropertyAnalysisDetail;
+
