@@ -128,15 +128,14 @@ const RenovationSelector = ({
   };
 
   return (
-    <div className="space-y-5 xs:space-y-6">
+    <div className="space-y-3 xs:space-y-5">
       <div>
-        <h3 className="text-lg font-semibold text-navy-dark mb-2">Renovation Selection</h3>
-        <p className="text-xs xs:text-sm text-gray-600 mb-4">
+        <h3 className="text-base xs:text-lg font-semibold text-navy-dark mb-1">Renovation Selection</h3>
+        <p className="text-2xs xs:text-xs text-gray-600 mb-2 xs:mb-4">
           Select the renovations you plan to complete and adjust costs and value-add estimates.
         </p>
       </div>
-
-      <div className="grid grid-cols-1 gap-3 xs:gap-4">
+      <div className="grid grid-cols-1 gap-2 xs:gap-3">
         {getRenovationCard('add_bedroom', 'Add Bedroom', <Plus className="h-4 w-4 text-green-600" />, true)}
         {getRenovationCard('kitchen', 'Kitchen Renovation', <Wrench className="h-4 w-4 text-blue-600" />)}
         {getRenovationCard('bathroom', 'Bathroom Renovation', <Wrench className="h-4 w-4 text-purple-600" />)}

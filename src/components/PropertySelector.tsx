@@ -53,8 +53,8 @@ const PropertySelector = ({
   
   if (isLoading) {
     return (
-      <Card className="bg-white shadow-lg rounded-2xl border-0 mb-4 sm:mb-6">
-        <CardContent className="p-4 xs:p-5 sm:p-6">
+      <Card className="bg-white shadow-lg rounded-2xl border-0 mb-3 xs:mb-4">
+        <CardContent className="p-2 xs:p-4">
           <div className="animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
             <div className="h-6 bg-gray-200 rounded w-1/2"></div>
@@ -65,22 +65,22 @@ const PropertySelector = ({
   }
   
   return (
-    <Card className="bg-white shadow-lg rounded-2xl border-0 mb-4 sm:mb-6">
-      <CardContent className="p-3 xs:p-4 sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 w-full">
+    <Card className="bg-white shadow-lg rounded-2xl border-0 mb-3 xs:mb-4 w-full">
+      <CardContent className="p-2 xs:p-4">
+        <div className="flex flex-col gap-2 xs:gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1 xs:gap-2 sm:flex-row sm:items-center sm:gap-4 w-full">
             <Button variant="outline" size="sm" onClick={() => navigate('/')} className="rounded-xl w-full sm:w-auto mb-1 sm:mb-0">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Dashboard
             </Button>
             
-            <div className="flex items-center gap-3 w-full min-w-0">
+            <div className="flex items-center gap-2 xs:gap-3 w-full min-w-0">
               <Home className="h-5 w-5 text-blue-primary flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-xs sm:text-sm text-navy font-medium truncate">Current Property</p>
+                <p className="text-2xs xs:text-xs sm:text-sm text-navy font-medium truncate">Current Property</p>
                 {currentDeal ? (
-                  <div className="flex items-center gap-2 flex-wrap min-w-0">
-                    <h2 className="text-base sm:text-lg font-semibold text-navy-dark truncate max-w-[180px] sm:max-w-none">{currentDeal.address}</h2>
+                  <div className="flex items-center gap-1 xs:gap-2 flex-wrap min-w-0">
+                    <h2 className="text-xs xs:text-base sm:text-lg font-semibold text-navy-dark truncate max-w-[130px] xs:max-w-[180px] sm:max-w-none">{currentDeal.address}</h2>
                     <Badge className={`${getStageColor(currentDeal.pipeline_stage)} rounded-lg text-xs`}>
                       {currentDeal.pipeline_stage}
                     </Badge>
@@ -101,12 +101,12 @@ const PropertySelector = ({
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-72 sm:w-80 z-50 bg-white">
+                <DropdownMenuContent className="w-64 xs:w-72 sm:w-80 z-50 bg-white">
                   {stageDeals.map(deal => (
                     <DropdownMenuItem 
                       key={deal.id} 
                       onClick={() => onDealSelect(deal.id)} 
-                      className={`p-3 sm:p-4 cursor-pointer rounded-lg ${deal.id === currentDealId ? 'bg-blue-50' : ''}`}
+                      className={`p-2 xs:p-3 sm:p-4 cursor-pointer rounded-lg ${deal.id === currentDealId ? 'bg-blue-50' : ''}`}
                     >
                       <div className="flex flex-col gap-0.5 w-full">
                         <div className="flex items-center justify-between">
@@ -115,11 +115,11 @@ const PropertySelector = ({
                             {deal.pipeline_stage}
                           </Badge>
                         </div>
-                        <div className="text-xs text-gray-600 truncate">
+                        <div className="text-2xs xs:text-xs text-gray-600 truncate">
                           {deal.suburb}, {deal.city}
                         </div>
                         {deal.purchase_price && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-2xs xs:text-xs text-gray-500">
                             Purchase: {formatCurrency(deal.purchase_price)}
                           </div>
                         )}
@@ -133,8 +133,8 @@ const PropertySelector = ({
         </div>
 
         {currentDeal && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-4 md:gap-4 text-xs sm:text-sm">
+          <div className="mt-2 xs:mt-3 pt-2 xs:pt-3 border-t border-gray-100">
+            <div className="grid grid-cols-1 gap-2 xs:gap-3 md:grid-cols-4 md:gap-4 text-2xs xs:text-xs sm:text-sm">
               <div>
                 <span className="text-navy font-medium">Location:</span>
                 <p className="text-navy-dark">{currentDeal.suburb}, {currentDeal.city}</p>

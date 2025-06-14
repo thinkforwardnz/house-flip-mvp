@@ -1,4 +1,3 @@
-
 import React, { useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import PropertySelector from '@/components/PropertySelector';
@@ -30,7 +29,7 @@ const PropertyAnalysis = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-2 xs:px-4 md:px-0">
+      <div className="mx-auto w-full max-w-full sm:max-w-[640px] px-1 xs:px-2 md:px-0 space-y-4 sm:space-y-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-2/3 sm:w-1/3 mb-3 sm:mb-4"></div>
           <div className="h-24 sm:h-32 bg-gray-200 rounded mb-4"></div>
@@ -45,25 +44,22 @@ const PropertyAnalysis = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-2 xs:px-4 md:px-0">
+    <div className="mx-auto w-full max-w-full sm:max-w-[640px] px-1 xs:px-2 md:px-0 space-y-4 sm:space-y-6">
       {/* Page Header */}
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">Property Analysis</h1>
-        <p className="text-blue-100 text-sm sm:text-base md:text-lg">
+      <div className="mb-5 sm:mb-7">
+        <h1 className="text-xl xs:text-2xl md:text-3xl font-bold text-white mb-1 xs:mb-2">Property Analysis</h1>
+        <p className="text-blue-100 text-xs xs:text-sm md:text-lg">
           {dealId ? 'Detailed property analysis and financial modeling' : 'AI-powered analysis dashboard'}
         </p>
       </div>
 
-      {/* Show detailed analysis if dealId is provided, otherwise show dashboard */}
       {dealId ? (
         <>
-          {/* Property Selector for detailed view */}
           <PropertySelector 
             currentDealId={currentDealId}
             onDealSelect={selectDeal}
             currentStage="Analysis"
           />
-
           {currentDeal ? (
             <div className="w-full">
               <PropertyAnalysisDetail 
@@ -88,7 +84,6 @@ const PropertyAnalysis = () => {
           )}
         </>
       ) : (
-        // Show analysis dashboard
         <div className="w-full">
           <AnalysisDashboard />
         </div>

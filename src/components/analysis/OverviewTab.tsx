@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { DollarSign, Target, Wrench, TrendingUp } from 'lucide-react';
 import type { Deal } from '@/types/analysis';
@@ -34,50 +32,50 @@ const OverviewTab = ({ deal, formatCurrency }: OverviewTabProps) => {
   console.log('OverviewTab - offerPrice:', offerPrice);
 
   return (
-    <div className="space-y-5 xs:space-y-6">
+    <div className="space-y-4 xs:space-y-5">
       <div className="grid grid-cols-1 gap-2 xs:gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
-        <div className="bg-blue-50 p-3 xs:p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-1 xs:gap-3 xs:mb-2">
+        <div className="bg-blue-50 p-2 xs:p-3 rounded-xl">
+          <div className="flex items-center gap-2 mb-1">
             <DollarSign className="h-5 w-5 text-blue-600" />
-            <p className="text-xs xs:text-sm font-medium text-blue-900">Purchase Price</p>
+            <p className="text-2xs xs:text-xs font-medium text-blue-900">Purchase Price</p>
           </div>
-          <p className="text-lg xs:text-xl font-bold text-blue-900">
+          <p className="text-base xs:text-lg font-bold text-blue-900">
             {deal.purchase_price ? formatCurrency(deal.purchase_price) : 'TBD'}
           </p>
         </div>
 
-        <div className="bg-green-50 p-3 xs:p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-1 xs:gap-3 xs:mb-2">
+        <div className="bg-green-50 p-2 xs:p-3 rounded-xl">
+          <div className="flex items-center gap-2 mb-1">
             <Target className="h-5 w-5 text-green-600" />
-            <p className="text-xs xs:text-sm font-medium text-green-900">Calculated ARV</p>
+            <p className="text-2xs xs:text-xs font-medium text-green-900">Calculated ARV</p>
           </div>
-          <p className="text-lg xs:text-xl font-bold text-green-900">
+          <p className="text-base xs:text-lg font-bold text-green-900">
             {calculatedARV > 0 ? formatCurrency(calculatedARV) : 'TBD'}
           </p>
           {selectedRenovationCost > 0 && (
-            <p className="text-xs text-green-700 mt-1">Based on selected renovations</p>
+            <p className="text-2xs text-green-700 mt-0.5">Based on selected renovations</p>
           )}
         </div>
 
-        <div className="bg-orange-50 p-3 xs:p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-1 xs:gap-3 xs:mb-2">
+        <div className="bg-orange-50 p-2 xs:p-3 rounded-xl">
+          <div className="flex items-center gap-2 mb-1">
             <Wrench className="h-5 w-5 text-orange-600" />
-            <p className="text-xs xs:text-sm font-medium text-orange-900">Total Renovation</p>
+            <p className="text-2xs xs:text-xs font-medium text-orange-900">Total Renovation</p>
           </div>
-          <p className="text-lg xs:text-xl font-bold text-orange-900">
+          <p className="text-base xs:text-lg font-bold text-orange-900">
             {formatCurrency(totalRenovationCost)}
           </p>
           {selectedRenovationCost > 0 && (
-            <p className="text-xs text-orange-700 mt-1">From selected items</p>
+            <p className="text-2xs text-orange-700 mt-0.5">From selected items</p>
           )}
         </div>
 
-        <div className="bg-purple-50 p-3 xs:p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-1 xs:gap-3 xs:mb-2">
+        <div className="bg-purple-50 p-2 xs:p-3 rounded-xl">
+          <div className="flex items-center gap-2 mb-1">
             <TrendingUp className="h-5 w-5 text-purple-600" />
-            <p className="text-xs xs:text-sm font-medium text-purple-900">Est. Profit</p>
+            <p className="text-2xs xs:text-xs font-medium text-purple-900">Est. Profit</p>
           </div>
-          <p className={`text-lg xs:text-xl font-bold ${estimatedProfit > 0 ? 'text-purple-900' : 'text-gray-600'}`}>
+          <p className={`text-base xs:text-lg font-bold ${estimatedProfit > 0 ? 'text-purple-900' : 'text-gray-600'}`}>
             {estimatedProfit > 0 ? formatCurrency(estimatedProfit) : 'TBD'}
           </p>
         </div>
@@ -85,23 +83,23 @@ const OverviewTab = ({ deal, formatCurrency }: OverviewTabProps) => {
 
       {/* Offer Scenarios */}
       {calculatedARV > 0 && (
-        <div className="mt-4 xs:mt-6">
-          <h3 className="text-base xs:text-lg font-semibold text-navy-dark mb-2 xs:mb-4">Offer Scenarios</h3>
-          <div className="grid grid-cols-1 gap-3 xs:gap-4 sm:grid-cols-3">
-            <div className="border border-gray-200 rounded-xl p-3 xs:p-4">
-              <h4 className="font-medium text-green-600 mb-2">Conservative</h4>
+        <div className="mt-2 xs:mt-4">
+          <h3 className="text-xs xs:text-base font-semibold text-navy-dark mb-1 xs:mb-2">Offer Scenarios</h3>
+          <div className="grid grid-cols-1 gap-2 xs:gap-3 sm:grid-cols-3">
+            <div className="border border-gray-200 rounded-xl p-2 xs:p-4">
+              <h4 className="font-medium text-green-600 mb-1">Conservative</h4>
               <p className="text-base xs:text-lg font-bold text-navy-dark">{formatCurrency(offerPrice * 0.9)}</p>
-              <p className="text-xs text-navy mt-1">Low risk, lower returns</p>
+              <p className="text-2xs xs:text-xs text-navy mt-0.5">Low risk, lower returns</p>
             </div>
-            <div className="border border-blue-200 rounded-xl p-3 xs:p-4 bg-blue-50">
-              <h4 className="font-medium text-blue-600 mb-2">Balanced</h4>
+            <div className="border border-blue-200 rounded-xl p-2 xs:p-4 bg-blue-50">
+              <h4 className="font-medium text-blue-600 mb-1">Balanced</h4>
               <p className="text-base xs:text-lg font-bold text-navy-dark">{formatCurrency(offerPrice)}</p>
-              <p className="text-xs text-navy mt-1">Recommended offer</p>
+              <p className="text-2xs xs:text-xs text-navy mt-0.5">Recommended offer</p>
             </div>
-            <div className="border border-orange-200 rounded-xl p-3 xs:p-4">
-              <h4 className="font-medium text-orange-600 mb-2">Aggressive</h4>
+            <div className="border border-orange-200 rounded-xl p-2 xs:p-4">
+              <h4 className="font-medium text-orange-600 mb-1">Aggressive</h4>
               <p className="text-base xs:text-lg font-bold text-navy-dark">{formatCurrency(offerPrice * 1.1)}</p>
-              <p className="text-xs text-navy mt-1">Higher risk, higher returns</p>
+              <p className="text-2xs xs:text-xs text-navy mt-0.5">Higher risk, higher returns</p>
             </div>
           </div>
         </div>

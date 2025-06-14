@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-// Removed supabase, useToast, CheckCircle, AlertTriangle as they are now in the hook
 import AIAnalysisSummary from '@/components/AIAnalysisSummary';
 import PropertyHeader from '@/components/analysis/PropertyHeader';
 import OverviewTab from '@/components/analysis/OverviewTab';
@@ -11,7 +10,9 @@ import RenovationTab from '@/components/analysis/RenovationTab';
 import OfferTab from '@/components/analysis/OfferTab';
 import RiskTab from '@/components/analysis/RiskTab';
 import type { Deal } from '@/types/analysis';
-import { usePropertyAnalysis } from '@/hooks/usePropertyAnalysis'; // Import the new hook
+import { usePropertyAnalysis } from '@/hooks/usePropertyAnalysis';
+import AnalysisMobileTabSelector from "@/components/analysis/AnalysisMobileTabSelector";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface PropertyAnalysisDetailProps {
   deal: Deal;
@@ -20,6 +21,7 @@ interface PropertyAnalysisDetailProps {
 
 const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDetailProps) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const isMobile = useIsMobile();
 
   // The usePropertyAnalysis hook's onUpdateDeal needs to be adapted or this component needs to manage it.
   // For now, the hook's onUpdateDeal is for AI analysis pipeline updates.
@@ -43,7 +45,7 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
   };
 
   return (
-    <div className="space-y-2 xs:space-y-3 sm:space-y-5 md:space-y-6 w-full overflow-x-hidden">
+    <div className="space-y-1 xs:space-y-2 sm:space-y-4 md:space-y-5 w-full overflow-x-hidden">
       {/* Property Header */}
       <div className="w-full">
         <PropertyHeader
@@ -57,83 +59,131 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
         />
       </div>
 
-      {/* Analysis Tabs */}
-      <Card className="bg-white shadow-lg rounded-2xl border-0 w-full">
-        <CardContent className="p-1 xs:p-2 sm:p-4 md:p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="flex flex-nowrap gap-1 xs:gap-2 sm:gap-4 sm:mb-6 mb-2 overflow-x-auto no-scrollbar min-w-0">
-              <TabsTrigger value="overview" className="min-w-[110px]">Overview</TabsTrigger>
-              <TabsTrigger value="data" className="min-w-[110px]">Data Collection</TabsTrigger>
-              <TabsTrigger value="cma" className="min-w-[110px]">Market Analysis</TabsTrigger>
-              <TabsTrigger value="renovation" className="min-w-[110px]">Renovation</TabsTrigger>
-              <TabsTrigger value="offer" className="min-w-[110px]">Offer Calculation</TabsTrigger>
-              <TabsTrigger value="risk" className="min-w-[110px]">Risk Assessment</TabsTrigger>
-            </TabsList>
+      {/* Tab Selector */}
+      {isMobile ? (
+        <AnalysisMobileTabSelector tab={activeTab} onTabChange={setActiveTab} className="mb-2" />
+      ) : (
+        <Card className="bg-white shadow-lg rounded-2xl border-0 w-full">
+          <CardContent className="p-1 xs:p-2 sm:p-4 md:p-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="flex flex-nowrap gap-1 xs:gap-2 sm:gap-4 sm:mb-6 mb-2 overflow-x-auto no-scrollbar min-w-0">
+                <TabsTrigger value="overview" className="min-w-[110px]">Overview</TabsTrigger>
+                <TabsTrigger value="data" className="min-w-[110px]">Data Collection</TabsTrigger>
+                <TabsTrigger value="cma" className="min-w-[110px]">Market Analysis</TabsTrigger>
+                <TabsTrigger value="renovation" className="min-w-[110px]">Renovation</TabsTrigger>
+                <TabsTrigger value="offer" className="min-w-[110px]">Offer Calculation</TabsTrigger>
+                <TabsTrigger value="risk" className="min-w-[110px]">Risk Assessment</TabsTrigger>
+              </TabsList>
+              {/* Render all tab contents on desktop, switch by mobile selector on mobile */}
+              <TabsContent value="overview">
+                <div className="px-0 xs:px-1 sm:px-0">
+                  <OverviewTab
+                    deal={deal}
+                    formatCurrency={formatCurrency}
+                    renovationEstimate={renovationEstimate}
+                    offerPrice={offerPrice}
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="data">
+                <div className="px-0 xs:px-1 sm:px-0">
+                  <DataCollectionTab
+                    dataSourceStatus={dataSourceStatus}
+                    isAnalyzing={isAnalyzing}
+                    onRunAnalysis={handleRunAnalysis}
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="cma">
+                <div className="px-0 xs:px-1 sm:px-0">
+                  <CMATab 
+                    deal={deal} 
+                    formatCurrency={formatCurrency}
+                    onDealUpdate={handleChildTabUpdates}
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="renovation">
+                <div className="px-0 xs:px-1 sm:px-0">
+                  <RenovationTab
+                    deal={deal}
+                    formatCurrency={formatCurrency}
+                    renovationEstimate={renovationEstimate} 
+                    onDealUpdate={handleChildTabUpdates}
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="offer">
+                <div className="px-0 xs:px-1 sm:px-0">
+                  <OfferTab
+                    deal={deal}
+                    formatCurrency={formatCurrency}
+                    renovationEstimate={renovationEstimate}
+                    offerPrice={offerPrice}
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="risk">
+                <div className="px-0 xs:px-1 sm:px-0">
+                  <RiskTab deal={deal} />
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
 
-            <TabsContent value="overview">
-              <div className="px-0 xs:px-1 sm:px-0">
-                <OverviewTab
-                  deal={deal}
-                  formatCurrency={formatCurrency}
-                  renovationEstimate={renovationEstimate}
-                  offerPrice={offerPrice}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="data">
-              <div className="px-0 xs:px-1 sm:px-0">
-                <DataCollectionTab
-                  dataSourceStatus={dataSourceStatus}
-                  isAnalyzing={isAnalyzing}
-                  onRunAnalysis={handleRunAnalysis}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="cma">
-              <div className="px-0 xs:px-1 sm:px-0">
-                <CMATab 
-                  deal={deal} 
-                  formatCurrency={formatCurrency}
-                  onDealUpdate={handleChildTabUpdates}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="renovation">
-              <div className="px-0 xs:px-1 sm:px-0">
-                <RenovationTab
-                  deal={deal}
-                  formatCurrency={formatCurrency}
-                  renovationEstimate={renovationEstimate} 
-                  onDealUpdate={handleChildTabUpdates}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="offer">
-              <div className="px-0 xs:px-1 sm:px-0">
-                <OfferTab
-                  deal={deal}
-                  formatCurrency={formatCurrency}
-                  renovationEstimate={renovationEstimate}
-                  offerPrice={offerPrice}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="risk">
-              <div className="px-0 xs:px-1 sm:px-0">
-                <RiskTab deal={deal} />
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
+      {/* Tabs content for mobile: only show active tab */}
+      {isMobile && (
+        <div className="bg-white shadow-lg rounded-2xl border-0 w-full">
+          <CardContent className="p-2 xs:p-2 sm:p-3 md:p-4">
+            {activeTab === "overview" && (
+              <OverviewTab
+                deal={deal}
+                formatCurrency={formatCurrency}
+                renovationEstimate={renovationEstimate}
+                offerPrice={offerPrice}
+              />
+            )}
+            {activeTab === "data" && (
+              <DataCollectionTab
+                dataSourceStatus={dataSourceStatus}
+                isAnalyzing={isAnalyzing}
+                onRunAnalysis={handleRunAnalysis}
+              />
+            )}
+            {activeTab === "cma" && (
+              <CMATab 
+                deal={deal} 
+                formatCurrency={formatCurrency}
+                onDealUpdate={handleChildTabUpdates}
+              />
+            )}
+            {activeTab === "renovation" && (
+              <RenovationTab
+                deal={deal}
+                formatCurrency={formatCurrency}
+                renovationEstimate={renovationEstimate} 
+                onDealUpdate={handleChildTabUpdates}
+              />
+            )}
+            {activeTab === "offer" && (
+              <OfferTab
+                deal={deal}
+                formatCurrency={formatCurrency}
+                renovationEstimate={renovationEstimate}
+                offerPrice={offerPrice}
+              />
+            )}
+            {activeTab === "risk" && <RiskTab deal={deal} />}
+          </CardContent>
+        </div>
+      )}
+      
       {/* AI Analysis Summary */}
-      <div className="w-full"><AIAnalysisSummary deal={deal} /></div>
+      <div className="w-full">
+        <AIAnalysisSummary deal={deal} />
+      </div>
     </div>
   );
 };
