@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useDeals } from '@/hooks/useDeals';
 import { Card, CardContent } from '@/components/ui/card';
@@ -54,8 +53,8 @@ const PropertySelector = ({
   
   if (isLoading) {
     return (
-      <Card className="bg-white shadow-lg rounded-2xl border-0 mb-6">
-        <CardContent className="p-6">
+      <Card className="bg-white shadow-lg rounded-2xl border-0 mb-4 sm:mb-6">
+        <CardContent className="p-4 xs:p-5 sm:p-6">
           <div className="animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
             <div className="h-6 bg-gray-200 rounded w-1/2"></div>
@@ -66,35 +65,35 @@ const PropertySelector = ({
   }
   
   return (
-    <Card className="bg-white shadow-lg rounded-2xl border-0 mb-6">
-      <CardContent className="p-6">
+    <Card className="bg-white shadow-lg rounded-2xl border-0 mb-4 sm:mb-6">
+      <CardContent className="p-3 xs:p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate('/')} className="rounded-xl w-full sm:w-auto mb-2 sm:mb-0">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 w-full">
+            <Button variant="outline" size="sm" onClick={() => navigate('/')} className="rounded-xl w-full sm:w-auto mb-1 sm:mb-0">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Dashboard
             </Button>
             
-            <div className="flex items-center gap-3">
-              <Home className="h-5 w-5 text-blue-primary" />
-              <div>
-                <p className="text-sm text-navy font-medium">Current Property</p>
+            <div className="flex items-center gap-3 w-full min-w-0">
+              <Home className="h-5 w-5 text-blue-primary flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-navy font-medium truncate">Current Property</p>
                 {currentDeal ? (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-lg font-semibold text-navy-dark">{currentDeal.address}</h2>
+                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                    <h2 className="text-base sm:text-lg font-semibold text-navy-dark truncate max-w-[180px] sm:max-w-none">{currentDeal.address}</h2>
                     <Badge className={`${getStageColor(currentDeal.pipeline_stage)} rounded-lg text-xs`}>
                       {currentDeal.pipeline_stage}
                     </Badge>
                   </div>
                 ) : (
-                  <p className="text-navy-dark">No property selected</p>
+                  <p className="text-navy-dark text-xs sm:text-sm">No property selected</p>
                 )}
               </div>
             </div>
           </div>
 
           {stageDeals.length > 1 && (
-            <div className="flex justify-end sm:justify-start mt-2 sm:mt-0">
+            <div className="flex justify-end sm:justify-start mt-1 sm:mt-0">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="rounded-xl w-full sm:w-auto">
@@ -102,25 +101,25 @@ const PropertySelector = ({
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-80 max-w-xs sm:max-w-none">
+                <DropdownMenuContent className="w-72 sm:w-80 z-50 bg-white">
                   {stageDeals.map(deal => (
                     <DropdownMenuItem 
                       key={deal.id} 
                       onClick={() => onDealSelect(deal.id)} 
-                      className={`p-4 cursor-pointer ${deal.id === currentDealId ? 'bg-blue-50' : ''}`}
+                      className={`p-3 sm:p-4 cursor-pointer rounded-lg ${deal.id === currentDealId ? 'bg-blue-50' : ''}`}
                     >
-                      <div className="flex flex-col gap-1 w-full">
+                      <div className="flex flex-col gap-0.5 w-full">
                         <div className="flex items-center justify-between">
-                          <span className="font-medium">{deal.address}</span>
+                          <span className="font-medium truncate">{deal.address}</span>
                           <Badge className={`${getStageColor(deal.pipeline_stage)} text-xs`}>
                             {deal.pipeline_stage}
                           </Badge>
                         </div>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-xs text-gray-600 truncate">
                           {deal.suburb}, {deal.city}
                         </div>
                         {deal.purchase_price && (
-                          <div className="text-sm text-gray-500">
+                          <div className="text-xs text-gray-500">
                             Purchase: {formatCurrency(deal.purchase_price)}
                           </div>
                         )}
@@ -134,8 +133,8 @@ const PropertySelector = ({
         </div>
 
         {currentDeal && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-4 md:gap-4 text-sm">
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-4 md:gap-4 text-xs sm:text-sm">
               <div>
                 <span className="text-navy font-medium">Location:</span>
                 <p className="text-navy-dark">{currentDeal.suburb}, {currentDeal.city}</p>
@@ -167,4 +166,3 @@ const PropertySelector = ({
 };
 
 export default PropertySelector;
-

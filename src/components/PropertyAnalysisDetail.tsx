@@ -43,7 +43,7 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
   };
 
   return (
-    <div className="space-y-3 sm:space-y-5 md:space-y-6 w-full overflow-x-hidden">
+    <div className="space-y-2 xs:space-y-3 sm:space-y-5 md:space-y-6 w-full overflow-x-hidden">
       {/* Property Header */}
       <div className="w-full">
         <PropertyHeader
@@ -59,19 +59,19 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
 
       {/* Analysis Tabs */}
       <Card className="bg-white shadow-lg rounded-2xl border-0 w-full">
-        <CardContent className="p-2 xs:p-4 md:p-6">
+        <CardContent className="p-1 xs:p-2 sm:p-4 md:p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="flex flex-nowrap gap-2 mb-3 sm:gap-4 sm:mb-6 overflow-x-auto no-scrollbar">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="data">Data Collection</TabsTrigger>
-              <TabsTrigger value="cma">Market Analysis</TabsTrigger>
-              <TabsTrigger value="renovation">Renovation</TabsTrigger>
-              <TabsTrigger value="offer">Offer Calculation</TabsTrigger>
-              <TabsTrigger value="risk">Risk Assessment</TabsTrigger>
+            <TabsList className="flex flex-nowrap gap-1 xs:gap-2 sm:gap-4 sm:mb-6 mb-2 overflow-x-auto no-scrollbar min-w-0">
+              <TabsTrigger value="overview" className="min-w-[110px]">Overview</TabsTrigger>
+              <TabsTrigger value="data" className="min-w-[110px]">Data Collection</TabsTrigger>
+              <TabsTrigger value="cma" className="min-w-[110px]">Market Analysis</TabsTrigger>
+              <TabsTrigger value="renovation" className="min-w-[110px]">Renovation</TabsTrigger>
+              <TabsTrigger value="offer" className="min-w-[110px]">Offer Calculation</TabsTrigger>
+              <TabsTrigger value="risk" className="min-w-[110px]">Risk Assessment</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
-              <div className="px-1 xs:px-2 sm:px-0">
+              <div className="px-0 xs:px-1 sm:px-0">
                 <OverviewTab
                   deal={deal}
                   formatCurrency={formatCurrency}
@@ -82,7 +82,7 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
             </TabsContent>
 
             <TabsContent value="data">
-              <div className="px-1 xs:px-2 sm:px-0">
+              <div className="px-0 xs:px-1 sm:px-0">
                 <DataCollectionTab
                   dataSourceStatus={dataSourceStatus}
                   isAnalyzing={isAnalyzing}
@@ -92,7 +92,7 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
             </TabsContent>
 
             <TabsContent value="cma">
-              <div className="px-1 xs:px-2 sm:px-0">
+              <div className="px-0 xs:px-1 sm:px-0">
                 <CMATab 
                   deal={deal} 
                   formatCurrency={formatCurrency}
@@ -102,7 +102,7 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
             </TabsContent>
 
             <TabsContent value="renovation">
-              <div className="px-1 xs:px-2 sm:px-0">
+              <div className="px-0 xs:px-1 sm:px-0">
                 <RenovationTab
                   deal={deal}
                   formatCurrency={formatCurrency}
@@ -113,7 +113,7 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
             </TabsContent>
 
             <TabsContent value="offer">
-              <div className="px-1 xs:px-2 sm:px-0">
+              <div className="px-0 xs:px-1 sm:px-0">
                 <OfferTab
                   deal={deal}
                   formatCurrency={formatCurrency}
@@ -124,7 +124,7 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
             </TabsContent>
 
             <TabsContent value="risk">
-              <div className="px-1 xs:px-2 sm:px-0">
+              <div className="px-0 xs:px-1 sm:px-0">
                 <RiskTab deal={deal} />
               </div>
             </TabsContent>
