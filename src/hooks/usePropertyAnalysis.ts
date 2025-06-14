@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -163,16 +162,56 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
           variant: "default",
         });
       } else if (fetchedDealData) {
-        // Cast JSONB fields to their specific types
+        const { property: rawPropertyFromDb, ...dealFieldsOnly } = fetchedDealData;
+
+        let transformedCoords: { lat: number; lng: number } | undefined = undefined;
+        // Supabase point type for coordinates is { x: number, y: number }
+        if (rawPropertyFromDb?.coordinates &&
+            typeof rawPropertyFromDb.coordinates === 'object' &&
+            rawPropertyFromDb.coordinates !== null &&
+            'x' in rawPropertyFromDb.coordinates && typeof (rawPropertyFromDb.coordinates as any).x === 'number' &&
+            'y' in rawPropertyFromDb.coordinates && typeof (rawPropertyFromDb.coordinates as any).y === 'number') {
+          transformedCoords = {
+            lat: (rawPropertyFromDb.coordinates as any).y,
+            lng: (rawPropertyFromDb.coordinates as any).x
+          };
+        }
+
+        // Reconstruct the `property` object to match Deal['property'] type
+        const propertyForDeal: Deal['property'] = rawPropertyFromDb ? {
+          address: rawPropertyFromDb.address, // address is non-null in unified_properties
+          suburb: rawPropertyFromDb.suburb ?? '', // Deal.property.suburb is string
+          city: rawPropertyFromDb.city ?? 'Auckland', // Deal.property.city is string
+          bedrooms: rawPropertyFromDb.bedrooms ?? undefined,
+          bathrooms: rawPropertyFromDb.bathrooms ?? undefined,
+          floor_area: rawPropertyFromDb.floor_area ?? undefined,
+          land_area: rawPropertyFromDb.land_area ?? undefined,
+          photos: rawPropertyFromDb.photos ?? undefined,
+          description: rawPropertyFromDb.description ?? undefined,
+          coordinates: transformedCoords,
+        } : undefined;
+        
         const dealForUpdate: Partial<Deal> = {
-          ...fetchedDealData,
-          market_analysis: fetchedDealData.market_analysis as MarketData | undefined,
-          renovation_analysis: fetchedDealData.renovation_analysis as RenovationAnalysis | undefined,
-          risk_assessment: fetchedDealData.risk_assessment as RiskAssessment | undefined,
-          listing_details: fetchedDealData.listing_details as ListingDetails | undefined,
-          // analysis_data and renovation_selections are 'any' in Deal type, so direct assignment is okay.
-          // If their types in Deal become more specific, they would need casting too.
-          // The 'property' field should be correctly typed from the select query.
+          ...dealFieldsOnly,
+          market_analysis: dealFieldsOnly.market_analysis as MarketData | undefined,
+          renovation_analysis: dealFieldsOnly.renovation_analysis as RenovationAnalysis | undefined,
+          risk_assessment: dealFieldsOnly.risk_assessment as RiskAssessment | undefined,
+          listing_details: dealFieldsOnly.listing_details as ListingDetails | undefined,
+          // analysis_data and renovation_selections are 'any' or JSONB in Deal type, direct assignment is okay.
+          
+                          property: propertyForDeal,
+
+          // Flattened property fields for backward compatibility, matching Deal type (optional fields)
+          address: rawPropertyFromDb?.address ?? undefined,
+          suburb: rawPropertyFromDb?.suburb ?? undefined,
+          city: rawPropertyFromDb?.city ?? undefined,
+          bedrooms: rawPropertyFromDb?.bedrooms ?? undefined,
+          bathrooms: rawPropertyFromDb?.bathrooms ?? undefined,
+          floor_area: rawPropertyFromDb?.floor_area ?? undefined,
+          land_area: rawPropertyFromDb?.land_area ?? undefined,
+          photos: rawPropertyFromDb?.photos ?? undefined,
+          description: rawPropertyFromDb?.description ?? undefined,
+          coordinates: transformedCoords,
         };
         onUpdateDeal(dealForUpdate);
       }
