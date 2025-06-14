@@ -118,6 +118,7 @@ export interface Deal {
   risk_assessment?: RiskAssessment;
   analysis_data?: any;
   listing_details?: ListingDetails;
+  renovation_selections?: any; // JSONB field for renovation selections
   // Property data from unified_properties (joined)
   property?: {
     address: string;
