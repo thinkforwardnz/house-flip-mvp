@@ -51,8 +51,8 @@ const PropertySelector = ({
   
   if (isLoading) {
     return (
-      <Card className="bg-white shadow-lg rounded-2xl border-0 mb-3 xs:mb-4">
-        <CardContent className="p-2 xs:p-4">
+      <Card className="bg-white shadow-lg rounded-2xl border-0 mb-4 w-full">
+        <CardContent className="p-4">
           <div className="animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
             <div className="h-6 bg-gray-200 rounded w-1/2"></div>
@@ -63,8 +63,8 @@ const PropertySelector = ({
   }
   
   return (
-    <Card className="bg-white shadow-lg rounded-2xl border-0 mb-3 xs:mb-4 w-full">
-      <CardContent className="p-2 xs:p-4">
+    <Card className="bg-white shadow-lg rounded-2xl border-0 mb-4 w-full">
+      <CardContent className="p-4">
         <PropertySelectorMobile 
           currentDeal={currentDeal}
           getStageColor={getStageColor}
