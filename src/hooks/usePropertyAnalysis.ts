@@ -1,98 +1,22 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, AlertTriangle } from 'lucide-react';
 import type { Deal } from '@/types/analysis';
 
-export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: any) => void) => {
+import { formatCurrency } from '@/utils/formatCurrency';
+import { calculateRenovationEstimate, calculateOfferPrice } from '@/utils/analysisCalculations';
+import { getAnalysisProgress, getDataSourceStatus } from '@/utils/analysisStatus';
+
+export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<Deal>) => void) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState('');
   const { toast } = useToast();
 
-  const formatCurrency = useCallback((amount: number) => {
-    return new Intl.NumberFormat('en-NZ', {
-      style: 'currency',
-      currency: 'NZD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  }, []);
-
-  const getAnalysisProgress = useCallback(() => {
-    let progress = 0;
-    let completed: string[] = [];
-    let pending: string[] = [];
-
-    if (deal.address) {
-      progress += 15;
-      completed.push('Property Identification');
-    } else {
-      pending.push('Property Identification');
-    }
-
-    if (deal.purchase_price) {
-      progress += 15;
-      completed.push('Initial Pricing');
-    } else {
-      pending.push('Initial Pricing');
-    }
-
-    if (deal.target_sale_price) {
-      progress += 20;
-      completed.push('ARV Estimation');
-    } else {
-      pending.push('ARV Estimation');
-    }
-
-    if (deal.market_analysis?.analysis) {
-      progress += 15;
-      completed.push('Market Analysis');
-    } else {
-      pending.push('Market Analysis');
-    }
-
-    if (deal.renovation_analysis?.total_cost) { // Check actual total_cost if available
-      progress += 15;
-      completed.push('Renovation Costing');
-    } else {
-      pending.push('Renovation Costing');
-    }
-
-    if (deal.risk_assessment?.overall_risk_score) {
-      progress += 20;
-      completed.push('Risk Assessment');
-    } else {
-      pending.push('Risk Assessment');
-    }
-
-    return { progress: Math.min(100, progress), completed, pending };
-  }, [deal]);
-
-  const { progress, completed, pending } = getAnalysisProgress();
-
-  const renovationEstimate = deal.renovation_analysis?.total_cost || 
-    (deal.target_sale_price && deal.purchase_price 
-      ? Math.max(0, (deal.target_sale_price - deal.purchase_price) * 0.15) 
-      : 50000);
-
-  const offerPrice = deal.target_sale_price 
-    ? deal.target_sale_price - renovationEstimate - (deal.target_sale_price * 0.1) - (deal.target_sale_price * 0.15)
-    : 0;
-
-  const getDataSourceStatus = useCallback(() => {
-    return {
-      linz: { status: 'complete', icon: CheckCircle, color: 'text-green-600' }, // Assuming LINZ data is always foundational
-      trademe: deal.photos && deal.photos.length > 0 ? 
-        { status: 'complete', icon: CheckCircle, color: 'text-green-600' } :
-        { status: 'pending', icon: AlertTriangle, color: 'text-yellow-600' },
-      googleMaps: deal.coordinates ? 
-        { status: 'complete', icon: CheckCircle, color: 'text-green-600' } :
-        { status: 'pending', icon: AlertTriangle, color: 'text-yellow-600' },
-      council: { status: 'pending', icon: AlertTriangle, color: 'text-gray-600' } // Example, adjust based on actual data
-    };
-  }, [deal.photos, deal.coordinates]);
-
-  const dataSourceStatus = getDataSourceStatus();
+  const { progress, completed, pending } = useMemo(() => getAnalysisProgress(deal), [deal]);
+  const renovationEstimate = useMemo(() => calculateRenovationEstimate(deal), [deal]);
+  const offerPrice = useMemo(() => calculateOfferPrice(deal, renovationEstimate), [deal, renovationEstimate]);
+  const dataSourceStatus = useMemo(() => getDataSourceStatus(deal), [deal]);
 
   const handleRunAnalysis = async () => {
     setIsAnalyzing(true);
@@ -117,6 +41,12 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: any) => 
         console.error('Market analysis error:', marketResponse.error);
         throw new Error(`Market analysis failed: ${marketResponse.error.message}`);
       }
+      console.log('Market analysis response:', marketResponse.data);
+      // Assuming marketResponse.data contains updates for the deal
+      if (marketResponse.data) {
+        onUpdateDeal(marketResponse.data);
+      }
+
 
       // Step 2: Property Enrichment
       setAnalysisStep('Enriching property data...');
@@ -125,14 +55,20 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: any) => 
       const enrichResponse = await supabase.functions.invoke('enrich-property-analysis', {
         body: {
           dealId: deal.id,
-          address: deal.address,
-          coordinates: deal.coordinates
+          address: deal.address, // Ensure address is passed
+          coordinates: deal.coordinates // Ensure coordinates are passed if available
         }
       });
 
       if (enrichResponse.error) {
         console.error('Property enrichment error:', enrichResponse.error.message);
         // Continue with analysis even if enrichment fails as some steps might not depend on it
+        // Potentially toast a warning or non-critical error
+      } else {
+        console.log('Property enrichment response:', enrichResponse.data);
+        if (enrichResponse.data) {
+          onUpdateDeal(enrichResponse.data);
+        }
       }
 
       // Step 3: Renovation Analysis
@@ -154,6 +90,10 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: any) => 
         console.error('Renovation analysis error:', renovationResponse.error);
         throw new Error(`Renovation analysis failed: ${renovationResponse.error.message}`);
       }
+      console.log('Renovation analysis response:', renovationResponse.data);
+      if (renovationResponse.data) {
+          onUpdateDeal(renovationResponse.data);
+      }
 
       // Step 4: Risk Assessment
       setAnalysisStep('Performing risk assessment...');
@@ -162,6 +102,7 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: any) => 
       const riskResponse = await supabase.functions.invoke('risk-assessment', {
         body: {
           dealId: deal.id
+          // Pass other relevant deal data if needed by the function
         }
       });
 
@@ -169,22 +110,53 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: any) => 
         console.error('Risk assessment error:', riskResponse.error);
         throw new Error(`Risk assessment failed: ${riskResponse.error.message}`);
       }
+      console.log('Risk assessment response:', riskResponse.data);
+      if (riskResponse.data) {
+        onUpdateDeal(riskResponse.data);
+      }
 
-      // Fetch updated deal data
-      setAnalysisStep('Finalizing analysis...');
+      // Fetch updated deal data (or rely on onUpdateDeal to refresh if it does a full fetch)
+      // Forcing a final fetch to ensure client state is fully synchronized with DB after all functions.
+      setAnalysisStep('Finalizing analysis and fetching latest data...');
       const { data: updatedDeal, error: fetchError } = await supabase
         .from('deals')
-        .select('*') // Consider a more specific select if possible
+        .select(`
+          *,
+          property_id (
+            id,
+            address,
+            suburb,
+            city,
+            coordinates,
+            photos,
+            description,
+            bedrooms,
+            bathrooms,
+            floor_area,
+            land_area,
+            year_built,
+            current_price,
+            listing_date,
+            source_url,
+            source_site,
+            tags,
+            status
+          )
+        `)
         .eq('id', deal.id)
         .single();
 
       if (fetchError) {
-        console.error('Error fetching updated deal:', fetchError);
-        throw new Error('Failed to fetch updated deal data');
-      }
-      
-      if (updatedDeal) {
-        onUpdateDeal(updatedDeal); // Call the prop to update the deal in the parent state
+        console.error('Error fetching final updated deal:', fetchError);
+        // Don't throw here, as previous steps might have partially succeeded.
+        // The UI will reflect partial updates. Toast a warning.
+        toast({
+          title: "Data Sync Issue",
+          description: "Could not fetch the very latest deal data after analysis, but analysis functions ran. Please refresh if needed.",
+          variant: "default", // Not destructive, as analysis itself might be fine
+        });
+      } else if (updatedDeal) {
+        onUpdateDeal(updatedDeal); // This ensures the parent component gets the fully updated deal
       }
 
       toast({
@@ -195,10 +167,10 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: any) => 
       console.log('Analysis completed successfully for deal:', deal.id);
       
     } catch (error: any) {
-      console.error('Analysis failed:', error);
+      console.error('Full analysis pipeline failed:', error);
       toast({
         title: "Analysis Failed",
-        description: error.message || "An error occurred during analysis.",
+        description: error.message || "An error occurred during the analysis pipeline.",
         variant: "destructive",
       });
     } finally {
@@ -211,7 +183,7 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: any) => 
     isAnalyzing,
     analysisStep,
     handleRunAnalysis,
-    formatCurrency,
+    formatCurrency, // Re-exporting the imported utility
     progress,
     completed,
     pending,
@@ -220,4 +192,3 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: any) => 
     dataSourceStatus,
   };
 };
-
