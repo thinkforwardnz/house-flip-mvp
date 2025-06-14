@@ -1,11 +1,18 @@
+
 import { useState, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { Deal, MarketData, RenovationAnalysis, RiskAssessment, ListingDetails } from '@/types/analysis';
+import type { Deal } from '@/types/analysis';
 
 import { formatCurrency } from '@/utils/formatCurrency';
 import { calculateRenovationEstimate, calculateOfferPrice } from '@/utils/analysisCalculations';
 import { getAnalysisProgress, getDataSourceStatus } from '@/utils/analysisStatus';
+import {
+  invokeMarketAnalysis,
+  invokePropertyEnrichment,
+  invokeRenovationAnalysis,
+  invokeRiskAssessment,
+  fetchFullyUpdatedDeal,
+} from '@/services/propertyAnalysisService';
 
 export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<Deal>) => void) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -23,205 +30,53 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
     try {
       // Step 1: Market Analysis
       setAnalysisStep('Running market analysis...');
-      console.log('Starting market analysis for deal:', deal.id);
-      
-      const marketResponse = await supabase.functions.invoke('market-analysis', {
-        body: {
-          dealId: deal.id,
-          address: deal.address,
-          suburb: deal.suburb,
-          city: deal.city,
-          bedrooms: deal.bedrooms,
-          bathrooms: deal.bathrooms
-        }
+      const marketUpdates = await invokeMarketAnalysis({
+        dealId: deal.id,
+        address: deal.address || deal.property?.address,
+        suburb: deal.suburb || deal.property?.suburb,
+        city: deal.city || deal.property?.city,
+        bedrooms: deal.bedrooms ?? deal.property?.bedrooms,
+        bathrooms: deal.bathrooms ?? deal.property?.bathrooms,
       });
-
-      if (marketResponse.error) {
-        console.error('Market analysis error:', marketResponse.error);
-        throw new Error(`Market analysis failed: ${marketResponse.error.message}`);
-      }
-      console.log('Market analysis response:', marketResponse.data);
-      // Assuming marketResponse.data contains updates for the deal
-      // These updates are partial and might not be the full Deal type
-      if (marketResponse.data && marketResponse.data.updatedFields) {
-         // Ensure market_analysis is correctly typed if it's part of updatedFields
-        const partialUpdates = { ...marketResponse.data.updatedFields };
-        if (partialUpdates.market_analysis) {
-          partialUpdates.market_analysis = partialUpdates.market_analysis as MarketData | undefined;
-        }
-        onUpdateDeal(partialUpdates);
-      }
-
+      if (Object.keys(marketUpdates).length > 0) onUpdateDeal(marketUpdates);
 
       // Step 2: Property Enrichment
       setAnalysisStep('Enriching property data...');
-      console.log('Starting property enrichment for deal:', deal.id);
-      
-      const enrichResponse = await supabase.functions.invoke('enrich-property-analysis', {
-        body: {
-          dealId: deal.id,
-          address: deal.address, 
-          coordinates: deal.coordinates 
-        }
+      const enrichmentUpdates = await invokePropertyEnrichment({
+        dealId: deal.id,
+        address: deal.address || deal.property?.address,
+        coordinates: deal.coordinates || deal.property?.coordinates,
       });
-
-      if (enrichResponse.error) {
-        console.error('Property enrichment error:', enrichResponse.error.message);
-      } else {
-        console.log('Property enrichment response:', enrichResponse.data);
-        // enrichResponse.data might return { success: boolean, data: enrichedData, message: string }
-        // Assuming enrichedData contains fields to update on the deal
-        if (enrichResponse.data && enrichResponse.data.data) {
-          // The actual enriched data is nested under `data` property from the function
-          // This might be `analysis_data` or other specific fields.
-          // If it's just `analysis_data`, then it should be:
-          // onUpdateDeal({ analysis_data: enrichResponse.data.data });
-          // For now, assuming it returns partial deal fields:
-           onUpdateDeal(enrichResponse.data.data as Partial<Deal>);
-        }
-      }
+      // Original logic allows this to fail softly, only update if data exists.
+      if (Object.keys(enrichmentUpdates).length > 0) onUpdateDeal(enrichmentUpdates);
 
       // Step 3: Renovation Analysis
       setAnalysisStep('Analyzing renovation requirements...');
-      console.log('Starting renovation analysis for deal:', deal.id);
-      
-      const renovationResponse = await supabase.functions.invoke('renovation-analysis', {
-        body: {
-          dealId: deal.id,
-          photos: deal.photos || [],
-          propertyDescription: deal.description || '',
-          bedrooms: deal.bedrooms,
-          bathrooms: deal.bathrooms,
-          floorArea: deal.floor_area
-        }
+      const renovationUpdates = await invokeRenovationAnalysis({
+        dealId: deal.id,
+        photos: deal.photos || deal.property?.photos || [],
+        propertyDescription: deal.description || deal.property?.description || '',
+        bedrooms: deal.bedrooms ?? deal.property?.bedrooms,
+        bathrooms: deal.bathrooms ?? deal.property?.bathrooms,
+        floorArea: deal.floor_area ?? deal.property?.floor_area,
       });
-
-      if (renovationResponse.error) {
-        console.error('Renovation analysis error:', renovationResponse.error);
-        throw new Error(`Renovation analysis failed: ${renovationResponse.error.message}`);
-      }
-      console.log('Renovation analysis response:', renovationResponse.data);
-      if (renovationResponse.data && renovationResponse.data.updatedFields) {
-        const partialUpdates = { ...renovationResponse.data.updatedFields };
-        if (partialUpdates.renovation_analysis) {
-          partialUpdates.renovation_analysis = partialUpdates.renovation_analysis as RenovationAnalysis | undefined;
-        }
-        onUpdateDeal(partialUpdates);
-      }
-
+      if (Object.keys(renovationUpdates).length > 0) onUpdateDeal(renovationUpdates);
+      
       // Step 4: Risk Assessment
       setAnalysisStep('Performing risk assessment...');
-      console.log('Starting risk assessment for deal:', deal.id);
-      
-      const riskResponse = await supabase.functions.invoke('risk-assessment', {
-        body: {
-          dealId: deal.id
-        }
-      });
+      const riskUpdates = await invokeRiskAssessment({ dealId: deal.id });
+      if (Object.keys(riskUpdates).length > 0) onUpdateDeal(riskUpdates);
 
-      if (riskResponse.error) {
-        console.error('Risk assessment error:', riskResponse.error);
-        throw new Error(`Risk assessment failed: ${riskResponse.error.message}`);
-      }
-      console.log('Risk assessment response:', riskResponse.data);
-      if (riskResponse.data && riskResponse.data.updatedFields) {
-        const partialUpdates = { ...riskResponse.data.updatedFields };
-        if (partialUpdates.risk_assessment) {
-          partialUpdates.risk_assessment = partialUpdates.risk_assessment as RiskAssessment | undefined;
-        }
-        onUpdateDeal(partialUpdates);
-      }
-
+      // Step 5: Fetch Final Data
       setAnalysisStep('Finalizing analysis and fetching latest data...');
-      // Fetch the fully updated deal object to ensure client state is synchronized.
-      const { data: fetchedDealData, error: fetchError } = await supabase
-        .from('deals')
-        .select(`
-          *,
-          property:unified_properties (
-            address,
-            suburb,
-            city,
-            bedrooms,
-            bathrooms,
-            floor_area,
-            land_area,
-            photos,
-            description,
-            coordinates
-          )
-        `)
-        .eq('id', deal.id)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching final updated deal:', fetchError);
-        toast({
-          title: "Data Sync Issue",
-          description: "Could not fetch the very latest deal data after analysis, but analysis functions ran. Please refresh if needed.",
-          variant: "default",
-        });
-      } else if (fetchedDealData) {
-        const { property: rawPropertyFromDb, ...dealFieldsOnly } = fetchedDealData;
-
-        let transformedCoords: { lat: number; lng: number } | undefined = undefined;
-        // Supabase point type for coordinates is { x: number, y: number }
-        if (rawPropertyFromDb?.coordinates &&
-            typeof rawPropertyFromDb.coordinates === 'object' &&
-            rawPropertyFromDb.coordinates !== null &&
-            'x' in rawPropertyFromDb.coordinates && typeof (rawPropertyFromDb.coordinates as any).x === 'number' &&
-            'y' in rawPropertyFromDb.coordinates && typeof (rawPropertyFromDb.coordinates as any).y === 'number') {
-          transformedCoords = {
-            lat: (rawPropertyFromDb.coordinates as any).y,
-            lng: (rawPropertyFromDb.coordinates as any).x
-          };
-        }
-
-        // Reconstruct the `property` object to match Deal['property'] type
-        const propertyForDeal: Deal['property'] = rawPropertyFromDb ? {
-          address: rawPropertyFromDb.address, // address is non-null in unified_properties
-          suburb: rawPropertyFromDb.suburb ?? '', // Deal.property.suburb is string
-          city: rawPropertyFromDb.city ?? 'Auckland', // Deal.property.city is string
-          bedrooms: rawPropertyFromDb.bedrooms ?? undefined,
-          bathrooms: rawPropertyFromDb.bathrooms ?? undefined,
-          floor_area: rawPropertyFromDb.floor_area ?? undefined,
-          land_area: rawPropertyFromDb.land_area ?? undefined,
-          photos: rawPropertyFromDb.photos ?? undefined,
-          description: rawPropertyFromDb.description ?? undefined,
-          coordinates: transformedCoords,
-        } : undefined;
-        
-        const dealForUpdate: Partial<Deal> = {
-          ...dealFieldsOnly,
-          market_analysis: dealFieldsOnly.market_analysis as MarketData | undefined,
-          renovation_analysis: dealFieldsOnly.renovation_analysis as RenovationAnalysis | undefined,
-          risk_assessment: dealFieldsOnly.risk_assessment as RiskAssessment | undefined,
-          listing_details: dealFieldsOnly.listing_details as ListingDetails | undefined,
-          // analysis_data and renovation_selections are 'any' or JSONB in Deal type, direct assignment is okay.
-          
-                          property: propertyForDeal,
-
-          // Flattened property fields for backward compatibility, matching Deal type (optional fields)
-          address: rawPropertyFromDb?.address ?? undefined,
-          suburb: rawPropertyFromDb?.suburb ?? undefined,
-          city: rawPropertyFromDb?.city ?? undefined,
-          bedrooms: rawPropertyFromDb?.bedrooms ?? undefined,
-          bathrooms: rawPropertyFromDb?.bathrooms ?? undefined,
-          floor_area: rawPropertyFromDb?.floor_area ?? undefined,
-          land_area: rawPropertyFromDb?.land_area ?? undefined,
-          photos: rawPropertyFromDb?.photos ?? undefined,
-          description: rawPropertyFromDb?.description ?? undefined,
-          coordinates: transformedCoords,
-        };
-        onUpdateDeal(dealForUpdate);
-      }
+      const finalDealData = await fetchFullyUpdatedDeal(deal.id);
+      onUpdateDeal(finalDealData);
 
       toast({
         title: "Analysis Complete",
         description: "Property analysis has been completed successfully.",
       });
-
-      console.log('Analysis completed successfully for deal:', deal.id);
+      console.log('Full analysis pipeline completed successfully for deal:', deal.id);
       
     } catch (error: any) {
       console.error('Full analysis pipeline failed:', error);
@@ -230,6 +85,14 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
         description: error.message || "An error occurred during the analysis pipeline.",
         variant: "destructive",
       });
+      // Special handling for fetchFullyUpdatedDeal error as per original logic
+      if (error.message.startsWith("Could not fetch the very latest deal data")) {
+         toast({
+          title: "Data Sync Issue",
+          description: "Could not fetch the very latest deal data after analysis, but analysis functions ran. Please refresh if needed.",
+          variant: "default",
+        });
+      }
     } finally {
       setIsAnalyzing(false);
       setAnalysisStep('');
