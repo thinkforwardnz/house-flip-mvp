@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,23 +43,25 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-5 md:space-y-6 w-full overflow-x-hidden">
       {/* Property Header */}
-      <PropertyHeader
-        deal={deal}
-        isAnalyzing={isAnalyzing}
-        analysisStep={analysisStep}
-        progress={progress}
-        completed={completed}
-        pending={pending}
-        onRunAnalysis={handleRunAnalysis}
-      />
+      <div className="w-full">
+        <PropertyHeader
+          deal={deal}
+          isAnalyzing={isAnalyzing}
+          analysisStep={analysisStep}
+          progress={progress}
+          completed={completed}
+          pending={pending}
+          onRunAnalysis={handleRunAnalysis}
+        />
+      </div>
 
       {/* Analysis Tabs */}
-      <Card className="bg-white shadow-lg rounded-2xl border-0">
-        <CardContent className="p-6">
+      <Card className="bg-white shadow-lg rounded-2xl border-0 w-full">
+        <CardContent className="p-2 xs:p-4 md:p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="mb-6">
+            <TabsList className="flex flex-wrap gap-2 mb-3 sm:gap-4 sm:mb-6 overflow-x-auto">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="data">Data Collection</TabsTrigger>
               <TabsTrigger value="cma">Market Analysis</TabsTrigger>
@@ -90,7 +91,7 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
               <CMATab 
                 deal={deal} 
                 formatCurrency={formatCurrency}
-                onDealUpdate={handleChildTabUpdates} // Changed to use the new handler
+                onDealUpdate={handleChildTabUpdates}
               />
             </TabsContent>
 
@@ -99,7 +100,7 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
                 deal={deal}
                 formatCurrency={formatCurrency}
                 renovationEstimate={renovationEstimate} 
-                onDealUpdate={handleChildTabUpdates} // Changed to use the new handler
+                onDealUpdate={handleChildTabUpdates}
               />
             </TabsContent>
 
@@ -120,10 +121,9 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
       </Card>
 
       {/* AI Analysis Summary */}
-      <AIAnalysisSummary deal={deal} />
+      <div className="w-full"><AIAnalysisSummary deal={deal} /></div>
     </div>
   );
 };
 
 export default PropertyAnalysisDetail;
-
