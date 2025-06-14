@@ -137,7 +137,7 @@ const RenovationSelector = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {getRenovationCard('add_bedroom', 'Add Bedroom', <Plus className="h-4 w-4 text-green-600" />, true)}
         {getRenovationCard('kitchen', 'Kitchen Renovation', <Wrench className="h-4 w-4 text-blue-600" />)}
         {getRenovationCard('bathroom', 'Bathroom Renovation', <Wrench className="h-4 w-4 text-purple-600" />)}
@@ -149,3 +149,4 @@ const RenovationSelector = ({
 };
 
 export default RenovationSelector;
+

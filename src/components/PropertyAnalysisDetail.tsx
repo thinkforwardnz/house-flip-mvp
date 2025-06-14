@@ -61,7 +61,7 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
       <Card className="bg-white shadow-lg rounded-2xl border-0 w-full">
         <CardContent className="p-2 xs:p-4 md:p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="flex flex-wrap gap-2 mb-3 sm:gap-4 sm:mb-6 overflow-x-auto">
+            <TabsList className="flex flex-nowrap gap-2 mb-3 sm:gap-4 sm:mb-6 overflow-x-auto no-scrollbar">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="data">Data Collection</TabsTrigger>
               <TabsTrigger value="cma">Market Analysis</TabsTrigger>
@@ -71,50 +71,62 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
             </TabsList>
 
             <TabsContent value="overview">
-              <OverviewTab
-                deal={deal}
-                formatCurrency={formatCurrency}
-                renovationEstimate={renovationEstimate}
-                offerPrice={offerPrice}
-              />
+              <div className="px-1 xs:px-2 sm:px-0">
+                <OverviewTab
+                  deal={deal}
+                  formatCurrency={formatCurrency}
+                  renovationEstimate={renovationEstimate}
+                  offerPrice={offerPrice}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="data">
-              <DataCollectionTab
-                dataSourceStatus={dataSourceStatus}
-                isAnalyzing={isAnalyzing}
-                onRunAnalysis={handleRunAnalysis}
-              />
+              <div className="px-1 xs:px-2 sm:px-0">
+                <DataCollectionTab
+                  dataSourceStatus={dataSourceStatus}
+                  isAnalyzing={isAnalyzing}
+                  onRunAnalysis={handleRunAnalysis}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="cma">
-              <CMATab 
-                deal={deal} 
-                formatCurrency={formatCurrency}
-                onDealUpdate={handleChildTabUpdates}
-              />
+              <div className="px-1 xs:px-2 sm:px-0">
+                <CMATab 
+                  deal={deal} 
+                  formatCurrency={formatCurrency}
+                  onDealUpdate={handleChildTabUpdates}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="renovation">
-              <RenovationTab
-                deal={deal}
-                formatCurrency={formatCurrency}
-                renovationEstimate={renovationEstimate} 
-                onDealUpdate={handleChildTabUpdates}
-              />
+              <div className="px-1 xs:px-2 sm:px-0">
+                <RenovationTab
+                  deal={deal}
+                  formatCurrency={formatCurrency}
+                  renovationEstimate={renovationEstimate} 
+                  onDealUpdate={handleChildTabUpdates}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="offer">
-              <OfferTab
-                deal={deal}
-                formatCurrency={formatCurrency}
-                renovationEstimate={renovationEstimate}
-                offerPrice={offerPrice}
-              />
+              <div className="px-1 xs:px-2 sm:px-0">
+                <OfferTab
+                  deal={deal}
+                  formatCurrency={formatCurrency}
+                  renovationEstimate={renovationEstimate}
+                  offerPrice={offerPrice}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="risk">
-              <RiskTab deal={deal} />
+              <div className="px-1 xs:px-2 sm:px-0">
+                <RiskTab deal={deal} />
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>

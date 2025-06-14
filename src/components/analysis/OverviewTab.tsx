@@ -34,7 +34,7 @@ const OverviewTab = ({ deal, formatCurrency }: OverviewTabProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
         <div className="bg-blue-50 p-4 rounded-xl">
           <div className="flex items-center gap-3 mb-2">
             <DollarSign className="h-5 w-5 text-blue-600" />
@@ -86,7 +86,7 @@ const OverviewTab = ({ deal, formatCurrency }: OverviewTabProps) => {
       {calculatedARV > 0 && (
         <div className="mt-6">
           <h3 className="text-lg font-semibold text-navy-dark mb-4">Offer Scenarios</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="border border-gray-200 rounded-xl p-4">
               <h4 className="font-medium text-green-600 mb-2">Conservative</h4>
               <p className="text-lg font-bold text-navy-dark">{formatCurrency(offerPrice * 0.9)}</p>
@@ -110,3 +110,4 @@ const OverviewTab = ({ deal, formatCurrency }: OverviewTabProps) => {
 };
 
 export default OverviewTab;
+

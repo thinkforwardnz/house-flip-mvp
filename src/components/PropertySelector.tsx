@@ -68,9 +68,9 @@ const PropertySelector = ({
   return (
     <Card className="bg-white shadow-lg rounded-2xl border-0 mb-6">
       <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate('/')} className="rounded-xl">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <Button variant="outline" size="sm" onClick={() => navigate('/')} className="rounded-xl w-full sm:w-auto mb-2 sm:mb-0">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Dashboard
             </Button>
@@ -80,7 +80,7 @@ const PropertySelector = ({
               <div>
                 <p className="text-sm text-navy font-medium">Current Property</p>
                 {currentDeal ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-lg font-semibold text-navy-dark">{currentDeal.address}</h2>
                     <Badge className={`${getStageColor(currentDeal.pipeline_stage)} rounded-lg text-xs`}>
                       {currentDeal.pipeline_stage}
@@ -94,46 +94,48 @@ const PropertySelector = ({
           </div>
 
           {stageDeals.length > 1 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="rounded-xl">
-                  Switch Property
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-80">
-                {stageDeals.map(deal => (
-                  <DropdownMenuItem 
-                    key={deal.id} 
-                    onClick={() => onDealSelect(deal.id)} 
-                    className={`p-4 cursor-pointer ${deal.id === currentDealId ? 'bg-blue-50' : ''}`}
-                  >
-                    <div className="flex flex-col gap-1 w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{deal.address}</span>
-                        <Badge className={`${getStageColor(deal.pipeline_stage)} text-xs`}>
-                          {deal.pipeline_stage}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {deal.suburb}, {deal.city}
-                      </div>
-                      {deal.purchase_price && (
-                        <div className="text-sm text-gray-500">
-                          Purchase: {formatCurrency(deal.purchase_price)}
+            <div className="flex justify-end sm:justify-start mt-2 sm:mt-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="rounded-xl w-full sm:w-auto">
+                    Switch Property
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-80 max-w-xs sm:max-w-none">
+                  {stageDeals.map(deal => (
+                    <DropdownMenuItem 
+                      key={deal.id} 
+                      onClick={() => onDealSelect(deal.id)} 
+                      className={`p-4 cursor-pointer ${deal.id === currentDealId ? 'bg-blue-50' : ''}`}
+                    >
+                      <div className="flex flex-col gap-1 w-full">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{deal.address}</span>
+                          <Badge className={`${getStageColor(deal.pipeline_stage)} text-xs`}>
+                            {deal.pipeline_stage}
+                          </Badge>
                         </div>
-                      )}
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                        <div className="text-sm text-gray-600">
+                          {deal.suburb}, {deal.city}
+                        </div>
+                        {deal.purchase_price && (
+                          <div className="text-sm text-gray-500">
+                            Purchase: {formatCurrency(deal.purchase_price)}
+                          </div>
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
 
         {currentDeal && (
           <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-4 md:gap-4 text-sm">
               <div>
                 <span className="text-navy font-medium">Location:</span>
                 <p className="text-navy-dark">{currentDeal.suburb}, {currentDeal.city}</p>
@@ -165,3 +167,4 @@ const PropertySelector = ({
 };
 
 export default PropertySelector;
+
