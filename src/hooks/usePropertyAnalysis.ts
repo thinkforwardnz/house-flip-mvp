@@ -1,11 +1,12 @@
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { Deal } from '@/types/analysis';
 
 import { formatCurrency } from '@/utils/formatCurrency';
-import { calculateRenovationEstimate, calculateOfferPrice } from '@/utils/analysisCalculations';
-import { getAnalysisProgress, getDataSourceStatus } from '@/utils/analysisStatus';
+// Import the new useDealMetrics hook
+import { useDealMetrics } from './useDealMetrics';
+// Analysis service functions remain imported
 import {
   invokeMarketAnalysis,
   invokePropertyEnrichment,
@@ -19,10 +20,8 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
   const [analysisStep, setAnalysisStep] = useState('');
   const { toast } = useToast();
 
-  const { progress, completed, pending } = useMemo(() => getAnalysisProgress(deal), [deal]);
-  const renovationEstimate = useMemo(() => calculateRenovationEstimate(deal), [deal]);
-  const offerPrice = useMemo(() => calculateOfferPrice(deal, renovationEstimate), [deal, renovationEstimate]);
-  const dataSourceStatus = useMemo(() => getDataSourceStatus(deal), [deal]);
+  // Use the new hook to get derived metrics
+  const metrics = useDealMetrics(deal);
 
   const handleRunAnalysis = async () => {
     setIsAnalyzing(true);
@@ -47,7 +46,6 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
         address: deal.address || deal.property?.address,
         coordinates: deal.coordinates || deal.property?.coordinates,
       });
-      // Original logic allows this to fail softly, only update if data exists.
       if (Object.keys(enrichmentUpdates).length > 0) onUpdateDeal(enrichmentUpdates);
 
       // Step 3: Renovation Analysis
@@ -85,12 +83,11 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
         description: error.message || "An error occurred during the analysis pipeline.",
         variant: "destructive",
       });
-      // Special handling for fetchFullyUpdatedDeal error as per original logic
       if (error.message.startsWith("Could not fetch the very latest deal data")) {
          toast({
           title: "Data Sync Issue",
           description: "Could not fetch the very latest deal data after analysis, but analysis functions ran. Please refresh if needed.",
-          variant: "default",
+          variant: "default", // Kept as default as per original logic
         });
       }
     } finally {
@@ -103,12 +100,7 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
     isAnalyzing,
     analysisStep,
     handleRunAnalysis,
-    formatCurrency,
-    progress,
-    completed,
-    pending,
-    renovationEstimate,
-    offerPrice,
-    dataSourceStatus,
+    formatCurrency, // Still exporting formatCurrency
+    ...metrics, // Spread the metrics from useDealMetrics
   };
 };
