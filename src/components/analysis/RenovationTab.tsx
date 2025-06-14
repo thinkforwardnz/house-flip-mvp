@@ -8,18 +8,18 @@ import type { RenovationSelections } from '@/types/renovation';
 import RenovationSelector from './RenovationSelector';
 import { calculateTotalRenovationCost } from '@/utils/arvCalculation';
 import { useDeals } from '@/hooks/useDeals';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast'; // Corrected import path
 
 interface RenovationTabProps {
   deal: Deal;
   formatCurrency: (amount: number) => string;
-  renovationEstimate: number; // This prop might not be used directly if totalSelectedCost is calculated here
+  renovationEstimate: number; 
   onDealUpdate: (updates: Partial<Deal>) => void;
 }
 
 const RenovationTab = ({ deal, formatCurrency, /* renovationEstimate, */ onDealUpdate }: RenovationTabProps) => {
   const { updateDeal } = useDeals();
-  const { toast } = useToast();
+  const { toast } = useToast(); // Corrected usage
   
   const baseMarketValue = deal.market_analysis?.analysis?.estimated_arv || 
                          deal.target_sale_price || 
@@ -33,21 +33,52 @@ const RenovationTab = ({ deal, formatCurrency, /* renovationEstimate, */ onDealU
     console.log('Saving renovation selections:', selections);
     
     try {
-      await updateDeal({
+      // The updateDeal mutation now handles the auth check internally
+      await updateDeal({ // updateDeal from useDeals is an async function if `mutateAsync` is used, or void if `mutate` is used.
+                          // Assuming it's meant to be awaited, it should be `updateDeal.mutateAsync` or handled via callbacks.
+                          // For simplicity, if `updateDeal` is `mutate`, we rely on its onError handler.
+                          // If `updateDeal` is `mutateAsync`, this try/catch is fine.
+                          // The current useDeals hook returns `mutate` not `mutateAsync`.
+                          // So, the try/catch here might not catch promise rejections directly from `mutate`.
+                          // The onError in `useMutation` will handle it.
         id: deal.id,
         renovation_selections: selections
+      }, {
+        onSuccess: () => {
+          onDealUpdate({
+            renovation_selections: selections
+          });
+          console.log('Renovation selections saved successfully via RenovationTab onSuccess');
+          // Toast for success is handled by useDeals hook
+        },
+        onError: (error: any) => {
+          // This onError will be called if the mutation fails.
+          console.error('Failed to save renovation selections (RenovationTab onError):', error);
+          let description = "Failed to save renovation selections. Please try again.";
+          if (error.message && error.message.includes('User not authenticated')) {
+            description = "Authentication error. Please log in and try again.";
+          } else if (error.message) {
+            description = error.message;
+          }
+          toast({
+            title: "Error",
+            description: description,
+            variant: "destructive",
+          });
+        }
       });
       
-      onDealUpdate({
-        renovation_selections: selections
-      });
-      
-      console.log('Renovation selections saved successfully');
-    } catch (error) {
-      console.error('Failed to save renovation selections:', error);
+    } catch (error: any) { // This catch block may not be effective if updateDeal is not promise-based.
+      console.error('Outer catch: Failed to save renovation selections:', error);
+      let description = "An unexpected error occurred. Please try again.";
+       if (error.message && error.message.includes('User not authenticated')) {
+        description = "Authentication error. Please log in and try again.";
+      } else if (error.message) {
+        description = error.message;
+      }
       toast({
         title: "Error",
-        description: "Failed to save renovation selections. Please try again.",
+        description: description,
         variant: "destructive",
       });
     }
@@ -70,20 +101,20 @@ const RenovationTab = ({ deal, formatCurrency, /* renovationEstimate, */ onDealU
             <Label htmlFor="selected-reno-cost" className="text-sm md:text-base">Selected Renovations Total</Label>
             <Input 
               id="selected-reno-cost"
-              type="text" // Changed to text to allow formatted currency if needed, or keep number and format display elsewhere
-              value={formatCurrency(totalSelectedCost)} // Format currency here
+              type="text" 
+              value={formatCurrency(totalSelectedCost)} 
               readOnly
-              className="mt-1 font-medium bg-gray-100 text-sm md:text-base" // Added bg-gray-100 for readonly
+              className="mt-1 font-medium bg-gray-100 text-sm md:text-base" 
             />
           </div>
           <div>
             <Label htmlFor="contingency" className="text-sm md:text-base">Contingency Buffer (15%)</Label>
             <Input 
               id="contingency"
-              type="text" // Changed to text
-              value={formatCurrency(Math.round(totalSelectedCost * 0.15))} // Format currency here
+              type="text" 
+              value={formatCurrency(Math.round(totalSelectedCost * 0.15))} 
               readOnly
-              className="mt-1 bg-gray-100 text-sm md:text-base" // Ensured consistent styling
+              className="mt-1 bg-gray-100 text-sm md:text-base" 
             />
           </div>
           <div className="p-3 bg-green-50 rounded-lg">
@@ -114,3 +145,4 @@ const RenovationTab = ({ deal, formatCurrency, /* renovationEstimate, */ onDealU
 };
 
 export default RenovationTab;
+

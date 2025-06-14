@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -200,6 +199,13 @@ export const useDeals = () => {
 
   const updateDealMutation = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Deal> & { id: string }) => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.error('Authentication error in updateDealMutation:', userError);
+        throw new Error('User not authenticated. Please log in to update deals.');
+      }
+
       // Remove property fields from updates as they should be updated in unified_properties
       const { property, address, suburb, city, bedrooms, bathrooms, floor_area, land_area, photos, description, coordinates, ...dealUpdates } = updates;
       
@@ -214,6 +220,9 @@ export const useDeals = () => {
         renovation_selections: dealUpdates.renovation_selections ? JSON.parse(JSON.stringify(dealUpdates.renovation_selections)) : undefined,
       };
       
+      console.log('Attempting to update deal with ID:', id, 'by user:', user.id);
+      console.log('Processed updates for deal:', processedUpdates);
+
       const { data, error } = await supabase
         .from('deals')
         .update(processedUpdates as any)
@@ -235,7 +244,10 @@ export const useDeals = () => {
         `)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error updating deal:', error);
+        throw error;
+      }
       
       // Transform the response
       const dealWithProperty = data as DealWithProperty;
@@ -278,20 +290,33 @@ export const useDeals = () => {
       });
     },
     onError: (error: unknown) => {
-      let message = 'Failed to update deal';
-      if (error instanceof Error) message = error.message;
+      let message = 'Failed to update deal.';
+      if (error instanceof Error) {
+        message = error.message.includes('User not authenticated') 
+          ? error.message 
+          : `Failed to update deal: ${error.message}`;
+      }
       toast({ title: 'Error', description: message, variant: 'destructive' });
     },
   });
 
   const deleteDealMutation = useMutation({
     mutationFn: async (id: string) => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('Authentication error in deleteDealMutation:', userError);
+        throw new Error('User not authenticated. Please log in to delete deals.');
+      }
+
       const { error } = await supabase
         .from('deals')
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error deleting deal:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
@@ -301,8 +326,12 @@ export const useDeals = () => {
       });
     },
     onError: (error: unknown) => {
-      let message = 'Failed to delete deal';
-      if (error instanceof Error) message = error.message;
+      let message = 'Failed to delete deal.';
+      if (error instanceof Error) {
+         message = error.message.includes('User not authenticated') 
+          ? error.message 
+          : `Failed to delete deal: ${error.message}`;
+      }
       toast({ title: 'Error', description: message, variant: 'destructive' });
     },
   });
