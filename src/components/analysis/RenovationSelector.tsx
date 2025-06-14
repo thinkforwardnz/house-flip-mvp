@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -26,23 +26,41 @@ const RenovationSelector = ({
   // Local state to track user input
   const [localSelections, setLocalSelections] = useState<RenovationSelections>(renovationSelections);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [activelyEditing, setActivelyEditing] = useState<string | null>(null);
+  
+  // Refs for proper cleanup
+  const timeoutRef = useRef<NodeJS.Timeout>();
 
-  // Sync local state with props when they change externally
+  // Sync local state with props only when not actively editing
   useEffect(() => {
-    setLocalSelections(renovationSelections);
-  }, [renovationSelections]);
+    if (!activelyEditing) {
+      // Only sync if there's a meaningful difference
+      const hasChanges = Object.keys(renovationSelections).some(key => {
+        const current = localSelections[key];
+        const incoming = renovationSelections[key];
+        return JSON.stringify(current) !== JSON.stringify(incoming);
+      });
+      
+      if (hasChanges) {
+        setLocalSelections(renovationSelections);
+      }
+    }
+  }, [renovationSelections, activelyEditing, localSelections]);
 
-  // Debounced save function
+  // Debounced save function with proper cleanup
   const debouncedSave = useMemo(() => {
-    let timeoutId: NodeJS.Timeout;
-    
     return (selections: RenovationSelections) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      timeoutRef.current = setTimeout(() => {
         setIsUpdating(true);
         onRenovationChange(selections);
-        // Add a small delay to show feedback
-        setTimeout(() => setIsUpdating(false), 300);
+        setTimeout(() => {
+          setIsUpdating(false);
+          setActivelyEditing(null);
+        }, 300);
       }, 500);
     };
   }, [onRenovationChange]);
@@ -50,7 +68,9 @@ const RenovationSelector = ({
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      // Clear any pending timeouts when component unmounts
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
   }, []);
 
@@ -75,7 +95,10 @@ const RenovationSelector = ({
     setTimeout(() => setIsUpdating(false), 300);
   };
 
-  const handleCostChange = (renovationType: string, cost: number) => {
+  const handleCostChange = (renovationType: string, value: string) => {
+    setActivelyEditing(renovationType);
+    const cost = value === '' ? 0 : Number(value);
+    
     const newSelections = {
       ...localSelections,
       [renovationType]: {
@@ -88,7 +111,22 @@ const RenovationSelector = ({
     debouncedSave(newSelections);
   };
 
-  const handleValueAddChange = (renovationType: string, valueAddPercent: number) => {
+  const handleSliderChange = (renovationType: string, valueAddPercent: number) => {
+    // For immediate visual feedback during dragging
+    const newSelections = {
+      ...localSelections,
+      [renovationType]: {
+        ...localSelections[renovationType]!,
+        value_add_percent: valueAddPercent
+      }
+    };
+    
+    setLocalSelections(newSelections);
+  };
+
+  const handleSliderCommit = (renovationType: string, valueAddPercent: number) => {
+    // Only trigger save when user releases the slider
+    setActivelyEditing(renovationType);
     const newSelections = {
       ...localSelections,
       [renovationType]: {
@@ -141,7 +179,8 @@ const RenovationSelector = ({
                 id={`${type}-cost`}
                 type="number"
                 value={cost}
-                onChange={(e) => handleCostChange(type, Number(e.target.value))}
+                onChange={(e) => handleCostChange(type, e.target.value)}
+                onFocus={() => setActivelyEditing(type)}
                 className="mt-1 h-8 text-xs sm:text-sm"
                 disabled={isUpdating}
               />
@@ -152,7 +191,8 @@ const RenovationSelector = ({
               <div className="mt-2 px-2">
                 <Slider
                   value={[valueAddPercent]}
-                  onValueChange={([value]) => handleValueAddChange(type, value)}
+                  onValueChange={([value]) => handleSliderChange(type, value)}
+                  onValueCommit={([value]) => handleSliderCommit(type, value)}
                   max={type === 'add_bedroom' ? 30 : 10}
                   min={0}
                   step={0.5}
