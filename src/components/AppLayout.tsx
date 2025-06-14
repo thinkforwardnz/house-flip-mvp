@@ -13,11 +13,11 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       <div className="min-h-screen flex w-full bg-soft-blue-mobile md:bg-gradient-blue">
         <AppSidebar />
         <SidebarInset className="flex-1">
-          {/* The background is now handled by the parent div */}
+          {/* The background is now handled by SidebarInset which defaults to bg-background (white) */}
           <div className="min-h-screen"> 
             {/* Mobile sidebar trigger */}
             <div className="md:hidden p-4">
-              <SidebarTrigger className="text-white" />
+              <SidebarTrigger className="text-navy-dark" /> {/* Changed from text-white to text-navy-dark */}
             </div>
             
             {/* Main content area with responsive padding */}

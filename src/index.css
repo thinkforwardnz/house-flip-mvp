@@ -14,8 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 213 94% 68%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 221 83% 53%; /* Updated from 213 94% 68% */
+    --primary-foreground: 0 0% 100%; /* Remains white, good contrast with new primary */
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -31,18 +31,18 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 213 94% 68%;
+    --ring: 221 83% 53%; /* Updated from 213 94% 68% */
 
     --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 213 94% 68%;
-    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-primary: 221 83% 53%; /* Updated from 213 94% 68% */
+    --sidebar-primary-foreground: 0 0% 98%; /* Remains light, good contrast */
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 213 94% 68%;
+    --sidebar-ring: 221 83% 53%; /* Updated from 213 94% 68% */
 
     /* Design System Colors */
     --navy-dark: 215 25% 10%;
@@ -66,7 +66,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 213 94% 68%;
+    --primary: 221 83% 53%; /* Updated for dark mode as well */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -83,15 +83,15 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 213 94% 68%;
+    --ring: 221 83% 53%; /* Updated for dark mode as well */
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 213 94% 68%;
+    --sidebar-primary: 221 83% 53%; /* Updated for dark mode as well */
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 213 94% 68%;
+    --sidebar-ring: 221 83% 53%; /* Updated for dark mode as well */
   }
 }
 
