@@ -16,12 +16,15 @@ import { usePropertyAnalysis } from '@/hooks/usePropertyAnalysis'; // Import the
 
 interface PropertyAnalysisDetailProps {
   deal: Deal;
-  onUpdateDeal: (updates: any) => void;
+  onSaveDealUpdates: (updates: Partial<Deal>) => void; // Changed prop name and type
 }
 
-const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailProps) => {
+const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDetailProps) => {
   const [activeTab, setActiveTab] = useState('overview');
 
+  // The usePropertyAnalysis hook's onUpdateDeal needs to be adapted or this component needs to manage it.
+  // For now, the hook's onUpdateDeal is for AI analysis pipeline updates.
+  // The onSaveDealUpdates prop is for direct user edits from tabs.
   const {
     isAnalyzing,
     analysisStep,
@@ -33,22 +36,11 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
     renovationEstimate,
     offerPrice,
     dataSourceStatus,
-  } = usePropertyAnalysis(deal, onUpdateDeal);
+  } = usePropertyAnalysis(deal, onSaveDealUpdates); // Pass onSaveDealUpdates to the hook if it needs to trigger updates
 
-  // These handlers are simple wrappers and can stay in the component
-  // or be passed directly if preferred, but this is clear.
-  const handleDealUpdate = (updatedDealData: Deal) => {
-    onUpdateDeal(updatedDealData);
-  };
-
-  const handlePartialDealUpdate = (updates: Partial<Deal>) => {
-    // The hook's onUpdateDeal will likely fetch the full new deal,
-    // but if a component needs to optimistically update or provide partial updates
-    // before a full refresh, this pattern can be useful.
-    // For now, it merges locally and calls the main updater.
-    // The hook itself calls onUpdateDeal with the full updated deal from Supabase.
-    const updatedDeal = { ...deal, ...updates };
-    onUpdateDeal(updatedDeal); 
+  // This function will be passed to child tabs for them to send updates upwards.
+  const handleChildTabUpdates = (updates: Partial<Deal>) => {
+    onSaveDealUpdates(updates); 
   };
 
   return (
@@ -98,7 +90,7 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
               <CMATab 
                 deal={deal} 
                 formatCurrency={formatCurrency}
-                onDealUpdate={handleDealUpdate} // Used for full deal object updates from CMATab
+                onDealUpdate={handleChildTabUpdates} // Changed to use the new handler
               />
             </TabsContent>
 
@@ -106,8 +98,8 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
               <RenovationTab
                 deal={deal}
                 formatCurrency={formatCurrency}
-                renovationEstimate={renovationEstimate} // renovationEstimate prop is still passed
-                onDealUpdate={handlePartialDealUpdate} // Used for partial updates like renovation_selections
+                renovationEstimate={renovationEstimate} 
+                onDealUpdate={handleChildTabUpdates} // Changed to use the new handler
               />
             </TabsContent>
 

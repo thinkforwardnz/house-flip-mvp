@@ -36,7 +36,7 @@ export const useUpdateDeal = () => {
         renovation_analysis: dealSpecificUpdates.renovation_analysis ? JSON.parse(JSON.stringify(dealSpecificUpdates.renovation_analysis)) : undefined,
         risk_assessment: dealSpecificUpdates.risk_assessment ? JSON.parse(JSON.stringify(dealSpecificUpdates.risk_assessment)) : undefined,
         analysis_data: dealSpecificUpdates.analysis_data ? JSON.parse(JSON.stringify(dealSpecificUpdates.analysis_data)) : undefined,
-        renovation_selections: dealSpecificUpdates.renovation_selections ? JSON.parse(JSON.stringify(dealSpecificUpdates.renovation_selections)) : undefined,
+        renovation_selections: dealSpecificUpdates.renovation_selections ? JSON.parse(JSON.stringify(dealSpecificUpdates.renovation_selections)) : undefined, // Added this line
       };
       
       console.log('Attempting to update deal with ID:', id, 'by user:', user.id);
@@ -44,7 +44,7 @@ export const useUpdateDeal = () => {
 
       const { data, error } = await supabase
         .from('deals')
-        .update(processedUpdates) // Supabase types should handle this, casting to 'any' if issues persist.
+        .update(processedUpdates)
         .eq('id', id)
         .select(`
           *,
@@ -72,6 +72,7 @@ export const useUpdateDeal = () => {
       });
     },
     onError: (error: unknown) => {
+      console.error('Full error in useUpdateDeal onError:', error); // Added for better debugging
       let message = 'Failed to update deal.';
       if (error instanceof Error) {
         message = error.message.includes('User not authenticated') 

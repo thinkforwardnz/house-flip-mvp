@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import PropertySelector from '@/components/PropertySelector';
 import { useSelectedDeal } from '@/hooks/useSelectedDeal';
@@ -9,6 +8,7 @@ import PropertyAnalysisDetail from '@/components/PropertyAnalysisDetail';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
+import type { Deal } from '@/types/analysis';
 
 const PropertyAnalysis = () => {
   const { dealId } = useParams();
@@ -21,11 +21,11 @@ const PropertyAnalysis = () => {
     ? deals.find(d => d.id === dealId)
     : selectedDeal;
 
-  const handleUpdateDeal = (updates: any) => {
-    if (currentDeal) {
-      updateDeal({ id: currentDeal.id, ...updates });
+  const handleSaveDealUpdates = useCallback((dealUpdates: Partial<Deal>) => {
+    if (currentDeal?.id) {
+      updateDeal({ id: currentDeal.id, ...dealUpdates });
     }
-  };
+  }, [currentDeal?.id, updateDeal]);
 
   if (isLoading) {
     return (
@@ -66,7 +66,7 @@ const PropertyAnalysis = () => {
           {currentDeal ? (
             <PropertyAnalysisDetail 
               deal={currentDeal}
-              onUpdateDeal={handleUpdateDeal}
+              onSaveDealUpdates={handleSaveDealUpdates}
             />
           ) : (
             <Card className="bg-white shadow-lg rounded-2xl border-0">
