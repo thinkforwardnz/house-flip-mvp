@@ -21,11 +21,10 @@ export const useUpdateDeal = () => {
       const { id, ...updatesFromPayload } = variables;
 
       // Remove property-related fields from updates, as these are derived from 'unified_properties'
-      // and not directly updatable on the 'deals' table this way.
       const { 
         property, address, suburb, city, bedrooms, bathrooms, floor_area, land_area, 
         photos, description, coordinates, 
-        ...dealSpecificUpdates // These are the fields to actually update on the 'deals' table
+        ...dealSpecificUpdates
       } = updatesFromPayload;
     
       // Process JSONB fields by ensuring they are proper JSON objects or undefined
@@ -36,9 +35,9 @@ export const useUpdateDeal = () => {
         renovation_analysis: dealSpecificUpdates.renovation_analysis ? JSON.parse(JSON.stringify(dealSpecificUpdates.renovation_analysis)) : undefined,
         risk_assessment: dealSpecificUpdates.risk_assessment ? JSON.parse(JSON.stringify(dealSpecificUpdates.risk_assessment)) : undefined,
         analysis_data: dealSpecificUpdates.analysis_data ? JSON.parse(JSON.stringify(dealSpecificUpdates.analysis_data)) : undefined,
-        renovation_selections: dealSpecificUpdates.renovation_selections ? JSON.parse(JSON.stringify(dealSpecificUpdates.renovation_selections)) : undefined, // Added this line
+        renovation_selections: dealSpecificUpdates.renovation_selections ? JSON.parse(JSON.stringify(dealSpecificUpdates.renovation_selections)) : undefined,
       };
-      
+
       console.log('Attempting to update deal with ID:', id, 'by user:', user.id);
       console.log('Processed updates for deal:', processedUpdates);
 
@@ -55,16 +54,21 @@ export const useUpdateDeal = () => {
         .single();
 
       if (error) {
-        console.error('Supabase error updating deal:', error);
-        throw error;
+        // Bubble up Supabase's error object along with the client-friendly message
+        // This lets our onError handler decode and message it well
+        const err = new Error(error.message);
+        // Attach the error code and details for later use (if available)
+        (err as any).code = error.code;
+        (err as any).details = error.details;
+        (err as any).hint = error.hint;
+        throw err;
       }
       if (!data) throw new Error('No data returned after updating deal.');
 
       return transformSupabaseDeal(data as DealWithNestedProperty);
     },
-    onSuccess: (updatedDealData) => { // updatedDealData is the result of transformSupabaseDeal
+    onSuccess: (updatedDealData) => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
-      // Optionally, invalidate a specific deal query if you have one like ['deal', dealId]
       queryClient.invalidateQueries({ queryKey: ['deal', updatedDealData.id] }); 
       toast({
         title: "Deal Updated",
@@ -72,14 +76,41 @@ export const useUpdateDeal = () => {
       });
     },
     onError: (error: unknown) => {
-      console.error('Full error in useUpdateDeal onError:', error); // Added for better debugging
+      // Try to extract the most helpful error message possible
+      console.error('Full error in useUpdateDeal onError:', error);
+
+      // Prefer Supabase errors: code/details/message/hint
       let message = 'Failed to update deal.';
-      if (error instanceof Error) {
-        message = error.message.includes('User not authenticated') 
-          ? error.message 
-          : `Failed to update deal: ${error.message}`;
+      if (typeof error === 'object' && error !== null) {
+        // Most Supabase errors come as Error objects, but some as plain strings
+        const err = error as any;
+        const supabaseMsg = err.message || err.msg || '';
+        const code = err.code || '';
+        const details = err.details ? `Details: ${err.details}` : '';
+        const hint = err.hint ? `Hint: ${err.hint}` : '';
+        // Detect row level security and permission errors
+        if (code && code.includes('42501')) {
+          // 42501 = insufficient_privilege
+          message = `Permission denied (RLS/Policy). ${supabaseMsg} ${details} ${hint}`;
+        } else if (
+          supabaseMsg.toLowerCase().includes('row level security') || 
+          supabaseMsg.toLowerCase().includes('permission denied')
+        ) {
+          message = `Permission/RLS Policy Error: ${supabaseMsg} ${details} ${hint}`;
+        } else if (supabaseMsg) {
+          message = supabaseMsg + (details ? `\n${details}` : '') + (hint ? `\n${hint}` : '');
+        }
+      } else if (typeof error === 'string') {
+        message = error;
       }
-      toast({ title: 'Error updating deal', description: message, variant: 'destructive' });
+      // Fallback message if all else fails
+      if (!message) message = 'Failed to update deal. Unknown error.';
+
+      toast({ 
+        title: 'Error updating deal', 
+        description: message, 
+        variant: 'destructive' 
+      });
     },
   });
   
@@ -90,4 +121,3 @@ export const useUpdateDeal = () => {
     errorUpdating: mutation.error,
   };
 };
-
