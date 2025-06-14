@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -75,12 +76,12 @@ const RenovationSelector = ({
 
     return (
       <Card key={type} className={`${isSelected ? 'border-blue-200 bg-blue-50' : 'border-gray-200'} ${isHighValue ? 'border-green-200 bg-green-50' : ''}`}>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2 p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {icon}
-              <CardTitle className="text-sm font-medium">{title}</CardTitle>
-              {isHighValue && <Plus className="h-4 w-4 text-green-600" />}
+              <CardTitle className="text-xs sm:text-sm font-medium">{title}</CardTitle>
+              {isHighValue && <Plus className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />}
             </div>
             <Switch
               checked={isSelected}
@@ -90,7 +91,7 @@ const RenovationSelector = ({
         </CardHeader>
         
         {isSelected && (
-          <CardContent className="pt-0 space-y-4">
+          <CardContent className="pt-0 p-3 space-y-3">
             <p className="text-xs text-gray-600">{defaultOption.description}</p>
             
             <div>
@@ -100,7 +101,7 @@ const RenovationSelector = ({
                 type="number"
                 value={cost}
                 onChange={(e) => handleCostChange(type, Number(e.target.value))}
-                className="mt-1 h-8"
+                className="mt-1 h-8 text-xs sm:text-sm"
               />
             </div>
 
@@ -128,14 +129,14 @@ const RenovationSelector = ({
   };
 
   return (
-    <div className="space-y-3 xs:space-y-5">
+    <div className="space-y-3">
       <div>
-        <h3 className="text-base xs:text-lg font-semibold text-navy-dark mb-1">Renovation Selection</h3>
-        <p className="text-2xs xs:text-xs text-gray-600 mb-2 xs:mb-4">
+        <h3 className="text-sm sm:text-base font-semibold text-navy-dark mb-1">Renovation Selection</h3>
+        <p className="text-xs text-gray-600 mb-2">
           Select the renovations you plan to complete and adjust costs and value-add estimates.
         </p>
       </div>
-      <div className="grid grid-cols-1 gap-2 xs:gap-3">
+      <div className="grid grid-cols-1 gap-2 sm:gap-3">
         {getRenovationCard('add_bedroom', 'Add Bedroom', <Plus className="h-4 w-4 text-green-600" />, true)}
         {getRenovationCard('kitchen', 'Kitchen Renovation', <Wrench className="h-4 w-4 text-blue-600" />)}
         {getRenovationCard('bathroom', 'Bathroom Renovation', <Wrench className="h-4 w-4 text-purple-600" />)}

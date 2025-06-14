@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,16 +17,13 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 interface PropertyAnalysisDetailProps {
   deal: Deal;
-  onSaveDealUpdates: (updates: Partial<Deal>) => void; // Changed prop name and type
+  onSaveDealUpdates: (updates: Partial<Deal>) => void;
 }
 
 const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDetailProps) => {
   const [activeTab, setActiveTab] = useState('overview');
   const isMobile = useIsMobile();
 
-  // The usePropertyAnalysis hook's onUpdateDeal needs to be adapted or this component needs to manage it.
-  // For now, the hook's onUpdateDeal is for AI analysis pipeline updates.
-  // The onSaveDealUpdates prop is for direct user edits from tabs.
   const {
     isAnalyzing,
     analysisStep,
@@ -37,15 +35,14 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
     renovationEstimate,
     offerPrice,
     dataSourceStatus,
-  } = usePropertyAnalysis(deal, onSaveDealUpdates); // Pass onSaveDealUpdates to the hook if it needs to trigger updates
+  } = usePropertyAnalysis(deal, onSaveDealUpdates);
 
-  // This function will be passed to child tabs for them to send updates upwards.
   const handleChildTabUpdates = (updates: Partial<Deal>) => {
     onSaveDealUpdates(updates); 
   };
 
   return (
-    <div className="space-y-1 xs:space-y-2 sm:space-y-4 md:space-y-5 w-full overflow-x-hidden">
+    <div className="space-y-3 sm:space-y-4 w-full">
       {/* Property Header */}
       <div className="w-full">
         <PropertyHeader
@@ -64,69 +61,57 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
         <AnalysisMobileTabSelector tab={activeTab} onTabChange={setActiveTab} className="mb-2" />
       ) : (
         <Card className="bg-white shadow-lg rounded-2xl border-0 w-full">
-          <CardContent className="p-1 xs:p-2 sm:p-4 md:p-6">
+          <CardContent className="p-2 sm:p-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="flex flex-nowrap gap-1 xs:gap-2 sm:gap-4 sm:mb-6 mb-2 overflow-x-auto no-scrollbar min-w-0">
-                <TabsTrigger value="overview" className="min-w-[110px]">Overview</TabsTrigger>
-                <TabsTrigger value="data" className="min-w-[110px]">Data Collection</TabsTrigger>
-                <TabsTrigger value="cma" className="min-w-[110px]">Market Analysis</TabsTrigger>
-                <TabsTrigger value="renovation" className="min-w-[110px]">Renovation</TabsTrigger>
-                <TabsTrigger value="offer" className="min-w-[110px]">Offer Calculation</TabsTrigger>
-                <TabsTrigger value="risk" className="min-w-[110px]">Risk Assessment</TabsTrigger>
+              <TabsList className="flex flex-nowrap gap-1 sm:gap-2 mb-3 sm:mb-4 overflow-x-auto">
+                <TabsTrigger value="overview" className="min-w-[90px] text-xs sm:text-sm">Overview</TabsTrigger>
+                <TabsTrigger value="data" className="min-w-[90px] text-xs sm:text-sm">Data Collection</TabsTrigger>
+                <TabsTrigger value="cma" className="min-w-[90px] text-xs sm:text-sm">Market Analysis</TabsTrigger>
+                <TabsTrigger value="renovation" className="min-w-[90px] text-xs sm:text-sm">Renovation</TabsTrigger>
+                <TabsTrigger value="offer" className="min-w-[90px] text-xs sm:text-sm">Offer Calculation</TabsTrigger>
+                <TabsTrigger value="risk" className="min-w-[90px] text-xs sm:text-sm">Risk Assessment</TabsTrigger>
               </TabsList>
-              {/* Render all tab contents on desktop, switch by mobile selector on mobile */}
+              
               <TabsContent value="overview">
-                <div className="px-0 xs:px-1 sm:px-0">
-                  <OverviewTab
-                    deal={deal}
-                    formatCurrency={formatCurrency}
-                    renovationEstimate={renovationEstimate}
-                    offerPrice={offerPrice}
-                  />
-                </div>
+                <OverviewTab
+                  deal={deal}
+                  formatCurrency={formatCurrency}
+                  renovationEstimate={renovationEstimate}
+                  offerPrice={offerPrice}
+                />
               </TabsContent>
               <TabsContent value="data">
-                <div className="px-0 xs:px-1 sm:px-0">
-                  <DataCollectionTab
-                    dataSourceStatus={dataSourceStatus}
-                    isAnalyzing={isAnalyzing}
-                    onRunAnalysis={handleRunAnalysis}
-                  />
-                </div>
+                <DataCollectionTab
+                  dataSourceStatus={dataSourceStatus}
+                  isAnalyzing={isAnalyzing}
+                  onRunAnalysis={handleRunAnalysis}
+                />
               </TabsContent>
               <TabsContent value="cma">
-                <div className="px-0 xs:px-1 sm:px-0">
-                  <CMATab 
-                    deal={deal} 
-                    formatCurrency={formatCurrency}
-                    onDealUpdate={handleChildTabUpdates}
-                  />
-                </div>
+                <CMATab 
+                  deal={deal} 
+                  formatCurrency={formatCurrency}
+                  onDealUpdate={handleChildTabUpdates}
+                />
               </TabsContent>
               <TabsContent value="renovation">
-                <div className="px-0 xs:px-1 sm:px-0">
-                  <RenovationTab
-                    deal={deal}
-                    formatCurrency={formatCurrency}
-                    renovationEstimate={renovationEstimate} 
-                    onDealUpdate={handleChildTabUpdates}
-                  />
-                </div>
+                <RenovationTab
+                  deal={deal}
+                  formatCurrency={formatCurrency}
+                  renovationEstimate={renovationEstimate} 
+                  onDealUpdate={handleChildTabUpdates}
+                />
               </TabsContent>
               <TabsContent value="offer">
-                <div className="px-0 xs:px-1 sm:px-0">
-                  <OfferTab
-                    deal={deal}
-                    formatCurrency={formatCurrency}
-                    renovationEstimate={renovationEstimate}
-                    offerPrice={offerPrice}
-                  />
-                </div>
+                <OfferTab
+                  deal={deal}
+                  formatCurrency={formatCurrency}
+                  renovationEstimate={renovationEstimate}
+                  offerPrice={offerPrice}
+                />
               </TabsContent>
               <TabsContent value="risk">
-                <div className="px-0 xs:px-1 sm:px-0">
-                  <RiskTab deal={deal} />
-                </div>
+                <RiskTab deal={deal} />
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -135,8 +120,8 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
 
       {/* Tabs content for mobile: only show active tab */}
       {isMobile && (
-        <div className="bg-white shadow-lg rounded-2xl border-0 w-full">
-          <CardContent className="p-2 xs:p-2 sm:p-3 md:p-4">
+        <Card className="bg-white shadow-lg rounded-2xl border-0 w-full">
+          <CardContent className="p-3 sm:p-4">
             {activeTab === "overview" && (
               <OverviewTab
                 deal={deal}
@@ -177,7 +162,7 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
             )}
             {activeTab === "risk" && <RiskTab deal={deal} />}
           </CardContent>
-        </div>
+        </Card>
       )}
       
       {/* AI Analysis Summary */}
