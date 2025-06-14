@@ -211,6 +211,7 @@ export const useDeals = () => {
         renovation_analysis: dealUpdates.renovation_analysis ? JSON.parse(JSON.stringify(dealUpdates.renovation_analysis)) : undefined,
         risk_assessment: dealUpdates.risk_assessment ? JSON.parse(JSON.stringify(dealUpdates.risk_assessment)) : undefined,
         analysis_data: dealUpdates.analysis_data ? JSON.parse(JSON.stringify(dealUpdates.analysis_data)) : undefined,
+        renovation_selections: dealUpdates.renovation_selections ? JSON.parse(JSON.stringify(dealUpdates.renovation_selections)) : undefined,
       };
       
       const { data, error } = await supabase

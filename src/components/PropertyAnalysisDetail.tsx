@@ -225,6 +225,11 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
     onUpdateDeal(updatedDeal);
   };
 
+  const handlePartialDealUpdate = (updates: Partial<Deal>) => {
+    const updatedDeal = { ...deal, ...updates };
+    onUpdateDeal(updatedDeal);
+  };
+
   return (
     <div className="space-y-6">
       {/* Property Header */}
@@ -281,6 +286,7 @@ const PropertyAnalysisDetail = ({ deal, onUpdateDeal }: PropertyAnalysisDetailPr
                 deal={deal}
                 formatCurrency={formatCurrency}
                 renovationEstimate={renovationEstimate}
+                onDealUpdate={handlePartialDealUpdate}
               />
             </TabsContent>
 

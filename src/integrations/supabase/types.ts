@@ -78,6 +78,7 @@ export type Database = {
           property_id: string
           purchase_price: number | null
           renovation_analysis: Json | null
+          renovation_selections: Json | null
           risk_assessment: Json | null
           target_sale_price: number | null
           team_id: string | null
@@ -98,6 +99,7 @@ export type Database = {
           property_id: string
           purchase_price?: number | null
           renovation_analysis?: Json | null
+          renovation_selections?: Json | null
           risk_assessment?: Json | null
           target_sale_price?: number | null
           team_id?: string | null
@@ -118,6 +120,7 @@ export type Database = {
           property_id?: string
           purchase_price?: number | null
           renovation_analysis?: Json | null
+          renovation_selections?: Json | null
           risk_assessment?: Json | null
           target_sale_price?: number | null
           team_id?: string | null
