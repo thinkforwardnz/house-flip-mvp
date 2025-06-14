@@ -4,23 +4,20 @@ import { useToast } from '@/hooks/use-toast';
 import type { Deal } from '@/types/analysis';
 
 import { formatCurrency } from '@/utils/formatCurrency';
-// Import the new useDealMetrics hook
 import { useDealMetrics } from './useDealMetrics';
-// Analysis service functions remain imported
-import {
-  invokeMarketAnalysis,
-  invokePropertyEnrichment,
-  invokeRenovationAnalysis,
-  invokeRiskAssessment,
-  fetchFullyUpdatedDeal,
-} from '@/services/propertyAnalysisService';
+
+// Import from new individual service files
+import { invokeMarketAnalysis } from '@/services/invokeMarketAnalysis';
+import { invokePropertyEnrichment } from '@/services/invokePropertyEnrichment';
+import { invokeRenovationAnalysis } from '@/services/invokeRenovationAnalysis';
+import { invokeRiskAssessment } from '@/services/invokeRiskAssessment';
+import { fetchFullyUpdatedDeal } from '@/services/fetchFullyUpdatedDeal';
 
 export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<Deal>) => void) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState('');
   const { toast } = useToast();
 
-  // Use the new hook to get derived metrics
   const metrics = useDealMetrics(deal);
 
   const handleRunAnalysis = async () => {
@@ -87,7 +84,7 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
          toast({
           title: "Data Sync Issue",
           description: "Could not fetch the very latest deal data after analysis, but analysis functions ran. Please refresh if needed.",
-          variant: "default", // Kept as default as per original logic
+          variant: "default",
         });
       }
     } finally {
@@ -100,7 +97,7 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
     isAnalyzing,
     analysisStep,
     handleRunAnalysis,
-    formatCurrency, // Still exporting formatCurrency
-    ...metrics, // Spread the metrics from useDealMetrics
+    formatCurrency,
+    ...metrics,
   };
 };
