@@ -28,11 +28,11 @@ const PropertyHeader = ({
 }: PropertyHeaderProps) => {
   return (
     <Card className="bg-white shadow-lg rounded-2xl border-0">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-navy-dark mb-2">{deal.address}</h1>
-            <div className="flex items-center text-navy mb-2">
+      <CardContent className="p-4 md:p-6"> {/* Adjusted padding */}
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4">
+          <div className="mb-4 md:mb-0"> {/* Added margin bottom for mobile stacking */}
+            <h1 className="text-xl md:text-2xl font-bold text-navy-dark mb-2">{deal.address}</h1>
+            <div className="flex items-center text-navy text-sm md:text-base mb-2">
               <MapPin className="h-4 w-4 mr-1" />
               {deal.suburb}, {deal.city}
             </div>
@@ -40,20 +40,20 @@ const PropertyHeader = ({
               deal.current_risk === 'low' ? 'bg-green-100 text-green-800' :
               deal.current_risk === 'medium' ? 'bg-yellow-100 text-yellow-800' :
               'bg-red-100 text-red-800'
-            } rounded-lg`}>
+            } rounded-lg text-xs md:text-sm`}>
               {deal.current_risk} Risk
             </Badge>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto"> {/* Buttons stack on small, row on sm+ */}
             <Button 
               onClick={onRunAnalysis}
               disabled={isAnalyzing}
-              className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl"
+              className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl w-full sm:w-auto" // Full width on mobile
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
               {isAnalyzing ? 'Analyzing...' : 'Run Analysis'}
             </Button>
-            <Button variant="outline" className="rounded-xl">
+            <Button variant="outline" className="rounded-xl w-full sm:w-auto"> {/* Full width on mobile */}
               <Download className="h-4 w-4 mr-2" />
               Export Report
             </Button>
@@ -62,23 +62,23 @@ const PropertyHeader = ({
 
         {/* Show analysis progress */}
         {isAnalyzing && (
-          <div className="bg-blue-50 p-4 rounded-xl mb-4">
+          <div className="bg-blue-50 p-3 md:p-4 rounded-xl mb-4"> {/* Adjusted padding */}
             <div className="flex items-center gap-2 mb-2">
               <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
               <span className="text-sm font-medium text-blue-900">{analysisStep}</span>
             </div>
-            <Progress value={75} className="h-2" />
+            <Progress value={75} className="h-2" /> {/* Consider making progress dynamic if not already */}
           </div>
         )}
 
         {/* Progress Overview */}
-        <div className="bg-gray-50 p-4 rounded-xl">
+        <div className="bg-gray-50 p-3 md:p-4 rounded-xl"> {/* Adjusted padding */}
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold text-navy-dark">Analysis Progress</h3>
+            <h3 className="font-semibold text-navy-dark text-sm md:text-base">Analysis Progress</h3>
             <span className="text-sm font-medium text-navy-dark">{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="h-3 mb-3" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <Progress value={progress} className="h-2 md:h-3 mb-3" /> {/* Adjusted height */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm"> {/* Adjusted gap and text size */}
             <div>
               <p className="font-medium text-green-600 mb-1">Completed ({completed.length})</p>
               <ul className="space-y-1">

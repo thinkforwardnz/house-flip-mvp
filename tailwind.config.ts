@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -72,7 +71,8 @@ export default {
 				'purple-accent': '#8B5CF6',
 				'green-success': '#22C55E',
 				'red-error': '#EF4444',
-				'input-bg': '#F4F4F5'
+				'input-bg': '#F4F4F5',
+        'soft-blue-mobile': 'hsl(var(--soft-blue-mobile))', // Added for mobile background
 			},
 			borderRadius: {
 				lg: '1rem',

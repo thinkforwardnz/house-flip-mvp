@@ -10,17 +10,18 @@ interface AppLayoutProps {
 const AppLayout = ({ children }: AppLayoutProps) => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-blue">
+      <div className="min-h-screen flex w-full bg-soft-blue-mobile md:bg-gradient-blue">
         <AppSidebar />
         <SidebarInset className="flex-1">
-          <div className="bg-gradient-blue min-h-screen">
+          {/* The background is now handled by the parent div */}
+          <div className="min-h-screen"> 
             {/* Mobile sidebar trigger */}
             <div className="md:hidden p-4">
               <SidebarTrigger className="text-white" />
             </div>
             
-            {/* Main content area */}
-            <div className="p-6">
+            {/* Main content area with responsive padding */}
+            <div className="p-4 md:p-6">
               {children}
             </div>
           </div>

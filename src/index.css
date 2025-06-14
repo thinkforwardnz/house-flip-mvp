@@ -53,6 +53,7 @@
     --accent-purple: 258 62% 62%;
     --success-green: 142 71% 45%;
     --error-red: 0 84% 60%;
+    --soft-blue-mobile: 207 60% 90%; /* Added for mobile background */
   }
 
   .dark {
@@ -143,5 +144,9 @@
   
   .bg-error {
     background-color: hsl(var(--error-red));
+  }
+
+  .bg-soft-blue-mobile { /* Added utility class */
+    background-color: hsl(var(--soft-blue-mobile));
   }
 }
