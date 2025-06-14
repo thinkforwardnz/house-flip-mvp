@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { Deal } from '@/types/analysis';
+import type { Deal, MarketData, RenovationAnalysis, RiskAssessment, ListingDetails } from '@/types/analysis';
 
 import { formatCurrency } from '@/utils/formatCurrency';
 import { calculateRenovationEstimate, calculateOfferPrice } from '@/utils/analysisCalculations';
@@ -43,8 +43,14 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
       }
       console.log('Market analysis response:', marketResponse.data);
       // Assuming marketResponse.data contains updates for the deal
-      if (marketResponse.data) {
-        onUpdateDeal(marketResponse.data);
+      // These updates are partial and might not be the full Deal type
+      if (marketResponse.data && marketResponse.data.updatedFields) {
+         // Ensure market_analysis is correctly typed if it's part of updatedFields
+        const partialUpdates = { ...marketResponse.data.updatedFields };
+        if (partialUpdates.market_analysis) {
+          partialUpdates.market_analysis = partialUpdates.market_analysis as MarketData | undefined;
+        }
+        onUpdateDeal(partialUpdates);
       }
 
 
@@ -55,19 +61,24 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
       const enrichResponse = await supabase.functions.invoke('enrich-property-analysis', {
         body: {
           dealId: deal.id,
-          address: deal.address, // Ensure address is passed
-          coordinates: deal.coordinates // Ensure coordinates are passed if available
+          address: deal.address, 
+          coordinates: deal.coordinates 
         }
       });
 
       if (enrichResponse.error) {
         console.error('Property enrichment error:', enrichResponse.error.message);
-        // Continue with analysis even if enrichment fails as some steps might not depend on it
-        // Potentially toast a warning or non-critical error
       } else {
         console.log('Property enrichment response:', enrichResponse.data);
-        if (enrichResponse.data) {
-          onUpdateDeal(enrichResponse.data);
+        // enrichResponse.data might return { success: boolean, data: enrichedData, message: string }
+        // Assuming enrichedData contains fields to update on the deal
+        if (enrichResponse.data && enrichResponse.data.data) {
+          // The actual enriched data is nested under `data` property from the function
+          // This might be `analysis_data` or other specific fields.
+          // If it's just `analysis_data`, then it should be:
+          // onUpdateDeal({ analysis_data: enrichResponse.data.data });
+          // For now, assuming it returns partial deal fields:
+           onUpdateDeal(enrichResponse.data.data as Partial<Deal>);
         }
       }
 
@@ -91,8 +102,12 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
         throw new Error(`Renovation analysis failed: ${renovationResponse.error.message}`);
       }
       console.log('Renovation analysis response:', renovationResponse.data);
-      if (renovationResponse.data) {
-          onUpdateDeal(renovationResponse.data);
+      if (renovationResponse.data && renovationResponse.data.updatedFields) {
+        const partialUpdates = { ...renovationResponse.data.updatedFields };
+        if (partialUpdates.renovation_analysis) {
+          partialUpdates.renovation_analysis = partialUpdates.renovation_analysis as RenovationAnalysis | undefined;
+        }
+        onUpdateDeal(partialUpdates);
       }
 
       // Step 4: Risk Assessment
@@ -102,7 +117,6 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
       const riskResponse = await supabase.functions.invoke('risk-assessment', {
         body: {
           dealId: deal.id
-          // Pass other relevant deal data if needed by the function
         }
       });
 
@@ -111,36 +125,31 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
         throw new Error(`Risk assessment failed: ${riskResponse.error.message}`);
       }
       console.log('Risk assessment response:', riskResponse.data);
-      if (riskResponse.data) {
-        onUpdateDeal(riskResponse.data);
+      if (riskResponse.data && riskResponse.data.updatedFields) {
+        const partialUpdates = { ...riskResponse.data.updatedFields };
+        if (partialUpdates.risk_assessment) {
+          partialUpdates.risk_assessment = partialUpdates.risk_assessment as RiskAssessment | undefined;
+        }
+        onUpdateDeal(partialUpdates);
       }
 
-      // Fetch updated deal data (or rely on onUpdateDeal to refresh if it does a full fetch)
-      // Forcing a final fetch to ensure client state is fully synchronized with DB after all functions.
       setAnalysisStep('Finalizing analysis and fetching latest data...');
-      const { data: updatedDeal, error: fetchError } = await supabase
+      // Fetch the fully updated deal object to ensure client state is synchronized.
+      const { data: fetchedDealData, error: fetchError } = await supabase
         .from('deals')
         .select(`
           *,
-          property_id (
-            id,
+          property:unified_properties (
             address,
             suburb,
             city,
-            coordinates,
-            photos,
-            description,
             bedrooms,
             bathrooms,
             floor_area,
             land_area,
-            year_built,
-            current_price,
-            listing_date,
-            source_url,
-            source_site,
-            tags,
-            status
+            photos,
+            description,
+            coordinates
           )
         `)
         .eq('id', deal.id)
@@ -148,15 +157,24 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
 
       if (fetchError) {
         console.error('Error fetching final updated deal:', fetchError);
-        // Don't throw here, as previous steps might have partially succeeded.
-        // The UI will reflect partial updates. Toast a warning.
         toast({
           title: "Data Sync Issue",
           description: "Could not fetch the very latest deal data after analysis, but analysis functions ran. Please refresh if needed.",
-          variant: "default", // Not destructive, as analysis itself might be fine
+          variant: "default",
         });
-      } else if (updatedDeal) {
-        onUpdateDeal(updatedDeal); // This ensures the parent component gets the fully updated deal
+      } else if (fetchedDealData) {
+        // Cast JSONB fields to their specific types
+        const dealForUpdate: Partial<Deal> = {
+          ...fetchedDealData,
+          market_analysis: fetchedDealData.market_analysis as MarketData | undefined,
+          renovation_analysis: fetchedDealData.renovation_analysis as RenovationAnalysis | undefined,
+          risk_assessment: fetchedDealData.risk_assessment as RiskAssessment | undefined,
+          listing_details: fetchedDealData.listing_details as ListingDetails | undefined,
+          // analysis_data and renovation_selections are 'any' in Deal type, so direct assignment is okay.
+          // If their types in Deal become more specific, they would need casting too.
+          // The 'property' field should be correctly typed from the select query.
+        };
+        onUpdateDeal(dealForUpdate);
       }
 
       toast({
@@ -183,7 +201,7 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
     isAnalyzing,
     analysisStep,
     handleRunAnalysis,
-    formatCurrency, // Re-exporting the imported utility
+    formatCurrency,
     progress,
     completed,
     pending,
