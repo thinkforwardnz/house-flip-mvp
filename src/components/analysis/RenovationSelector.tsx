@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -23,42 +23,82 @@ const RenovationSelector = ({
   baseMarketValue 
 }: RenovationSelectorProps) => {
   
+  // Local state to track user input
+  const [localSelections, setLocalSelections] = useState<RenovationSelections>(renovationSelections);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Sync local state with props when they change externally
+  useEffect(() => {
+    setLocalSelections(renovationSelections);
+  }, [renovationSelections]);
+
+  // Debounced save function
+  const debouncedSave = useMemo(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    return (selections: RenovationSelections) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setIsUpdating(true);
+        onRenovationChange(selections);
+        // Add a small delay to show feedback
+        setTimeout(() => setIsUpdating(false), 300);
+      }, 500);
+    };
+  }, [onRenovationChange]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      // Clear any pending timeouts when component unmounts
+    };
+  }, []);
+
   const handleRenovationToggle = (renovationType: string, enabled: boolean) => {
     const defaultOption = DEFAULT_RENOVATION_OPTIONS[renovationType];
     const newSelections = {
-      ...renovationSelections,
+      ...localSelections,
       [renovationType]: enabled 
         ? { 
             selected: true, 
-            cost: renovationSelections[renovationType]?.cost || defaultOption.cost,
-            value_add_percent: renovationSelections[renovationType]?.value_add_percent || defaultOption.value_add_percent,
+            cost: localSelections[renovationType]?.cost ?? defaultOption.cost,
+            value_add_percent: localSelections[renovationType]?.value_add_percent ?? defaultOption.value_add_percent,
             description: defaultOption.description
           }
-        : { ...renovationSelections[renovationType], selected: false }
+        : { ...localSelections[renovationType], selected: false }
     };
+    
+    setLocalSelections(newSelections);
+    // Immediate save for toggle changes
+    setIsUpdating(true);
     onRenovationChange(newSelections);
+    setTimeout(() => setIsUpdating(false), 300);
   };
 
   const handleCostChange = (renovationType: string, cost: number) => {
     const newSelections = {
-      ...renovationSelections,
+      ...localSelections,
       [renovationType]: {
-        ...renovationSelections[renovationType]!,
+        ...localSelections[renovationType]!,
         cost
       }
     };
-    onRenovationChange(newSelections);
+    
+    setLocalSelections(newSelections);
+    debouncedSave(newSelections);
   };
 
   const handleValueAddChange = (renovationType: string, valueAddPercent: number) => {
     const newSelections = {
-      ...renovationSelections,
+      ...localSelections,
       [renovationType]: {
-        ...renovationSelections[renovationType]!,
+        ...localSelections[renovationType]!,
         value_add_percent: valueAddPercent
       }
     };
-    onRenovationChange(newSelections);
+    
+    setLocalSelections(newSelections);
+    debouncedSave(newSelections);
   };
 
   const getRenovationCard = (
@@ -67,15 +107,15 @@ const RenovationSelector = ({
     icon: React.ReactNode,
     isHighValue = false
   ) => {
-    const option = renovationSelections[type];
+    const option = localSelections[type];
     const defaultOption = DEFAULT_RENOVATION_OPTIONS[type];
     const isSelected = option?.selected || false;
-    const cost = option?.cost || defaultOption.cost;
-    const valueAddPercent = option?.value_add_percent || defaultOption.value_add_percent;
+    const cost = option?.cost ?? defaultOption.cost;
+    const valueAddPercent = option?.value_add_percent ?? defaultOption.value_add_percent;
     const valueAdd = baseMarketValue * (valueAddPercent / 100);
 
     return (
-      <Card key={type} className={`${isSelected ? 'border-blue-200 bg-blue-50' : 'border-gray-200'} ${isHighValue ? 'border-green-200 bg-green-50' : ''}`}>
+      <Card key={type} className={`${isSelected ? 'border-blue-200 bg-blue-50' : 'border-gray-200'} ${isHighValue ? 'border-green-200 bg-green-50' : ''} ${isUpdating ? 'opacity-75' : ''}`}>
         <CardHeader className="pb-2 p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -86,6 +126,7 @@ const RenovationSelector = ({
             <Switch
               checked={isSelected}
               onCheckedChange={(enabled) => handleRenovationToggle(type, enabled)}
+              disabled={isUpdating}
             />
           </div>
         </CardHeader>
@@ -102,11 +143,12 @@ const RenovationSelector = ({
                 value={cost}
                 onChange={(e) => handleCostChange(type, Number(e.target.value))}
                 className="mt-1 h-8 text-xs sm:text-sm"
+                disabled={isUpdating}
               />
             </div>
 
             <div>
-              <Label htmlFor={`${type}-value`} className="text-xs">Value Add %</Label>
+              <Label htmlFor={`${type}-value`} className="text-xs">Value add %</Label>
               <div className="mt-2 px-2">
                 <Slider
                   value={[valueAddPercent]}
@@ -115,6 +157,7 @@ const RenovationSelector = ({
                   min={0}
                   step={0.5}
                   className="w-full"
+                  disabled={isUpdating}
                 />
               </div>
               <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -135,6 +178,9 @@ const RenovationSelector = ({
         <p className="text-xs text-gray-600 mb-2">
           Select the renovations you plan to complete and adjust costs and value-add estimates.
         </p>
+        {isUpdating && (
+          <p className="text-xs text-blue-600 mb-2">Saving changes...</p>
+        )}
       </div>
       <div className="grid grid-cols-1 gap-2 sm:gap-3">
         {getRenovationCard('add_bedroom', 'Add Bedroom', <Plus className="h-4 w-4 text-green-600" />, true)}
