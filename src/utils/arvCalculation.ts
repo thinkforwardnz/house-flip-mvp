@@ -3,10 +3,10 @@ import type { Deal } from '@/types/analysis';
 import type { RenovationSelections } from '@/types/renovation';
 
 export const calculateARV = (deal: Deal): number => {
-  // Get base market value from market analysis, fallback to target_sale_price or current_price
+  // Get base market value from market analysis, fallback to target_sale_price or purchase_price
   const baseMarketValue = deal.market_analysis?.analysis?.estimated_arv || 
                          deal.target_sale_price || 
-                         deal.current_price ||
+                         deal.purchase_price ||
                          0;
 
   console.log('calculateARV - baseMarketValue:', baseMarketValue);

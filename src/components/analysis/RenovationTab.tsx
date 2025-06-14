@@ -21,10 +21,10 @@ const RenovationTab = ({ deal, formatCurrency, renovationEstimate, onDealUpdate 
   const { updateDeal } = useDeals();
   const { toast } = useToast();
   
-  // Use market analysis for base value, fallback to target_sale_price or current_price
+  // Use market analysis for base value, fallback to target_sale_price or purchase_price
   const baseMarketValue = deal.market_analysis?.analysis?.estimated_arv || 
                          deal.target_sale_price || 
-                         deal.current_price ||
+                         deal.purchase_price ||
                          0;
                          
   const renovationSelections = (deal.renovation_selections as RenovationSelections) || {};
