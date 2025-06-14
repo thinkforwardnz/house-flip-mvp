@@ -27,6 +27,11 @@ const OverviewTab = ({ deal, formatCurrency }: OverviewTabProps) => {
     ? calculatedARV - deal.purchase_price - totalRenovationCost - (calculatedARV * 0.1)
     : (deal.current_profit || 0);
 
+  console.log('OverviewTab - deal:', deal.id);
+  console.log('OverviewTab - calculatedARV:', calculatedARV);
+  console.log('OverviewTab - selectedRenovationCost:', selectedRenovationCost);
+  console.log('OverviewTab - offerPrice:', offerPrice);
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

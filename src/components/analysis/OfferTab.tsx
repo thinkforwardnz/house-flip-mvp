@@ -21,6 +21,10 @@ const OfferTab = ({ deal, formatCurrency }: OfferTabProps) => {
     ? calculatedARV - totalRenovationCost - (calculatedARV * 0.1) - (calculatedARV * 0.15)
     : 0;
 
+  console.log('OfferTab - calculatedARV:', calculatedARV);
+  console.log('OfferTab - totalRenovationCost:', totalRenovationCost);
+  console.log('OfferTab - offerPrice:', offerPrice);
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-navy-dark">Offer Price Calculation</h3>

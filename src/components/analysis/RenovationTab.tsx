@@ -7,6 +7,8 @@ import type { Deal } from '@/types/analysis';
 import type { RenovationSelections } from '@/types/renovation';
 import RenovationSelector from './RenovationSelector';
 import { calculateTotalRenovationCost } from '@/utils/arvCalculation';
+import { useDeals } from '@/hooks/useDeals';
+import { useToast } from '@/hooks/use-toast';
 
 interface RenovationTabProps {
   deal: Deal;
@@ -16,14 +18,42 @@ interface RenovationTabProps {
 }
 
 const RenovationTab = ({ deal, formatCurrency, renovationEstimate, onDealUpdate }: RenovationTabProps) => {
-  const baseMarketValue = deal.market_analysis?.analysis?.estimated_arv || deal.target_sale_price || 0;
+  const { updateDeal } = useDeals();
+  const { toast } = useToast();
+  
+  // Use market analysis for base value, fallback to target_sale_price or current_price
+  const baseMarketValue = deal.market_analysis?.analysis?.estimated_arv || 
+                         deal.target_sale_price || 
+                         deal.current_price ||
+                         0;
+                         
   const renovationSelections = (deal.renovation_selections as RenovationSelections) || {};
   const totalSelectedCost = calculateTotalRenovationCost(renovationSelections);
 
-  const handleRenovationSelectionsChange = (selections: RenovationSelections) => {
-    onDealUpdate({
-      renovation_selections: selections
-    });
+  const handleRenovationSelectionsChange = async (selections: RenovationSelections) => {
+    console.log('Saving renovation selections:', selections);
+    
+    try {
+      // Update the deal in the database
+      await updateDeal({
+        id: deal.id,
+        renovation_selections: selections
+      });
+      
+      // Also update the local state
+      onDealUpdate({
+        renovation_selections: selections
+      });
+      
+      console.log('Renovation selections saved successfully');
+    } catch (error) {
+      console.error('Failed to save renovation selections:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save renovation selections. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
