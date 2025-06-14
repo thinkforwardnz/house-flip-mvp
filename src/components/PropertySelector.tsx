@@ -3,7 +3,7 @@ import { useDeals } from '@/hooks/useDeals';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Home, ArrowLeft } from 'lucide-react';
+import { ChevronDown, Home, ArrowLeft, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
@@ -67,7 +67,40 @@ const PropertySelector = ({
   return (
     <Card className="bg-white shadow-lg rounded-2xl border-0 mb-3 xs:mb-4 w-full">
       <CardContent className="p-2 xs:p-4">
-        <div className="flex flex-col gap-2 xs:gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* --- MOBILE LAYOUT --- */}
+        <div className="block sm:hidden relative">
+          {/* Status badge at top right */}
+          {currentDeal && (
+            <span
+              className={`absolute right-0 top-0 m-2 z-10 ${getStageColor(currentDeal.pipeline_stage)} rounded-lg text-xs px-2 py-1 font-semibold`}
+            >
+              {currentDeal.pipeline_stage}
+            </span>
+          )}
+          {/* Address/Title */}
+          <div className="mb-2 mt-6 pr-8">
+            <h2 className="text-lg font-bold text-navy-dark break-words">{currentDeal?.address || "No property selected"}</h2>
+            {currentDeal && (
+              <div className="text-sm text-navy">
+                {currentDeal.suburb}, {currentDeal.city}
+              </div>
+            )}
+          </div>
+          {/* View Analysis Button - if in detail page */}
+          {currentDeal && (
+            <Button
+              className="w-full mb-2 rounded-xl flex items-center justify-center font-semibold"
+              variant="outline"
+              onClick={() => navigate(`/analysis?dealId=${currentDeal.id}`)}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              View Analysis
+            </Button>
+          )}
+        </div>
+
+        {/* --- DESKTOP/TABLET LAYOUT (unchanged) --- */}
+        <div className="hidden sm:flex flex-col gap-2 xs:gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-1 xs:gap-2 sm:flex-row sm:items-center sm:gap-4 w-full">
             <Button variant="outline" size="sm" onClick={() => navigate('/')} className="rounded-xl w-full sm:w-auto mb-1 sm:mb-0">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -91,7 +124,6 @@ const PropertySelector = ({
               </div>
             </div>
           </div>
-
           {stageDeals.length > 1 && (
             <div className="flex justify-end sm:justify-start mt-1 sm:mt-0">
               <DropdownMenu>
@@ -132,6 +164,7 @@ const PropertySelector = ({
           )}
         </div>
 
+        {/* --- Info Section --- */}
         {currentDeal && (
           <div className="mt-2 xs:mt-3 pt-2 xs:pt-3 border-t border-gray-100">
             <div className="grid grid-cols-1 gap-2 xs:gap-3 md:grid-cols-4 md:gap-4 text-2xs xs:text-xs sm:text-sm">
