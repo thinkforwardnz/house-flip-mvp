@@ -39,7 +39,7 @@ const PropertyAnalysis = () => {
   }, [currentDeal?.id, updateDeal]);
   
   if (isLoading) {
-    return <div className="w-full max-w-sm sm:max-w-2xl lg:max-w-4xl mx-auto px-2 sm:px-4 space-y-3 sm:space-y-4">
+    return <div className="max-w-7xl mx-auto space-y-6">
         <div className="animate-pulse">
           <div className="h-6 sm:h-8 bg-gray-200 rounded w-2/3 mb-2 sm:mb-3"></div>
           <div className="h-20 sm:h-24 bg-gray-200 rounded mb-3 sm:mb-4"></div>
@@ -52,11 +52,11 @@ const PropertyAnalysis = () => {
       </div>;
   }
   
-  return <div className="w-full max-w-sm sm:max-w-2xl lg:max-w-4xl mx-auto px-2 sm:px-4 space-y-3 sm:space-y-4">
+  return <div className="max-w-7xl mx-auto space-y-6">
       {/* Page Header */}
-      <div className="mb-4 sm:mb-6">
-        <h1 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1 text-slate-700">Property Analysis</h1>
-        <p className="text-xs sm:text-sm text-slate-800">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-700 mb-2">Property Analysis</h1>
+        <p className="text-blue-100 text-lg">
           {dealId ? 'Detailed property analysis and financial modeling' : 'AI-powered analysis dashboard'}
         </p>
       </div>
