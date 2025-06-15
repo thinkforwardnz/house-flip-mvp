@@ -127,22 +127,22 @@ const RenovationSelector = ({
     setActivelyEditing(null); // Editing is finished on blur
 
     const rawValue = rawCostInputs[renovationType] ?? '';
-    const numericValue = rawValue === '' ? 0 : parseInt(rawValue, 10);
-    
-    // Format the input to a clean number
-    setRawCostInputs(prev => ({
-        ...prev,
-        [renovationType]: numericValue.toString()
-    }));
+    const numericValue = parseInt(rawValue, 10) || 0; // Gracefully handles empty/invalid strings
 
-    // Check if the value has changed and save
-    if (localSelections[renovationType]?.cost !== numericValue) {
-       const newSelections = {
+    // To prevent the flicker, we'll let the parent's state update drive the UI change
+    // via the useEffect hook. This creates a single data flow.
+    if (localSelections[renovationType]?.cost !== numericValue || rawCostInputs[renovationType] !== numericValue.toString()) {
+      const currentSelection = localSelections[renovationType];
+      const defaultOption = DEFAULT_RENOVATION_OPTIONS[renovationType];
+
+      const newSelections = {
         ...localSelections,
         [renovationType]: {
-          ...localSelections[renovationType]!,
-          cost: numericValue
-        }
+          selected: true,
+          cost: numericValue,
+          value_add_percent: currentSelection?.value_add_percent ?? defaultOption.value_add_percent,
+          description: currentSelection?.description ?? defaultOption.description,
+        },
       };
       setLocalSelections(newSelections);
       saveImmediately(newSelections);
