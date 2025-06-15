@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Wrench, Plus } from 'lucide-react';
 import type { RenovationSelections, RenovationOption } from '@/types/renovation';
 import { DEFAULT_RENOVATION_OPTIONS } from '@/types/renovation';
@@ -45,20 +46,33 @@ const RenovationSelector = ({
   // Sync local state with props only when not actively editing
   useEffect(() => {
     if (!activelyEditing) {
-      // Only sync if there's a meaningful difference
-      const hasChanges = Object.keys(renovationSelections).some(key => {
-        const current = localSelections[key];
-        const incoming = renovationSelections[key];
-        return JSON.stringify(current) !== JSON.stringify(incoming);
+      const hasMeaningfulChanges = Object.keys(renovationSelections).some(key => {
+        return JSON.stringify(localSelections[key]) !== JSON.stringify(renovationSelections[key]);
       });
-      
-      if (hasChanges) {
+
+      if (hasMeaningfulChanges) {
         setLocalSelections(renovationSelections);
+        
+        // Also sync the raw input values to match the incoming data
+        const newRawCosts: Record<string, string> = {};
+        Object.keys(renovationSelections).forEach(key => {
+          newRawCosts[key] = renovationSelections[key]?.cost.toString() ?? '';
+        });
+        setRawCostInputs(newRawCosts);
       }
     }
-  }, [renovationSelections, activelyEditing, localSelections]);
+  }, [renovationSelections, activelyEditing]);
 
-  // Debounced save function with proper cleanup
+  const saveImmediately = useCallback((selections: RenovationSelections) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    setIsUpdating(true);
+    onRenovationChange(selections);
+    setTimeout(() => setIsUpdating(false), 400); // Give a bit of time for UI to feel responsive
+  }, [onRenovationChange, timeoutRef]);
+
+  // Debounced save function for cost and slider inputs
   const debouncedSave = useMemo(() => {
     return (selections: RenovationSelections) => {
       if (timeoutRef.current) {
@@ -66,15 +80,10 @@ const RenovationSelector = ({
       }
       
       timeoutRef.current = setTimeout(() => {
-        setIsUpdating(true);
-        onRenovationChange(selections);
-        setTimeout(() => {
-          setIsUpdating(false);
-          setActivelyEditing(null);
-        }, 300);
-      }, 500);
+        saveImmediately(selections);
+      }, 700); // Increased debounce time
     };
-  }, [onRenovationChange]);
+  }, [saveImmediately]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -100,22 +109,16 @@ const RenovationSelector = ({
     };
     
     setLocalSelections(newSelections);
-    // Immediate save for toggle changes
-    setIsUpdating(true);
-    onRenovationChange(newSelections);
-    setTimeout(() => setIsUpdating(false), 300);
+    saveImmediately(newSelections);
   };
 
   const handleCostChange = (renovationType: string, value: string) => {
     setActivelyEditing(renovationType);
     
-    // Allow only numeric characters for cost
     const numericValue = value.replace(/[^0-9]/g, '');
     
-    // Update raw string state for immediate input feedback
     setRawCostInputs(prev => ({ ...prev, [renovationType]: numericValue }));
 
-    // Parse to number for calculations and saving
     const cost = numericValue === '' ? 0 : parseInt(numericValue, 10);
     
     const newSelections = {
@@ -131,18 +134,32 @@ const RenovationSelector = ({
   };
 
   const handleCostBlur = (renovationType: string) => {
-    const rawValue = rawCostInputs[renovationType] ?? '0';
-    const numericValue = parseInt(rawValue, 10) || 0;
+    setActivelyEditing(null); // Editing is finished on blur
+
+    const rawValue = rawCostInputs[renovationType] ?? '';
+    const numericValue = rawValue === '' ? 0 : parseInt(rawValue, 10);
     
-    // Clean up the input field to show the formatted number
+    // Format the input to a clean number
     setRawCostInputs(prev => ({
         ...prev,
         [renovationType]: numericValue.toString()
     }));
+
+    // Check if the value has changed and save
+    if (localSelections[renovationType]?.cost !== numericValue) {
+       const newSelections = {
+        ...localSelections,
+        [renovationType]: {
+          ...localSelections[renovationType]!,
+          cost: numericValue
+        }
+      };
+      setLocalSelections(newSelections);
+      saveImmediately(newSelections);
+    }
   };
 
   const handleSliderChange = (renovationType: string, valueAddPercent: number) => {
-    // Set actively editing to prevent prop sync from overwriting slider value during drag
     setActivelyEditing(renovationType);
     const newSelections = {
       ...localSelections,
@@ -156,7 +173,8 @@ const RenovationSelector = ({
   };
 
   const handleSliderCommit = (renovationType: string, valueAddPercent: number) => {
-    // Only trigger save when user releases the slider
+    setActivelyEditing(null); // Editing is finished on commit
+    
     const newSelections = {
       ...localSelections,
       [renovationType]: {
@@ -165,8 +183,8 @@ const RenovationSelector = ({
       }
     };
     
-    setLocalSelections(newSelections); // Ensure final value is set
-    debouncedSave(newSelections);
+    setLocalSelections(newSelections);
+    saveImmediately(newSelections);
   };
 
   return (
@@ -177,7 +195,7 @@ const RenovationSelector = ({
           Select the renovations you plan to complete and adjust costs and value-add estimates.
         </p>
         {isUpdating && (
-          <p className="text-xs text-blue-600 mb-2">Saving changes...</p>
+          <p className="text-xs text-blue-600 mb-2 animate-pulse">Saving changes...</p>
         )}
       </div>
       <div className="grid grid-cols-1 gap-2 sm:gap-3">
