@@ -1,17 +1,11 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Loader2, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-interface SourceProgress {
-  name: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  scraped?: number;
-  skipped?: number;
-  error?: string;
-}
+import { SourceProgress } from '@/hooks/useEnhancedScraping';
 
 interface ScrapingProgressProps {
   isActive: boolean;
