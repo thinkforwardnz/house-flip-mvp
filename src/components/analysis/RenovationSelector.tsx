@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -25,6 +24,14 @@ const RenovationSelector = ({
   
   // Local state to track user input
   const [localSelections, setLocalSelections] = useState<RenovationSelections>(renovationSelections);
+  const [rawCostInputs, setRawCostInputs] = useState<Record<string, string>>(() => {
+    const initialRaws: Record<string, string> = {};
+    Object.keys(DEFAULT_RENOVATION_OPTIONS).forEach(key => {
+      const selection = renovationSelections[key];
+      initialRaws[key] = selection?.cost?.toString() ?? DEFAULT_RENOVATION_OPTIONS[key].cost.toString();
+    });
+    return initialRaws;
+  });
   const [isUpdating, setIsUpdating] = useState(false);
   const [activelyEditing, setActivelyEditing] = useState<string | null>(null);
   
@@ -97,7 +104,15 @@ const RenovationSelector = ({
 
   const handleCostChange = (renovationType: string, value: string) => {
     setActivelyEditing(renovationType);
-    const cost = value === '' ? 0 : Number(value);
+    
+    // Allow only numeric characters for cost
+    const numericValue = value.replace(/[^0-9]/g, '');
+    
+    // Update raw string state for immediate input feedback
+    setRawCostInputs(prev => ({ ...prev, [renovationType]: numericValue }));
+
+    // Parse to number for calculations and saving
+    const cost = numericValue === '' ? 0 : parseInt(numericValue, 10);
     
     const newSelections = {
       ...localSelections,
@@ -111,8 +126,20 @@ const RenovationSelector = ({
     debouncedSave(newSelections);
   };
 
+  const handleCostBlur = (renovationType: string) => {
+    const rawValue = rawCostInputs[renovationType] ?? '0';
+    const numericValue = parseInt(rawValue, 10) || 0;
+    
+    // Clean up the input field to show the formatted number
+    setRawCostInputs(prev => ({
+        ...prev,
+        [renovationType]: numericValue.toString()
+    }));
+  };
+
   const handleSliderChange = (renovationType: string, valueAddPercent: number) => {
-    // For immediate visual feedback during dragging
+    // Set actively editing to prevent prop sync from overwriting slider value during drag
+    setActivelyEditing(renovationType);
     const newSelections = {
       ...localSelections,
       [renovationType]: {
@@ -126,7 +153,6 @@ const RenovationSelector = ({
 
   const handleSliderCommit = (renovationType: string, valueAddPercent: number) => {
     // Only trigger save when user releases the slider
-    setActivelyEditing(renovationType);
     const newSelections = {
       ...localSelections,
       [renovationType]: {
@@ -135,7 +161,7 @@ const RenovationSelector = ({
       }
     };
     
-    setLocalSelections(newSelections);
+    setLocalSelections(newSelections); // Ensure final value is set
     debouncedSave(newSelections);
   };
 
@@ -177,10 +203,12 @@ const RenovationSelector = ({
               <Label htmlFor={`${type}-cost`} className="text-xs">Cost</Label>
               <Input
                 id={`${type}-cost`}
-                type="number"
-                value={cost}
+                type="text"
+                value={rawCostInputs[type] ?? ''}
                 onChange={(e) => handleCostChange(type, e.target.value)}
                 onFocus={() => setActivelyEditing(type)}
+                onBlur={() => handleCostBlur(type)}
+                placeholder="Enter cost"
                 className="mt-1 h-8 text-xs sm:text-sm"
                 disabled={isUpdating}
               />
