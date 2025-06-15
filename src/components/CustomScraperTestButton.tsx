@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, TestTube, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useScraperEndpoint } from '@/hooks/useScraperEndpoint';
+import { useApiConfig } from '@/hooks/useApiConfig';
 
 const CustomScraperTestButton = () => {
   const [isTestingSearch, setIsTestingSearch] = useState(false);
@@ -17,7 +17,7 @@ const CustomScraperTestButton = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [propertyResult, setPropertyResult] = useState<any>(null);
   const { toast } = useToast();
-  const { endpoint } = useScraperEndpoint();
+  const { value: endpoint, isLoading: isEndpointLoading } = useApiConfig('trademe_endpoint');
 
   const testSearchScraping = async () => {
     setIsTestingSearch(true);
@@ -58,6 +58,16 @@ const CustomScraperTestButton = () => {
   const testPropertyScraping = async () => {
     setIsTestingProperty(true);
     setPropertyResult(null);
+
+    if (!endpoint) {
+      toast({
+        title: "Endpoint not configured",
+        description: "Please set the TradeMe Custom Scraper endpoint in Settings > API Keys.",
+        variant: "destructive",
+      });
+      setIsTestingProperty(false);
+      return;
+    }
     
     try {
       // Extract property ID from URL
@@ -163,7 +173,7 @@ const CustomScraperTestButton = () => {
             />
             <Button
               onClick={testPropertyScraping}
-              disabled={isTestingProperty || !propertyUrl}
+              disabled={isTestingProperty || !propertyUrl || isEndpointLoading || !endpoint}
               variant="outline"
             >
               {isTestingProperty && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -198,7 +208,7 @@ const CustomScraperTestButton = () => {
 
         <div className="text-xs text-gray-500 flex items-center gap-1">
           <ExternalLink className="h-3 w-3" />
-          Current endpoint: {endpoint}
+          Current endpoint: {isEndpointLoading ? 'Loading...' : (endpoint || 'Not configured')}
         </div>
       </CardContent>
     </Card>
