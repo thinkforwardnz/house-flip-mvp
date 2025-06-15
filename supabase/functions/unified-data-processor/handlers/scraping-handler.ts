@@ -18,6 +18,11 @@ export async function handleScraping(request: ProcessingRequest): Promise<Respon
   const errors: string[] = [];
   const searchUrls: string[] = [];
 
+  // Extract and process keywords for tagging
+  const searchKeywords = filters.keywords ? 
+    filters.keywords.split(',').map((keyword: string) => keyword.trim().toLowerCase()).filter((keyword: string) => keyword.length > 0) : 
+    [];
+
   // Process TradeMe scraping
   if (sources.includes('trademe')) {
     try {
@@ -38,6 +43,7 @@ export async function handleScraping(request: ProcessingRequest): Promise<Respon
       
       if (searchResults?.data?.properties && Array.isArray(searchResults.data.properties)) {
         console.log(`Found ${searchResults.data.properties.length} properties to process`);
+        console.log(`Search keywords for tagging: [${searchKeywords.join(', ')}]`);
         
         // Process ALL properties, not just first 50
         for (let i = 0; i < searchResults.data.properties.length; i++) {
@@ -49,10 +55,10 @@ export async function handleScraping(request: ProcessingRequest): Promise<Respon
           });
           
           try {
-            const result = await processAndSaveBasicProperty(property, 'Trade Me');
+            const result = await processAndSaveBasicProperty(property, 'Trade Me', searchKeywords);
             if (result.success) {
               totalScraped++;
-              console.log(`✅ Property ${i + 1} processed successfully`);
+              console.log(`✅ Property ${i + 1} processed successfully with keywords: [${searchKeywords.join(', ')}]`);
             } else {
               totalSkipped++;
               if (result.error) {
@@ -105,7 +111,7 @@ export async function handleScraping(request: ProcessingRequest): Promise<Respon
 
   const success = totalScraped > 0 || errors.length === 0;
   const message = success 
-    ? `Search complete: ${totalScraped} properties found and saved to feed`
+    ? `Search complete: ${totalScraped} properties found and saved to feed${searchKeywords.length > 0 ? ` with keywords: [${searchKeywords.join(', ')}]` : ''}`
     : `Search failed: ${errors.join(', ')}`;
 
   return new Response(JSON.stringify({
@@ -118,6 +124,7 @@ export async function handleScraping(request: ProcessingRequest): Promise<Respon
     debug: {
       filtersReceived: filters,
       sourcesRequested: sources,
+      searchKeywords: searchKeywords,
       timestamp: new Date().toISOString()
     }
   }), {

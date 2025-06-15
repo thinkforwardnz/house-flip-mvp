@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useProspectingProperties } from '@/hooks/useUnifiedProperties';
 import { useEnhancedScraping } from '@/hooks/useEnhancedScraping';
 import { useRefreshFeed } from '@/hooks/useRefreshFeed';
@@ -11,6 +11,7 @@ import PropertyFeedHeader from '@/components/PropertyFeed/PropertyFeedHeader';
 import PropertyFeedGrid from '@/components/PropertyFeed/PropertyFeedGrid';
 import PropertyFeedEmpty from '@/components/PropertyFeed/PropertyFeedEmpty';
 import PropertyFeedLoading from '@/components/PropertyFeed/PropertyFeedLoading';
+import KeywordTagFilter from '@/components/KeywordTagFilter';
 import { usePropertyFeedActions } from '@/components/PropertyFeed/PropertyFeedActions';
 
 interface PropertyFeedProps {
@@ -19,6 +20,8 @@ interface PropertyFeedProps {
 }
 
 const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
+  const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+
   const {
     properties,
     isLoading,
@@ -65,6 +68,18 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
     }
   };
 
+  const handleKeywordToggle = (keyword: string) => {
+    setSelectedKeywords(prev => 
+      prev.includes(keyword) 
+        ? prev.filter(k => k !== keyword)
+        : [...prev, keyword]
+    );
+  };
+
+  const handleClearAllKeywords = () => {
+    setSelectedKeywords([]);
+  };
+
   if (error) {
     toast({
       title: 'Error loading properties',
@@ -79,9 +94,16 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
   }
 
   // Filter out dismissed and imported properties from display
-  const visibleProperties = properties.filter(property => 
+  let visibleProperties = properties.filter(property => 
     !property.tags.includes('dismissed') && !property.tags.includes('deal')
   );
+
+  // Apply keyword filtering if any keywords are selected
+  if (selectedKeywords.length > 0) {
+    visibleProperties = visibleProperties.filter(property =>
+      selectedKeywords.some(keyword => property.tags.includes(keyword))
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -124,6 +146,15 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
             isRefreshing={isRefreshing}
             isScrapingActive={isScrapingActive}
             onRefreshFeed={handleRefreshFeed}
+          />
+          
+          <KeywordTagFilter
+            properties={properties.filter(property => 
+              !property.tags.includes('dismissed') && !property.tags.includes('deal')
+            )}
+            selectedKeywords={selectedKeywords}
+            onKeywordToggle={handleKeywordToggle}
+            onClearAll={handleClearAllKeywords}
           />
           
           {visibleProperties.length === 0 ? (

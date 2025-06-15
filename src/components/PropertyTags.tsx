@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Tag } from 'lucide-react';
 import { UnifiedProperty } from '@/hooks/useUnifiedProperties';
 
 interface PropertyTagsProps {
@@ -41,6 +41,13 @@ const PropertyTags = ({
   };
 
   const getTagColor = (tag: string) => {
+    const systemTags = ['prospecting', 'deal', 'analysis', 'offer', 'under_contract', 'renovation', 'listed', 'sold'];
+    
+    // Check if it's a keyword tag (not a system tag)
+    if (!systemTags.includes(tag) && !['saved', 'dismissed', 'recent_sale', 'linz_enriched', 'council_enriched', 'market_analyzed'].includes(tag)) {
+      return 'bg-orange-100 text-orange-800 border-orange-200';
+    }
+    
     switch (tag) {
       case 'prospecting':
         return 'bg-blue-100 text-blue-800 border-blue-200';
@@ -80,6 +87,12 @@ const PropertyTags = ({
     return systemTags.includes(tag);
   };
 
+  const isKeywordTag = (tag: string) => {
+    const systemTags = ['prospecting', 'deal', 'analysis', 'offer', 'under_contract', 'renovation', 'listed', 'sold'];
+    const otherTags = ['saved', 'dismissed', 'recent_sale', 'linz_enriched', 'council_enriched', 'market_analyzed'];
+    return !systemTags.includes(tag) && !otherTags.includes(tag);
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
@@ -88,6 +101,7 @@ const PropertyTags = ({
             key={tag} 
             className={`${getTagColor(tag)} flex items-center gap-1 text-xs`}
           >
+            {isKeywordTag(tag) && <Tag className="h-3 w-3" />}
             {tag.replace('_', ' ')}
             {!isSystemTag(tag) && (
               <button

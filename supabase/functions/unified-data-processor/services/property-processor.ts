@@ -8,7 +8,11 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-export async function processAndSaveBasicProperty(property: any, sourceSite: string): Promise<PropertyProcessingResult> {
+export async function processAndSaveBasicProperty(
+  property: any, 
+  sourceSite: string, 
+  searchKeywords: string[] = []
+): Promise<PropertyProcessingResult> {
   try {
     const addressParts = parseAddress(property.address);
     const fullUrl = property.url.startsWith('http') 
@@ -26,6 +30,20 @@ export async function processAndSaveBasicProperty(property: any, sourceSite: str
       return { success: false, error: 'Property already exists' };
     }
 
+    // Build tags array - start with prospecting, add search keywords
+    const tags = ['prospecting'];
+    
+    // Add search keywords as tags if they exist
+    if (searchKeywords && searchKeywords.length > 0) {
+      // Clean and normalize keywords, avoid duplicates
+      const cleanKeywords = searchKeywords
+        .map(keyword => keyword.toLowerCase().trim())
+        .filter(keyword => keyword.length > 0 && !tags.includes(keyword));
+      
+      tags.push(...cleanKeywords);
+      console.log(`Adding keyword tags: [${cleanKeywords.join(', ')}] to property: ${property.address}`);
+    }
+
     // Insert new property with BASIC information only
     const { data: newProperty, error } = await supabase
       .from('unified_properties')
@@ -41,7 +59,7 @@ export async function processAndSaveBasicProperty(property: any, sourceSite: str
         bathrooms: getPropertyFeatureValue(property.property_features, 'bathroom') ? parseInt(getPropertyFeatureValue(property.property_features, 'bathroom')) : null,
         photos: property.main_img ? [property.main_img] : null,
         date_scraped: new Date().toISOString(),
-        tags: ['prospecting'], // Only prospecting tag, no enrichment yet
+        tags: tags, // Use the tags array with keywords
         status: 'active'
       })
       .select()
@@ -52,7 +70,7 @@ export async function processAndSaveBasicProperty(property: any, sourceSite: str
       return { success: false, error: error.message };
     }
 
-    console.log(`Saved basic property data: ${property.address}`);
+    console.log(`Saved basic property data: ${property.address} with tags: [${tags.join(', ')}]`);
     return { success: true, propertyId: newProperty.id };
   } catch (error) {
     console.error('Error processing property:', error);
