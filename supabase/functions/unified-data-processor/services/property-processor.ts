@@ -1,6 +1,6 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
-import { parseAddress, parsePrice, getPropertyFeatureValue } from '../utils/helpers.ts';
+import { parseAddress, parsePrice, getPropertyFeatureValue, parseLocationFromTradeMeUrl } from '../utils/helpers.ts';
 import { PropertyProcessingResult } from '../types/processor-types.ts';
 
 const supabase = createClient(
@@ -14,10 +14,27 @@ export async function processAndSaveBasicProperty(
   searchKeywords: string[] = []
 ): Promise<PropertyProcessingResult> {
   try {
-    const addressParts = parseAddress(property.address);
     const fullUrl = property.url.startsWith('http') 
       ? property.url 
       : `https://www.trademe.co.nz/a/${property.url}`;
+
+    // Parse location from TradeMe URL first (most accurate)
+    let locationInfo = { suburb: null, city: null, district: null };
+    if (sourceSite === 'Trade Me' && fullUrl.includes('trademe.co.nz')) {
+      locationInfo = parseLocationFromTradeMeUrl(fullUrl);
+      console.log(`Parsed location from URL ${fullUrl}:`, locationInfo);
+    }
+
+    // Fallback to parsing from address if URL parsing fails
+    if (!locationInfo.suburb && !locationInfo.city) {
+      const addressParts = parseAddress(property.address);
+      locationInfo = {
+        suburb: addressParts.suburb,
+        city: addressParts.city || 'Wellington',
+        district: addressParts.district
+      };
+      console.log(`Fallback to address parsing for ${property.address}:`, locationInfo);
+    }
 
     // Check if property already exists
     const { data: existing } = await supabase
@@ -51,9 +68,9 @@ export async function processAndSaveBasicProperty(
         source_url: fullUrl,
         source_site: sourceSite,
         address: property.address,
-        suburb: addressParts.suburb,
-        city: addressParts.city || 'Wellington',
-        district: addressParts.district,
+        suburb: locationInfo.suburb,
+        city: locationInfo.city,
+        district: locationInfo.district,
         current_price: parsePrice(property.price),
         bedrooms: getPropertyFeatureValue(property.property_features, 'bedroom') ? parseInt(getPropertyFeatureValue(property.property_features, 'bedroom')) : null,
         bathrooms: getPropertyFeatureValue(property.property_features, 'bathroom') ? parseInt(getPropertyFeatureValue(property.property_features, 'bathroom')) : null,
@@ -70,7 +87,7 @@ export async function processAndSaveBasicProperty(
       return { success: false, error: error.message };
     }
 
-    console.log(`Saved basic property data: ${property.address} with tags: [${tags.join(', ')}]`);
+    console.log(`Saved property: ${property.address} with location: ${locationInfo.suburb}, ${locationInfo.city} and tags: [${tags.join(', ')}]`);
     return { success: true, propertyId: newProperty.id };
   } catch (error) {
     console.error('Error processing property:', error);

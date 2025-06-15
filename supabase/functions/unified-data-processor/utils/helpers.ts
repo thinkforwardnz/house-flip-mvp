@@ -64,6 +64,87 @@ const districtMappings: { [key: string]: string } = {
   'Auckland Council': 'auckland'
 };
 
+// Reverse mappings for URL parsing
+const urlToRegionMappings: { [key: string]: string } = Object.fromEntries(
+  Object.entries(regionMappings).map(([key, value]) => [value, key])
+);
+
+const urlToDistrictMappings: { [key: string]: string } = {
+  // Wellington districts
+  'wellington-city': 'Wellington City',
+  'hutt-city': 'Lower Hutt City',
+  'lower-hutt': 'Lower Hutt City',
+  'upper-hutt-city': 'Upper Hutt City',
+  'upper-hutt': 'Upper Hutt City',
+  'porirua-city': 'Porirua City',
+  'porirua': 'Porirua City',
+  'kapiti-coast': 'Kapiti Coast District',
+  'south-wairarapa': 'South Wairarapa District',
+  'carterton': 'Carterton District',
+  'masterton': 'Masterton District',
+  
+  // Canterbury districts
+  'christchurch-city': 'Christchurch City',
+  'christchurch': 'Christchurch City',
+  'selwyn': 'Selwyn District',
+  'waimakariri': 'Waimakariri District',
+  'ashburton': 'Ashburton District',
+  'timaru': 'Timaru District',
+  'mackenzie': 'Mackenzie District',
+  'waimate': 'Waimate District',
+  'hurunui': 'Hurunui District',
+  'kaikoura': 'Kaikoura District',
+  
+  // Auckland districts
+  'auckland': 'Auckland Council'
+};
+
+export function parseLocationFromTradeMeUrl(url: string): { suburb: string | null; city: string | null; district: string | null } {
+  try {
+    console.log('Parsing TradeMe URL:', url);
+    
+    // Extract the path from URL
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/').filter(part => part.length > 0);
+    
+    // TradeMe URL structure: /a/property/residential/sale/[region]/[district]/[suburb]/listing/[id]
+    // Find the index of 'sale' to know where location data starts
+    const saleIndex = pathParts.indexOf('sale');
+    if (saleIndex === -1 || pathParts.length < saleIndex + 4) {
+      console.log('URL does not contain expected structure');
+      return { suburb: null, city: null, district: null };
+    }
+    
+    const regionSlug = pathParts[saleIndex + 1];
+    const districtSlug = pathParts[saleIndex + 2];
+    const suburbSlug = pathParts[saleIndex + 3];
+    
+    console.log('URL segments:', { regionSlug, districtSlug, suburbSlug });
+    
+    // Convert URL slugs back to proper names
+    const region = urlToRegionMappings[regionSlug] || null;
+    const district = urlToDistrictMappings[districtSlug] || null;
+    
+    // Convert suburb slug to proper name (capitalize and replace hyphens with spaces)
+    const suburb = suburbSlug 
+      ? suburbSlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+      : null;
+    
+    const result = {
+      suburb: suburb,
+      city: region, // In NZ, the region is often the main city
+      district: district
+    };
+    
+    console.log('Parsed location result:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('Error parsing TradeMe URL:', error);
+    return { suburb: null, city: null, district: null };
+  }
+}
+
 export function buildTradeeMeSearchUrl(filters: ScrapingFilters): string {
   console.log('Building URL with filters:', JSON.stringify(filters, null, 2));
   
