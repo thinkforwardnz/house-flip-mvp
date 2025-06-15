@@ -21,13 +21,13 @@ const ApiConfigurationManager = () => {
   const loadConfigs = useCallback(async () => {
     setIsLoading(true);
     try {
-      // NOTE: This assumes `get-scraper-config` is updated to return all configs.
       const { data, error } = await supabase.functions.invoke('get-scraper-config');
       if (error) throw error;
       
       const loadedConfigs = { ...data };
       setConfigs(loadedConfigs);
       setInitialConfigs(loadedConfigs);
+      
       // Initialize test statuses
       const initialStatuses: Record<string, TestStatus> = {};
       allConfigKeys.forEach(key => {
@@ -64,9 +64,8 @@ const ApiConfigurationManager = () => {
     }
     setTestStatuses(prev => ({ ...prev, [id]: 'testing' }));
 
-    // Re-use existing test logic for trademe scraper
-    if (id === 'trademe_endpoint') {
-      try {
+    try {
+      if (id === 'trademe_endpoint') {
         const testUrl = 'https://www.trademe.co.nz/a/property/residential/sale/wellington';
         const response = await fetch(`${value}/scrape-search-results`, {
           method: 'POST',
@@ -80,25 +79,47 @@ const ApiConfigurationManager = () => {
         } else {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-      } catch (error) {
-        console.error('Endpoint test failed:', error);
-        setTestStatuses(prev => ({ ...prev, [id]: 'failed' }));
-        toast({
-          title: "Endpoint Test Failed",
-          description: error instanceof Error ? error.message : 'Unknown error occurred',
-          variant: "destructive",
+      } else if (id === 'openai_api_key') {
+        // Test OpenAI API key
+        const response = await fetch('https://api.openai.com/v1/models', {
+          headers: { 'Authorization': `Bearer ${value}` }
         });
-      }
-    } else {
-      // Placeholder for other API tests
-      // In a real implementation, you would invoke a Supabase function here.
-      setTimeout(() => {
-        toast({
+        
+        if (response.ok) {
+          setTestStatuses(prev => ({ ...prev, [id]: 'success' }));
+          toast({ title: "Test Successful", description: "OpenAI API key is valid." });
+        } else {
+          throw new Error('Invalid OpenAI API key');
+        }
+      } else if (id === 'google_maps_api_key') {
+        // Test Google Maps API key
+        const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=Auckland&key=${value}`);
+        const data = await response.json();
+        
+        if (data.status === 'OK') {
+          setTestStatuses(prev => ({ ...prev, [id]: 'success' }));
+          toast({ title: "Test Successful", description: "Google Maps API key is valid." });
+        } else {
+          throw new Error(data.error_message || 'Invalid Google Maps API key');
+        }
+      } else {
+        // For other API keys, show a message that testing is not implemented
+        setTimeout(() => {
+          toast({
             title: "Test Not Implemented",
             description: `Testing for ${id} is not yet configured.`,
-        });
-        setTestStatuses(prev => ({ ...prev, [id]: 'untested' }));
-      }, 1000);
+          });
+          setTestStatuses(prev => ({ ...prev, [id]: 'untested' }));
+        }, 1000);
+      }
+    } catch (error) {
+      console.error(`${id} test failed:`, error);
+      setTestStatuses(prev => ({ ...prev, [id]: 'failed' }));
+      toast({
+        title: "Test Failed",
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: "destructive",
+      });
     }
   };
   
@@ -108,7 +129,7 @@ const ApiConfigurationManager = () => {
       const changedConfigs: Record<string, string> = {};
       allConfigKeys.forEach(key => {
         if (configs[key] !== initialConfigs[key]) {
-          changedConfigs[key] = configs[key];
+          changedConfigs[key] = configs[key] || '';
         }
       });
       
@@ -117,7 +138,6 @@ const ApiConfigurationManager = () => {
         return;
       }
 
-      // NOTE: This assumes `update-scraper-config` is updated to accept multiple keys.
       const { error } = await supabase.functions.invoke('update-scraper-config', {
         body: changedConfigs
       });

@@ -15,34 +15,32 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Query the scraper_config table for the trademe_endpoint
+    // Query all scraper configurations
     const { data, error } = await supabase
       .from('scraper_config')
-      .select('config_value')
-      .eq('config_key', 'trademe_endpoint')
-      .single();
+      .select('config_key, config_value');
 
     if (error) {
       console.error('Database query error:', error);
-      // Fall back to default endpoint if database query fails
-      return new Response(JSON.stringify({
-        endpoint: 'https://4419-222-154-21-216.ngrok-free.app'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      throw error;
+    }
+
+    // Convert array to object for easier frontend consumption
+    const configs: Record<string, string> = {};
+    if (data) {
+      data.forEach(config => {
+        configs[config.config_key] = config.config_value;
       });
     }
 
-    return new Response(JSON.stringify({
-      endpoint: data.config_value
-    }), {
+    return new Response(JSON.stringify(configs), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
     console.error('Get scraper config error:', error);
     return new Response(JSON.stringify({
-      endpoint: 'https://4419-222-154-21-216.ngrok-free.app',
-      error: 'Failed to get scraper configuration, using default'
+      error: 'Failed to get scraper configuration'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

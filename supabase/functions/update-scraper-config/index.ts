@@ -9,62 +9,41 @@ serve(async (req) => {
   }
 
   try {
-    const { endpoint } = await req.json();
-    
-    if (!endpoint || typeof endpoint !== 'string') {
-      return new Response(JSON.stringify({
-        error: 'Valid endpoint URL is required'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Validate URL format
-    try {
-      new URL(endpoint);
-    } catch {
-      return new Response(JSON.stringify({
-        error: 'Invalid URL format'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Initialize Supabase client with service role key for database access
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Update the endpoint in the database using upsert
-    const { error } = await supabase
-      .from('scraper_config')
-      .upsert({
-        config_key: 'trademe_endpoint',
-        config_value: endpoint,
-        description: 'Base URL for the TradeMe scraper service'
-      }, {
-        onConflict: 'config_key'
-      });
+    const body = await req.json();
+    
+    // Handle both single key updates and bulk updates
+    if (typeof body === 'object' && body !== null) {
+      const updates = Object.entries(body);
+      
+      for (const [configKey, configValue] of updates) {
+        if (typeof configValue === 'string') {
+          // Use upsert to insert or update the configuration
+          const { error } = await supabase
+            .from('scraper_config')
+            .upsert({
+              config_key: configKey,
+              config_value: configValue,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'config_key'
+            });
 
-    if (error) {
-      console.error('Database update error:', error);
-      return new Response(JSON.stringify({
-        error: 'Failed to update scraper configuration in database'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+          if (error) {
+            console.error(`Error updating config ${configKey}:`, error);
+            throw error;
+          }
+        }
+      }
     }
 
-    console.log('Scraper endpoint updated successfully in database:', endpoint);
-    
-    return new Response(JSON.stringify({
+    return new Response(JSON.stringify({ 
       success: true,
-      message: 'Endpoint configuration updated successfully',
-      endpoint
+      message: 'Configuration updated successfully' 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
@@ -72,7 +51,8 @@ serve(async (req) => {
   } catch (error) {
     console.error('Update scraper config error:', error);
     return new Response(JSON.stringify({
-      error: 'Failed to update scraper configuration'
+      error: 'Failed to update scraper configuration',
+      details: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
