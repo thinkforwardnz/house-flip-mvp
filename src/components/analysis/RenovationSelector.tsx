@@ -120,19 +120,7 @@ const RenovationSelector = ({
     const numericValue = value.replace(/[^0-9]/g, '');
     
     setRawCostInputs(prev => ({ ...prev, [renovationType]: numericValue }));
-
-    const cost = numericValue === '' ? 0 : parseInt(numericValue, 10);
-    
-    const newSelections = {
-      ...localSelections,
-      [renovationType]: {
-        ...localSelections[renovationType]!,
-        cost
-      }
-    };
-    
-    setLocalSelections(newSelections);
-    debouncedSave(newSelections);
+    // We no longer save on every change, only on blur.
   };
 
   const handleCostBlur = (renovationType: string) => {
@@ -172,6 +160,7 @@ const RenovationSelector = ({
     };
     
     setLocalSelections(newSelections);
+    // We no longer save on slider change, only on commit.
   };
 
   const handleSliderCommit = (renovationType: string, valueAddPercent: number) => {
