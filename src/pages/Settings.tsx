@@ -8,7 +8,7 @@ import NotificationSettings from '@/components/NotificationSettings';
 import PreferenceSettings from '@/components/PreferenceSettings';
 import TeamManagement from '@/components/TeamManagement';
 import ActivityLog from '@/components/ActivityLog';
-import ScraperEndpointSettings from '@/components/ScraperEndpointSettings';
+import ApiConfigurationManager from '@/components/ApiConfigurationManager';
 
 const Settings = () => {
   return (
@@ -38,7 +38,7 @@ const Settings = () => {
               </TabsTrigger>
               <TabsTrigger value="endpoints" className="flex items-center gap-2 rounded-xl">
                 <Globe className="h-4 w-4" />
-                <span className="hidden sm:inline">Endpoints</span>
+                <span className="hidden sm:inline">API Keys</span>
               </TabsTrigger>
               <TabsTrigger value="team" className="flex items-center gap-2 rounded-xl">
                 <Users className="h-4 w-4" />
@@ -63,7 +63,7 @@ const Settings = () => {
             </TabsContent>
 
             <TabsContent value="endpoints">
-              <ScraperEndpointSettings />
+              <ApiConfigurationManager />
             </TabsContent>
 
             <TabsContent value="team">
