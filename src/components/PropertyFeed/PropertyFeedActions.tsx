@@ -1,8 +1,9 @@
-
 import React from 'react';
 import { UnifiedProperty } from '@/hooks/useUnifiedProperties';
 import { useToast } from '@/hooks/use-toast';
 import { usePropertyEnrichment } from '@/hooks/usePropertyEnrichment';
+import { useCreateDeal } from '@/hooks/mutations/useCreateDeal';
+import { useNavigate } from 'react-router-dom';
 
 interface PropertyFeedActionsProps {
   addTag: (params: { propertyId: string; tag: string }) => void;
@@ -10,45 +11,59 @@ interface PropertyFeedActionsProps {
   onSwitchToSavedTab?: () => void;
 }
 
-export const usePropertyFeedActions = ({ addTag, removeTag, onSwitchToSavedTab }: PropertyFeedActionsProps) => {
+export const usePropertyFeedActions = ({ addTag, removeTag }: PropertyFeedActionsProps) => {
   const { toast } = useToast();
   const { enrichProperty } = usePropertyEnrichment();
+  const { createDealAsync } = useCreateDeal();
+  const navigate = useNavigate();
 
   const handleImportAsDeal = async (property: UnifiedProperty) => {
     try {
-      // First enrich the property with detailed data
+      // First, attempt to enrich the property with detailed data
       console.log('Starting property enrichment for analysis...');
       const enrichmentResult = await enrichProperty(property.id);
       
+      // Regardless of enrichment, create the deal
+      console.log(`Creating deal for property ${property.id}...`);
+      const newDeal = await createDealAsync({
+        propertyId: property.id,
+        pipeline_stage: 'Analysis',
+        purchase_price: property.current_price || 0,
+        target_sale_price: property.ai_arv || 0,
+        estimated_renovation_cost: property.ai_reno_cost || 0,
+        current_profit: property.ai_est_profit || 0,
+        current_risk: 'medium',
+        notes: `Deal created from property feed for: ${property.address}.`,
+      });
+
+      // Update tags to reflect the new status
+      removeTag({ propertyId: property.id, tag: 'prospecting' });
+      addTag({ propertyId: property.id, tag: 'deal' });
+      addTag({ propertyId: property.id, tag: 'analysis' });
+      
       if (enrichmentResult.success) {
-        // Remove prospecting tag and add deal and analysis tags
-        removeTag({ propertyId: property.id, tag: 'prospecting' });
-        addTag({ propertyId: property.id, tag: 'deal' });
-        addTag({ propertyId: property.id, tag: 'analysis' });
-        
         toast({
-          title: "Property Imported",
-          description: "Property has been enriched and added to your pipeline as a new deal.",
+          title: "Property Imported as Deal",
+          description: "Property has been enriched and added to your pipeline for analysis.",
         });
       } else {
-        // Still import but note enrichment failed
-        removeTag({ propertyId: property.id, tag: 'prospecting' });
-        addTag({ propertyId: property.id, tag: 'deal' });
-        addTag({ propertyId: property.id, tag: 'analysis' });
-        
         toast({
-          title: "Property Imported",
+          title: "Property Imported as Deal",
           description: "Property added to pipeline, but enrichment failed. You may need to add details manually.",
-          variant: "destructive",
+          variant: "default",
         });
       }
+
+      return newDeal;
+
     } catch (error) {
-      console.error('Error during property import:', error);
+      console.error('Error during property import as deal:', error);
       toast({
         title: "Import Error",
-        description: "Failed to import property. Please try again.",
+        description: "Failed to import property as a new deal. Please try again.",
         variant: "destructive",
       });
+      return null;
     }
   };
 
@@ -74,11 +89,9 @@ export const usePropertyFeedActions = ({ addTag, removeTag, onSwitchToSavedTab }
   };
 
   const handleAnalyse = async (property: UnifiedProperty) => {
-    await handleImportAsDeal(property);
-    if (onSwitchToSavedTab) {
-      setTimeout(() => {
-        onSwitchToSavedTab();
-      }, 1000);
+    const newDeal = await handleImportAsDeal(property);
+    if (newDeal) {
+      navigate(`/analysis?dealId=${newDeal.id}`);
     }
   };
 
