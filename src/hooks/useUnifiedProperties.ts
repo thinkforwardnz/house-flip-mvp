@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -244,11 +243,6 @@ export const usePropertiesByTags = (tags: string[]) => {
     },
     enabled: tags.length > 0,
   });
-};
-
-// Hook for getting deal properties (properties with deal tag)
-export const useDealProperties = () => {
-  return useUnifiedProperties(undefined, ['deal']);
 };
 
 // Hook for getting prospecting properties (properties with prospecting tag)

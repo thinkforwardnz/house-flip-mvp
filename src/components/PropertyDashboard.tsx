@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { useDealProperties } from '@/hooks/useUnifiedProperties';
+import { useDeals } from '@/hooks/useDeals';
 import CreateDealDialog from '@/components/CreateDealDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,39 +14,48 @@ import {
   AlertTriangle,
   ChevronRight
 } from 'lucide-react';
+import type { Deal } from '@/types/analysis';
 
 const PropertyDashboard = () => {
-  const { properties: dealProperties, isLoading: dealsLoading } = useDealProperties();
+  const { deals: dealProperties, isLoading: dealsLoading } = useDeals();
   const navigate = useNavigate();
 
-  const getStageColor = (tags: string[]) => {
-    if (tags.includes('analysis')) return 'bg-blue-100 text-blue-800 border-blue-200';
-    if (tags.includes('offer')) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    if (tags.includes('under_contract')) return 'bg-orange-100 text-orange-800 border-orange-200';
-    if (tags.includes('renovation')) return 'bg-purple-100 text-purple-800 border-purple-200';
-    if (tags.includes('listed')) return 'bg-green-100 text-green-800 border-green-200';
-    if (tags.includes('sold')) return 'bg-gray-100 text-gray-800 border-gray-200';
-    return 'bg-gray-100 text-gray-800 border-gray-200';
+  const getStageColor = (stage: string) => {
+    switch (stage) {
+      case 'Analysis':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'Offer':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'Under Contract':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'Reno':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'Listed':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'Sold':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
   };
 
-  const getStageLabel = (tags: string[]) => {
-    if (tags.includes('sold')) return 'Sold';
-    if (tags.includes('listed')) return 'Listed';
-    if (tags.includes('renovation')) return 'Reno';
-    if (tags.includes('under_contract')) return 'Under Contract';
-    if (tags.includes('offer')) return 'Offer';
-    if (tags.includes('analysis')) return 'Analysis';
-    return 'Unknown';
-  };
-
-  const getStageRoute = (tags: string[]) => {
-    if (tags.includes('sold')) return '/sold';
-    if (tags.includes('listed')) return '/listed';
-    if (tags.includes('renovation')) return '/renovation';
-    if (tags.includes('under_contract')) return '/under-contract';
-    if (tags.includes('offer')) return '/offer';
-    if (tags.includes('analysis')) return '/analysis';
-    return '/analysis';
+  const getStageRoute = (stage: string) => {
+    switch (stage) {
+      case 'Sold':
+        return '/sold';
+      case 'Listed':
+        return '/listed';
+      case 'Reno':
+        return '/renovation';
+      case 'Under Contract':
+        return '/under-contract';
+      case 'Offer':
+        return '/offer';
+      case 'Analysis':
+        return '/analysis';
+      default:
+        return '/analysis';
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -58,16 +66,16 @@ const PropertyDashboard = () => {
     }).format(amount);
   };
 
-  const handleDealClick = (property: any) => {
-    const route = getStageRoute(property.tags);
-    navigate(`${route}?dealId=${property.deal_id || property.id}`);
+  const handleDealClick = (deal: Deal) => {
+    const route = getStageRoute(deal.pipeline_stage);
+    navigate(`${route}?dealId=${deal.id}`);
   };
 
-  // Calculate totals from unified properties with deal tags
-  const totalValue = dealProperties.reduce((sum, property) => sum + (property.current_price || 0), 0);
-  const totalProfit = dealProperties.reduce((sum, property) => sum + (property.ai_est_profit || 0), 0);
-  const highRiskCount = dealProperties.filter(property => 
-    property.ai_confidence && property.ai_confidence < 50
+  // Calculate totals from deals
+  const totalValue = dealProperties.reduce((sum, deal) => sum + (deal.purchase_price || 0), 0);
+  const totalProfit = dealProperties.reduce((sum, deal) => sum + (deal.current_profit || 0), 0);
+  const highRiskCount = dealProperties.filter(deal => 
+    deal.current_risk === 'high'
   ).length;
 
   return (
@@ -131,7 +139,7 @@ const PropertyDashboard = () => {
                 <AlertTriangle className="h-6 w-6 text-red-error" />
               </div>
               <div className="text-center">
-                <p className="text-sm text-navy font-medium">Low Confidence</p>
+                <p className="text-sm text-navy font-medium">High Risk Deals</p>
                 <p className="text-2xl font-bold text-navy-dark">{highRiskCount}</p>
               </div>
             </div>
@@ -168,27 +176,27 @@ const PropertyDashboard = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {dealProperties.map((property) => (
+              {dealProperties.map((deal) => (
                 <div 
-                  key={property.id} 
+                  key={deal.id} 
                   className="flex items-center justify-between p-6 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer group"
-                  onClick={() => handleDealClick(property)}
+                  onClick={() => handleDealClick(deal)}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-navy-dark">{property.address}</h3>
-                      <Badge className={`${getStageColor(property.tags)} rounded-lg`}>
-                        {getStageLabel(property.tags)}
+                      <h3 className="font-semibold text-navy-dark">{deal.address}</h3>
+                      <Badge className={`${getStageColor(deal.pipeline_stage)} rounded-lg`}>
+                        {deal.pipeline_stage}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-navy">
-                      <span>{property.suburb}, {property.city}</span>
-                      {property.current_price && (
-                        <span>Price: {formatCurrency(property.current_price)}</span>
+                      <span>{deal.suburb}, {deal.city}</span>
+                      {deal.purchase_price && (
+                        <span>Price: {formatCurrency(deal.purchase_price)}</span>
                       )}
-                      {property.ai_est_profit && property.ai_est_profit > 0 && (
+                      {deal.current_profit && deal.current_profit > 0 && (
                         <span className="text-green-600 font-medium">
-                          Est. Profit: {formatCurrency(property.ai_est_profit)}
+                          Est. Profit: {formatCurrency(deal.current_profit)}
                         </span>
                       )}
                     </div>
@@ -196,7 +204,7 @@ const PropertyDashboard = () => {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <div className="text-sm text-navy">
-                        Created {new Date(property.created_at).toLocaleDateString()}
+                        Created {new Date(deal.created_at).toLocaleDateString()}
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-primary transition-colors" />
