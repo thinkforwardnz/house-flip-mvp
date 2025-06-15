@@ -75,9 +75,9 @@ export class CustomScraperClient {
   private fallbackUrls: string[];
 
   constructor() {
-    // Initialize with environment variable as fallback
-    this.baseUrl = Deno.env.get('CUSTOM_SCRAPER_BASE_URL') || 'https://e104-222-154-21-216.ngrok-free.app';
+    // Initialize with fallback URLs only
     this.fallbackUrls = [
+      'https://4419-222-154-21-216.ngrok-free.app',
       'https://e104-222-154-21-216.ngrok-free.app',
     ];
   }
@@ -116,8 +116,8 @@ export class CustomScraperClient {
     } catch (error) {
       console.error('❌ Error loading endpoint from database:', error);
       
-      // Fall back to environment variable or default
-      const fallback = Deno.env.get('CUSTOM_SCRAPER_BASE_URL') || this.fallbackUrls[0];
+      // Fall back to first fallback URL
+      const fallback = this.fallbackUrls[0];
       console.log(`Using fallback endpoint: ${fallback}`);
       return fallback;
     }

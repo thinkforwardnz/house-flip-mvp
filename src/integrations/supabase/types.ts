@@ -405,6 +405,33 @@ export type Database = {
           },
         ]
       }
+      scraper_config: {
+        Row: {
+          config_key: string
+          config_value: string
+          created_at: string
+          description: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          config_key: string
+          config_value: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          config_key?: string
+          config_value?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       scraping_history: {
         Row: {
           completed_at: string | null

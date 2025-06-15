@@ -1,5 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { corsHeaders } from '../shared/cors.ts';
 
 serve(async (req) => {
@@ -31,11 +32,34 @@ serve(async (req) => {
       });
     }
 
-    // Note: In a real implementation, you might want to store this in a database
-    // For now, we'll just validate and return success
-    // The actual endpoint update would need to be done via environment variables
+    // Initialize Supabase client with service role key for database access
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    console.log('Scraper endpoint update requested:', endpoint);
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Update the endpoint in the database using upsert
+    const { error } = await supabase
+      .from('scraper_config')
+      .upsert({
+        config_key: 'trademe_endpoint',
+        config_value: endpoint,
+        description: 'Base URL for the TradeMe scraper service'
+      }, {
+        onConflict: 'config_key'
+      });
+
+    if (error) {
+      console.error('Database update error:', error);
+      return new Response(JSON.stringify({
+        error: 'Failed to update scraper configuration in database'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log('Scraper endpoint updated successfully in database:', endpoint);
     
     return new Response(JSON.stringify({
       success: true,
