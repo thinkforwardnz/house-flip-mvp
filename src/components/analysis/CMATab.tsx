@@ -61,11 +61,11 @@ const CMATab = ({ deal, formatCurrency, onDealUpdate }: CMATabProps) => {
       </div>
 
       <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="subject">Subject Property</TabsTrigger>
-          <TabsTrigger value="comparables">Comparables</TabsTrigger>
-          <TabsTrigger value="analysis">Analysis</TabsTrigger>
+        <TabsList className="flex flex-nowrap gap-1 sm:gap-2 overflow-x-auto">
+          <TabsTrigger value="overview" className="min-w-[90px] text-xs sm:text-sm">Overview</TabsTrigger>
+          <TabsTrigger value="subject" className="min-w-[90px] text-xs sm:text-sm">Subject Property</TabsTrigger>
+          <TabsTrigger value="comparables" className="min-w-[90px] text-xs sm:text-sm">Comparables</TabsTrigger>
+          <TabsTrigger value="analysis" className="min-w-[90px] text-xs sm:text-sm">Analysis</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
