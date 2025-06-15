@@ -1,6 +1,6 @@
 
 import React, { useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import PropertySelector from '@/components/PropertySelector';
 import { useSelectedDeal } from '@/hooks/useSelectedDeal';
 import { useDeals } from '@/hooks/useDeals';
@@ -12,9 +12,9 @@ import { MapPin } from 'lucide-react';
 import type { Deal } from '@/types/analysis';
 
 const PropertyAnalysis = () => {
-  const {
-    dealId
-  } = useParams();
+  const [searchParams] = useSearchParams();
+  const dealId = searchParams.get('dealId');
+
   const {
     selectedDeal,
     selectedDealId,
@@ -28,7 +28,8 @@ const PropertyAnalysis = () => {
 
   // Always call useDeals once, then find the deal
   const currentDealId = dealId || selectedDealId;
-  const currentDeal = dealId ? deals.find(d => d.id === dealId) : selectedDeal;
+  const currentDeal = deals.find(d => d.id === currentDealId);
+
   const handleSaveDealUpdates = useCallback((dealUpdates: Partial<Deal>) => {
     if (currentDeal?.id) {
       updateDeal({
@@ -57,11 +58,11 @@ const PropertyAnalysis = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-700 mb-2">Property Analysis</h1>
         <p className="text-blue-100 text-lg">
-          {dealId ? 'Detailed property analysis and financial modeling' : 'AI-powered analysis dashboard'}
+          {currentDealId ? 'Detailed property analysis and financial modeling' : 'AI-powered analysis dashboard'}
         </p>
       </div>
 
-      {dealId ? <>
+      {currentDealId ? <>
           <PropertySelector currentDealId={currentDealId} onDealSelect={selectDeal} currentStage="Analysis" />
           {currentDeal ? <div className="w-full">
               <PropertyAnalysisDetail deal={currentDeal} onSaveDealUpdates={handleSaveDealUpdates} />
