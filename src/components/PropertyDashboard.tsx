@@ -84,11 +84,11 @@ const PropertyDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card className="bg-white shadow-lg rounded-2xl border-0">
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
                 <Home className="h-6 w-6 text-blue-primary" />
               </div>
-              <div>
+              <div className="text-center">
                 <p className="text-sm text-navy font-medium">Total Deals</p>
                 <p className="text-2xl font-bold text-navy-dark">{dealProperties.length}</p>
               </div>
@@ -98,11 +98,11 @@ const PropertyDashboard = () => {
 
         <Card className="bg-white shadow-lg rounded-2xl border-0">
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
                 <DollarSign className="h-6 w-6 text-green-success" />
               </div>
-              <div>
+              <div className="text-center">
                 <p className="text-sm text-navy font-medium">Total Value</p>
                 <p className="text-2xl font-bold text-navy-dark">{formatCurrency(totalValue)}</p>
               </div>
@@ -112,11 +112,11 @@ const PropertyDashboard = () => {
 
         <Card className="bg-white shadow-lg rounded-2xl border-0">
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-orange-accent" />
               </div>
-              <div>
+              <div className="text-center">
                 <p className="text-sm text-navy font-medium">Total Profit</p>
                 <p className="text-2xl font-bold text-navy-dark">{formatCurrency(totalProfit)}</p>
               </div>
@@ -126,11 +126,11 @@ const PropertyDashboard = () => {
 
         <Card className="bg-white shadow-lg rounded-2xl border-0">
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center">
                 <AlertTriangle className="h-6 w-6 text-red-error" />
               </div>
-              <div>
+              <div className="text-center">
                 <p className="text-sm text-navy font-medium">Low Confidence</p>
                 <p className="text-2xl font-bold text-navy-dark">{highRiskCount}</p>
               </div>
