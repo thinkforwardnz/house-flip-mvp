@@ -71,7 +71,7 @@ export interface FullPropertyResponse {
 }
 
 export class CustomScraperClient {
-  private baseUrl: string;
+  private currentEndpoint: string | null = null;
   private fallbackUrls: string[];
 
   constructor() {
@@ -82,7 +82,12 @@ export class CustomScraperClient {
     ];
   }
 
-  private async loadCurrentEndpoint(): Promise<string> {
+  private async getCurrentEndpoint(): Promise<string> {
+    // If we already loaded the endpoint in this session, use it
+    if (this.currentEndpoint) {
+      return this.currentEndpoint;
+    }
+
     try {
       console.log('Loading current endpoint from database...');
       
@@ -98,30 +103,32 @@ export class CustomScraperClient {
       if (response.ok) {
         const data = await response.json();
         const endpoint = data.endpoint;
-        console.log(`Loaded endpoint from database: ${endpoint}`);
+        console.log(`✅ Loaded endpoint from database: ${endpoint}`);
         
-        // Update baseUrl and fallbackUrls with the current endpoint
-        this.baseUrl = endpoint;
-        this.fallbackUrls = [endpoint, ...this.fallbackUrls.filter(url => url !== endpoint)];
+        // Cache the endpoint for this session
+        this.currentEndpoint = endpoint;
         
         return endpoint;
       } else {
-        console.warn('Failed to load endpoint from database, using fallback');
-        return this.baseUrl;
+        console.warn('❌ Failed to load endpoint from database, using fallback');
+        throw new Error('Failed to load from database');
       }
     } catch (error) {
-      console.error('Error loading endpoint from database:', error);
-      return this.baseUrl;
+      console.error('❌ Error loading endpoint from database:', error);
+      
+      // Fall back to environment variable or default
+      const fallback = Deno.env.get('CUSTOM_SCRAPER_BASE_URL') || this.fallbackUrls[0];
+      console.log(`Using fallback endpoint: ${fallback}`);
+      return fallback;
     }
   }
 
   async scrapeSearchResults(searchUrl: string): Promise<{ data: { properties: CustomScraperProperty[] } }> {
     console.log('=== CUSTOM SCRAPER CLIENT ===');
     
-    // Load the current endpoint before scraping
-    await this.loadCurrentEndpoint();
-    
-    console.log(`Current scraper URL: ${this.baseUrl}`);
+    // Get the current endpoint (this will load from database if needed)
+    const primaryEndpoint = await this.getCurrentEndpoint();
+    console.log(`🎯 Using scraper endpoint: ${primaryEndpoint}`);
     console.log(`Search URL to scrape: ${searchUrl}`);
     
     // Validate the search URL first
@@ -131,16 +138,17 @@ export class CustomScraperClient {
       throw new Error(`Invalid search URL provided: ${searchUrl}`);
     }
 
-    const urls = [this.baseUrl, ...this.fallbackUrls];
+    // Try primary endpoint first, then fallbacks
+    const urlsToTry = [primaryEndpoint, ...this.fallbackUrls.filter(url => url !== primaryEndpoint)];
     let lastError: Error | null = null;
 
-    for (let i = 0; i < urls.length; i++) {
-      const scraperUrl = urls[i];
-      console.log(`Attempting scraper ${i + 1}/${urls.length}: ${scraperUrl}`);
+    for (let i = 0; i < urlsToTry.length; i++) {
+      const scraperUrl = urlsToTry[i];
+      console.log(`🔄 Attempting scraper ${i + 1}/${urlsToTry.length}: ${scraperUrl}`);
       
       try {
         const endpoint = `${scraperUrl}/scrape-search-results`;
-        console.log(`Making request to: ${endpoint}`);
+        console.log(`📡 Making request to: ${endpoint}`);
         
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -153,14 +161,14 @@ export class CustomScraperClient {
           }),
         });
 
-        console.log(`Response status: ${response.status} ${response.statusText}`);
+        console.log(`📊 Response status: ${response.status} ${response.statusText}`);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log('Response received, parsing...');
+        console.log('📥 Response received, parsing...');
         console.log(`Data type: ${typeof data}`);
         console.log(`Is array: ${Array.isArray(data)}`);
         
@@ -187,8 +195,8 @@ export class CustomScraperClient {
         lastError = error;
         
         // If this is not the last URL, continue to next one
-        if (i < urls.length - 1) {
-          console.log('Trying next scraper...');
+        if (i < urlsToTry.length - 1) {
+          console.log('🔄 Trying next scraper...');
           continue;
         }
       }
@@ -203,11 +211,12 @@ export class CustomScraperClient {
     console.log('=== SCRAPING INDIVIDUAL PROPERTY ===');
     console.log(`Property URL: ${propertyUrl}`);
     
-    // Load the current endpoint before scraping
-    await this.loadCurrentEndpoint();
+    // Get the current endpoint
+    const endpoint = await this.getCurrentEndpoint();
+    console.log(`🎯 Using scraper endpoint: ${endpoint}`);
     
     try {
-      const response = await fetch(`${this.baseUrl}/scrape-property-full`, {
+      const response = await fetch(`${endpoint}/scrape-property-full`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

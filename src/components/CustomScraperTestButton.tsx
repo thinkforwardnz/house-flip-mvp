@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, TestTube, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useScraperEndpoint } from '@/hooks/useScraperEndpoint';
 
 const CustomScraperTestButton = () => {
   const [isTestingSearch, setIsTestingSearch] = useState(false);
@@ -16,6 +17,7 @@ const CustomScraperTestButton = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [propertyResult, setPropertyResult] = useState<any>(null);
   const { toast } = useToast();
+  const { endpoint } = useScraperEndpoint();
 
   const testSearchScraping = async () => {
     setIsTestingSearch(true);
@@ -64,7 +66,7 @@ const CustomScraperTestButton = () => {
         throw new Error('Invalid property URL format');
       }
 
-      const response = await fetch('https://7eeb-222-154-21-216.ngrok-free.app/scrape-property-full', {
+      const response = await fetch(`${endpoint}/scrape-property-full`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -196,7 +198,7 @@ const CustomScraperTestButton = () => {
 
         <div className="text-xs text-gray-500 flex items-center gap-1">
           <ExternalLink className="h-3 w-3" />
-          Testing connection to: https://7eeb-222-154-21-216.ngrok-free.app
+          Current endpoint: {endpoint}
         </div>
       </CardContent>
     </Card>
