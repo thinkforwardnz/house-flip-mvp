@@ -43,7 +43,8 @@ const RenovationSelector = ({
   // Refs for proper cleanup
   const timeoutRef = useRef<NodeJS.Timeout>();
 
-  // Sync local state with props only when not actively editing
+  // Sync with incoming props, but only when no field is being actively edited.
+  // This prevents props from overwriting user input while they are typing.
   useEffect(() => {
     if (!activelyEditing) {
       const hasMeaningfulChanges = Object.keys(renovationSelections).some(key => {
@@ -61,7 +62,7 @@ const RenovationSelector = ({
         setRawCostInputs(newRawCosts);
       }
     }
-  }, [renovationSelections, activelyEditing]);
+  }, [renovationSelections, activelyEditing, localSelections]);
 
   const saveImmediately = useCallback((selections: RenovationSelections) => {
     if (timeoutRef.current) {
