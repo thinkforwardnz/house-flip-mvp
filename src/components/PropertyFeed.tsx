@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { SearchFilters } from '@/types/filters';
 
 import ScrapingProgress from '@/components/ScrapingProgress';
-import CustomScraperTestButton from '@/components/CustomScraperTestButton';
 import PropertyFeedHeader from '@/components/PropertyFeed/PropertyFeedHeader';
 import PropertyFeedGrid from '@/components/PropertyFeed/PropertyFeedGrid';
 import PropertyFeedEmpty from '@/components/PropertyFeed/PropertyFeedEmpty';
@@ -86,8 +85,6 @@ const PropertyFeed = ({ filters, onSwitchToSavedTab }: PropertyFeedProps) => {
 
   return (
     <div className="space-y-6">
-      <CustomScraperTestButton />
-
       <ScrapingProgress
         isActive={isScrapingActive}
         sources={sourceProgress}
