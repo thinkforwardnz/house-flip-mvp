@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Wrench, Plus } from 'lucide-react';
 import type { RenovationSelections, RenovationOption } from '@/types/renovation';
 import { DEFAULT_RENOVATION_OPTIONS } from '@/types/renovation';
@@ -43,26 +42,28 @@ const RenovationSelector = ({
   // Refs for proper cleanup
   const timeoutRef = useRef<NodeJS.Timeout>();
 
-  // Sync with incoming props, but only when no field is being actively edited.
-  // This prevents props from overwriting user input while they are typing.
+  // This effect syncs incoming prop changes to the local state.
+  // It's designed to NOT run when a user is actively editing a field,
+  // preventing their input from being overwritten by data from the parent.
   useEffect(() => {
-    if (!activelyEditing) {
-      const hasMeaningfulChanges = Object.keys(renovationSelections).some(key => {
-        return JSON.stringify(localSelections[key]) !== JSON.stringify(renovationSelections[key]);
-      });
-
-      if (hasMeaningfulChanges) {
-        setLocalSelections(renovationSelections);
-        
-        // Also sync the raw input values to match the incoming data
-        const newRawCosts: Record<string, string> = {};
-        Object.keys(renovationSelections).forEach(key => {
-          newRawCosts[key] = renovationSelections[key]?.cost.toString() ?? '';
-        });
-        setRawCostInputs(newRawCosts);
-      }
+    if (activelyEditing) {
+      return; // The user is typing, so we don't want to overwrite their changes.
     }
-  }, [renovationSelections, activelyEditing, localSelections]);
+
+    // If not editing, we update the local state to match the props.
+    setLocalSelections(renovationSelections);
+    
+    const newRawCosts: Record<string, string> = {};
+    Object.keys(DEFAULT_RENOVATION_OPTIONS).forEach(key => {
+      const selection = renovationSelections[key];
+      const cost = selection?.cost;
+      newRawCosts[key] = cost !== undefined 
+        ? cost.toString() 
+        : (DEFAULT_RENOVATION_OPTIONS[key]?.cost.toString() ?? '');
+    });
+    setRawCostInputs(newRawCosts);
+    
+  }, [renovationSelections, activelyEditing]); // This effect now ONLY depends on props and the editing status.
 
   const saveImmediately = useCallback((selections: RenovationSelections) => {
     if (timeoutRef.current) {
