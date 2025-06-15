@@ -15,7 +15,7 @@ const Settings = () => {
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
+        <h1 className="text-3xl font-bold text-slate-700 mb-2">Settings</h1>
         <p className="text-blue-100 text-lg">Manage your account and preferences</p>
       </div>
 

@@ -63,14 +63,14 @@ const Listed = () => {
   }
 
   const propertyData = {
-    address: selectedDeal.address,
-    listPrice: selectedDeal.target_sale_price || 0,
+    address: selectedDeal?.address,
+    listPrice: selectedDeal?.target_sale_price || 0,
     bedrooms: 3, // This would come from property details if available
     bathrooms: 2,
     sqft: 1200,
-    aiRiskLevel: selectedDeal.current_risk as 'Low' | 'Medium' | 'High',
-    estimatedProfit: selectedDeal.current_profit || 0,
-    roi: selectedDeal.purchase_price && selectedDeal.current_profit 
+    aiRiskLevel: selectedDeal?.current_risk as 'Low' | 'Medium' | 'High',
+    estimatedProfit: selectedDeal?.current_profit || 0,
+    roi: selectedDeal?.purchase_price && selectedDeal?.current_profit 
       ? ((selectedDeal.current_profit / selectedDeal.purchase_price) * 100)
       : 0
   };
@@ -86,8 +86,8 @@ const Listed = () => {
 
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Listed for Sale</h1>
-        <p className="text-blue-100 text-lg">{selectedDeal.address}, {selectedDeal.suburb}, {selectedDeal.city}</p>
+        <h1 className="text-3xl font-bold text-slate-700 mb-2">Listed for Sale</h1>
+        <p className="text-blue-100 text-lg">{selectedDeal?.address}, {selectedDeal?.suburb}, {selectedDeal?.city}</p>
       </div>
 
       {/* Property Summary */}

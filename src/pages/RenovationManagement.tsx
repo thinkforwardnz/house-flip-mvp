@@ -63,8 +63,8 @@ const RenovationManagement = () => {
 
   // Calculate project data from deal
   const projectData = {
-    name: `${selectedDeal.address} Renovation`,
-    address: `${selectedDeal.address}, ${selectedDeal.suburb}, ${selectedDeal.city}`,
+    name: `${selectedDeal?.address} Renovation`,
+    address: `${selectedDeal?.address}, ${selectedDeal?.suburb}, ${selectedDeal?.city}`,
     budget: 85000, // This could be stored in deal or calculated
     actualSpent: 72500, // This would come from renovation records
     startDate: '2024-01-15', // This would come from deal data
@@ -82,7 +82,7 @@ const RenovationManagement = () => {
 
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">{projectData.name}</h1>
+        <h1 className="text-3xl font-bold text-slate-700 mb-2">{projectData.name}</h1>
         <p className="text-blue-100 text-lg">{projectData.address}</p>
       </div>
 

@@ -1,3 +1,4 @@
+
 import React, { useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import PropertySelector from '@/components/PropertySelector';
@@ -9,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
 import type { Deal } from '@/types/analysis';
+
 const PropertyAnalysis = () => {
   const {
     dealId
@@ -35,6 +37,7 @@ const PropertyAnalysis = () => {
       });
     }
   }, [currentDeal?.id, updateDeal]);
+  
   if (isLoading) {
     return <div className="w-full max-w-sm sm:max-w-2xl lg:max-w-4xl mx-auto px-2 sm:px-4 space-y-3 sm:space-y-4">
         <div className="animate-pulse">
@@ -48,10 +51,11 @@ const PropertyAnalysis = () => {
         </div>
       </div>;
   }
+  
   return <div className="w-full max-w-sm sm:max-w-2xl lg:max-w-4xl mx-auto px-2 sm:px-4 space-y-3 sm:space-y-4">
       {/* Page Header */}
       <div className="mb-4 sm:mb-6">
-        <h1 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1 text-gray-700">Property Analysis</h1>
+        <h1 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1 text-slate-700">Property Analysis</h1>
         <p className="text-xs sm:text-sm text-slate-800">
           {dealId ? 'Detailed property analysis and financial modeling' : 'AI-powered analysis dashboard'}
         </p>
@@ -76,4 +80,5 @@ const PropertyAnalysis = () => {
         </div>}
     </div>;
 };
+
 export default PropertyAnalysis;

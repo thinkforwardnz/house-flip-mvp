@@ -36,7 +36,7 @@ const Find = () => {
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Find Properties</h1>
+        <h1 className="text-3xl font-bold text-slate-700 mb-2">Find Properties</h1>
         <p className="text-blue-100 text-lg">Discover potential flip opportunities with AI-powered analysis</p>
       </div>
 

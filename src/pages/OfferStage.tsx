@@ -69,8 +69,8 @@ const OfferStage = () => {
 
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Offer Stage</h1>
-        <p className="text-blue-100 text-lg">Manage offers and negotiations for {selectedDeal.address}</p>
+        <h1 className="text-3xl font-bold text-slate-700 mb-2">Offer Stage</h1>
+        <p className="text-blue-100 text-lg">Manage offers and negotiations for {selectedDeal?.address}</p>
       </div>
 
       {/* Property Overview */}
@@ -86,26 +86,26 @@ const OfferStage = () => {
             <div className="bg-gray-50 p-4 rounded-xl">
               <p className="text-sm text-navy font-medium mb-1">Target Purchase Price</p>
               <p className="text-xl font-bold text-navy-dark">
-                {selectedDeal.purchase_price ? formatCurrency(selectedDeal.purchase_price) : 'TBD'}
+                {selectedDeal?.purchase_price ? formatCurrency(selectedDeal.purchase_price) : 'TBD'}
               </p>
             </div>
             <div className="bg-gray-50 p-4 rounded-xl">
               <p className="text-sm text-navy font-medium mb-1">Target Sale Price</p>
               <p className="text-xl font-bold text-navy-dark">
-                {selectedDeal.target_sale_price ? formatCurrency(selectedDeal.target_sale_price) : 'TBD'}
+                {selectedDeal?.target_sale_price ? formatCurrency(selectedDeal.target_sale_price) : 'TBD'}
               </p>
             </div>
             <div className="bg-gray-50 p-4 rounded-xl">
               <p className="text-sm text-navy font-medium mb-1">Risk Level</p>
               <p className={`text-xl font-bold ${
-                selectedDeal.current_risk === 'low' ? 'text-green-600' :
-                selectedDeal.current_risk === 'medium' ? 'text-yellow-600' : 'text-red-600'
+                selectedDeal?.current_risk === 'low' ? 'text-green-600' :
+                selectedDeal?.current_risk === 'medium' ? 'text-yellow-600' : 'text-red-600'
               }`}>
-                {selectedDeal.current_risk?.toUpperCase()}
+                {selectedDeal?.current_risk?.toUpperCase()}
               </p>
             </div>
           </div>
-          {selectedDeal.notes && (
+          {selectedDeal?.notes && (
             <div className="mt-6 pt-6 border-t border-gray-100">
               <h4 className="font-medium text-navy-dark mb-2">Property Notes</h4>
               <p className="text-navy">{selectedDeal.notes}</p>
