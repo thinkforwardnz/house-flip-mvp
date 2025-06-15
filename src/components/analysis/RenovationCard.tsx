@@ -22,7 +22,6 @@ interface RenovationCardProps {
   onToggle: (enabled: boolean) => void;
   onCostChange: (value: string) => void;
   onCostBlur: () => void;
-  onSliderChange: (value: number) => void;
   onSliderCommit: (value: number) => void;
   onCostFocus: () => void;
 }
@@ -40,14 +39,23 @@ const RenovationCard = ({
   onToggle,
   onCostChange,
   onCostBlur,
-  onSliderChange,
   onSliderCommit,
   onCostFocus,
 }: RenovationCardProps) => {
   const defaultOption = DEFAULT_RENOVATION_OPTIONS[type];
   const isSelected = selection?.selected || false;
-  const valueAddPercent = selection?.value_add_percent ?? defaultOption.value_add_percent;
-  const valueAdd = baseMarketValue * (valueAddPercent / 100);
+  
+  // For the slider, we introduce local state to provide a smooth UX
+  // without triggering parent re-renders on every slide.
+  const initialValueAddPercent = selection?.value_add_percent ?? defaultOption.value_add_percent;
+  const [sliderValue, setSliderValue] = React.useState(initialValueAddPercent);
+
+  // Sync with prop changes if they occur from parent
+  React.useEffect(() => {
+    setSliderValue(initialValueAddPercent);
+  }, [initialValueAddPercent]);
+  
+  const valueAdd = baseMarketValue * (sliderValue / 100);
 
   return (
     <Card className={`${isSelected ? 'border-blue-200 bg-blue-50' : 'border-gray-200'} ${isHighValue ? 'border-green-200 bg-green-50' : ''} ${isUpdating ? 'opacity-75' : ''}`}>
@@ -89,8 +97,8 @@ const RenovationCard = ({
             <Label htmlFor={`${type}-value`} className="text-xs">Value add %</Label>
             <div className="mt-2 px-2">
               <Slider
-                value={[valueAddPercent]}
-                onValueChange={([value]) => onSliderChange(value)}
+                value={[sliderValue]}
+                onValueChange={([value]) => setSliderValue(value)}
                 onValueCommit={([value]) => onSliderCommit(value)}
                 max={type === 'add_bedroom' ? 30 : 10}
                 min={0}
@@ -100,7 +108,7 @@ const RenovationCard = ({
               />
             </div>
             <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>{valueAddPercent}%</span>
+              <span>{sliderValue.toFixed(1)}%</span>
               <span>+{formatCurrency(valueAdd)}</span>
             </div>
           </div>

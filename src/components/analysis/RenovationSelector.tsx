@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Wrench, Plus } from 'lucide-react';
 import type { RenovationSelections, RenovationOption } from '@/types/renovation';
 import { DEFAULT_RENOVATION_OPTIONS } from '@/types/renovation';
-import RenovationCard from './RenovationCard';
+import RenovationItem from './RenovationItem';
 
 interface RenovationSelectorProps {
   renovationSelections: RenovationSelections;
@@ -26,44 +27,13 @@ const RenovationSelector = ({
   baseMarketValue 
 }: RenovationSelectorProps) => {
   
-  // Local state to track user input
   const [localSelections, setLocalSelections] = useState<RenovationSelections>(renovationSelections);
-  const [rawCostInputs, setRawCostInputs] = useState<Record<string, string>>(() => {
-    const initialRaws: Record<string, string> = {};
-    Object.keys(DEFAULT_RENOVATION_OPTIONS).forEach(key => {
-      const selection = renovationSelections[key];
-      initialRaws[key] = selection?.cost?.toString() ?? DEFAULT_RENOVATION_OPTIONS[key].cost.toString();
-    });
-    return initialRaws;
-  });
   const [isUpdating, setIsUpdating] = useState(false);
-  const [activelyEditing, setActivelyEditing] = useState<string | null>(null);
-  
-  // Refs for proper cleanup
   const timeoutRef = useRef<NodeJS.Timeout>();
 
-  // This effect syncs incoming prop changes to the local state.
-  // It's designed to NOT run when a user is actively editing a field,
-  // preventing their input from being overwritten by data from the parent.
   useEffect(() => {
-    if (activelyEditing) {
-      return; // The user is typing, so we don't want to overwrite their changes.
-    }
-
-    // If not editing, we update the local state to match the props.
     setLocalSelections(renovationSelections);
-    
-    const newRawCosts: Record<string, string> = {};
-    Object.keys(DEFAULT_RENOVATION_OPTIONS).forEach(key => {
-      const selection = renovationSelections[key];
-      const cost = selection?.cost;
-      newRawCosts[key] = cost !== undefined 
-        ? cost.toString() 
-        : (DEFAULT_RENOVATION_OPTIONS[key]?.cost.toString() ?? '');
-    });
-    setRawCostInputs(newRawCosts);
-    
-  }, [renovationSelections, activelyEditing]); // This effect now ONLY depends on props and the editing status.
+  }, [renovationSelections]);
 
   const saveImmediately = useCallback((selections: RenovationSelections) => {
     if (timeoutRef.current) {
@@ -71,23 +41,9 @@ const RenovationSelector = ({
     }
     setIsUpdating(true);
     onRenovationChange(selections);
-    setTimeout(() => setIsUpdating(false), 400); // Give a bit of time for UI to feel responsive
-  }, [onRenovationChange, timeoutRef]);
+    setTimeout(() => setIsUpdating(false), 400);
+  }, [onRenovationChange]);
 
-  // Debounced save function for cost and slider inputs
-  const debouncedSave = useMemo(() => {
-    return (selections: RenovationSelections) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      
-      timeoutRef.current = setTimeout(() => {
-        saveImmediately(selections);
-      }, 700); // Increased debounce time
-    };
-  }, [saveImmediately]);
-
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -96,7 +52,7 @@ const RenovationSelector = ({
     };
   }, []);
 
-  const handleRenovationToggle = (renovationType: string, enabled: boolean) => {
+  const handleItemToggle = (renovationType: string, enabled: boolean) => {
     const defaultOption = DEFAULT_RENOVATION_OPTIONS[renovationType];
     const newSelections = {
       ...localSelections,
@@ -114,66 +70,20 @@ const RenovationSelector = ({
     saveImmediately(newSelections);
   };
 
-  const handleCostChange = (renovationType: string, value: string) => {
-    setActivelyEditing(renovationType);
-    
-    const numericValue = value.replace(/[^0-9]/g, '');
-    
-    setRawCostInputs(prev => ({ ...prev, [renovationType]: numericValue }));
-    // We no longer save on every change, only on blur.
-  };
+  const handleItemChange = (renovationType: string, updates: Partial<RenovationOption>) => {
+    const currentSelection = localSelections[renovationType];
+    const defaultOption = DEFAULT_RENOVATION_OPTIONS[renovationType];
 
-  const handleCostBlur = (renovationType: string) => {
-    setActivelyEditing(null); // Editing is finished on blur
-
-    const rawValue = rawCostInputs[renovationType] ?? '';
-    const numericValue = parseInt(rawValue, 10) || 0; // Gracefully handles empty/invalid strings
-
-    // To prevent the flicker, we'll let the parent's state update drive the UI change
-    // via the useEffect hook. This creates a single data flow.
-    if (localSelections[renovationType]?.cost !== numericValue || rawCostInputs[renovationType] !== numericValue.toString()) {
-      const currentSelection = localSelections[renovationType];
-      const defaultOption = DEFAULT_RENOVATION_OPTIONS[renovationType];
-
-      const newSelections = {
-        ...localSelections,
-        [renovationType]: {
-          selected: true,
-          cost: numericValue,
-          value_add_percent: currentSelection?.value_add_percent ?? defaultOption.value_add_percent,
-          description: currentSelection?.description ?? defaultOption.description,
-        },
-      };
-      setLocalSelections(newSelections);
-      saveImmediately(newSelections);
-    }
-  };
-
-  const handleSliderChange = (renovationType: string, valueAddPercent: number) => {
-    setActivelyEditing(renovationType);
     const newSelections = {
       ...localSelections,
       [renovationType]: {
-        ...localSelections[renovationType]!,
-        value_add_percent: valueAddPercent
-      }
+        selected: true,
+        cost: currentSelection?.cost ?? defaultOption.cost,
+        value_add_percent: currentSelection?.value_add_percent ?? defaultOption.value_add_percent,
+        description: currentSelection?.description ?? defaultOption.description,
+        ...updates
+      },
     };
-    
-    setLocalSelections(newSelections);
-    // We no longer save on slider change, only on commit.
-  };
-
-  const handleSliderCommit = (renovationType: string, valueAddPercent: number) => {
-    setActivelyEditing(null); // Editing is finished on commit
-    
-    const newSelections = {
-      ...localSelections,
-      [renovationType]: {
-        ...localSelections[renovationType]!,
-        value_add_percent: valueAddPercent
-      }
-    };
-    
     setLocalSelections(newSelections);
     saveImmediately(newSelections);
   };
@@ -191,23 +101,18 @@ const RenovationSelector = ({
       </div>
       <div className="grid grid-cols-1 gap-2 sm:gap-3">
         {renovationItems.map(({ type, title, icon, isHighValue }) => (
-          <RenovationCard
+          <RenovationItem
             key={type}
             type={type}
             title={title}
             icon={icon}
             isHighValue={isHighValue}
             selection={localSelections[type]}
-            rawCostInput={rawCostInputs[type] ?? ''}
             isUpdating={isUpdating}
             baseMarketValue={baseMarketValue}
             formatCurrency={formatCurrency}
-            onToggle={(enabled) => handleRenovationToggle(type, enabled)}
-            onCostChange={(value) => handleCostChange(type, value)}
-            onCostBlur={() => handleCostBlur(type)}
-            onCostFocus={() => setActivelyEditing(type)}
-            onSliderChange={(value) => handleSliderChange(type, value)}
-            onSliderCommit={(value) => handleSliderCommit(type, value)}
+            onItemToggle={handleItemToggle}
+            onItemChange={handleItemChange}
           />
         ))}
       </div>
