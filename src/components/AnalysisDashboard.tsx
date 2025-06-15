@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -158,28 +157,31 @@ const AnalysisDashboard = () => {
                     className="border border-gray-200 rounded-2xl p-6 hover:shadow-md transition-shadow cursor-pointer"
                     onClick={() => navigate(`/analysis/${deal.id}`)}
                   >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                    <div className="flex flex-wrap items-start justify-between gap-y-4 mb-4">
+                      <div className="w-full sm:w-auto sm:flex-grow">
+                        <div className="flex items-start justify-between sm:items-center sm:justify-start sm:gap-3">
                           <h3 className="font-semibold text-navy-dark text-lg">{deal.address}</h3>
                           <Badge className={`${status.bgColor} ${status.color} text-xs font-semibold rounded-lg`}>
                             {status.label}
                           </Badge>
                         </div>
-                        <p className="text-sm text-navy">{deal.suburb}, {deal.city}</p>
+                        <p className="text-sm text-navy mt-1 sm:mt-2">{deal.suburb}, {deal.city}</p>
                       </div>
-                      <Button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/analysis/${deal.id}`);
-                        }}
-                        variant="outline" 
-                        size="sm"
-                        className="rounded-xl"
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Analysis
-                      </Button>
+                      
+                      <div className="w-full sm:w-auto">
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/analysis/${deal.id}`);
+                          }}
+                          variant="outline" 
+                          size="sm"
+                          className="rounded-xl w-full sm:w-auto"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Analysis
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
