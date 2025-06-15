@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, History, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ChevronDown, History, CheckCircle, XCircle, Clock, ExternalLink } from 'lucide-react';
 import { useScrapingHistory } from '@/hooks/useScrapingHistory';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -130,11 +131,29 @@ const ScrapingHistoryPanel = () => {
                         }
                         
                         return (
-                          <div key={source} className="text-sm bg-white p-2 rounded border">
+                          <div key={source} className="text-sm bg-white p-2 rounded border space-y-2">
                             <div className="font-medium">{source}</div>
                             <div className="text-gray-600">
                               Scraped: {result.scraped || 0}, Skipped: {result.skipped || 0}
                             </div>
+                            {result.searchUrls && result.searchUrls.length > 0 && (
+                              <div className="space-y-1">
+                                <div className="font-medium text-xs text-blue-600">Search URLs:</div>
+                                {result.searchUrls.map((url: string, index: number) => (
+                                  <div key={index} className="flex items-center gap-2">
+                                    <ExternalLink className="h-3 w-3 text-blue-600" />
+                                    <a 
+                                      href={url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-blue-600 hover:underline break-all"
+                                    >
+                                      {url}
+                                    </a>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

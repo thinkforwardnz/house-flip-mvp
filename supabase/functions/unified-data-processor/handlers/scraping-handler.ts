@@ -12,11 +12,13 @@ export async function handleScraping(request: ProcessingRequest): Promise<Respon
   let totalScraped = 0;
   let totalSkipped = 0;
   const errors: string[] = [];
+  const searchUrls: string[] = [];
 
   // Process TradeMe scraping
   if (sources.includes('trademe')) {
     try {
       const searchUrl = buildTradeeMeSearchUrl(filters);
+      searchUrls.push(searchUrl);
       console.log(`Scraping search results from: ${searchUrl}`);
       
       const searchResults = await scraperClient.scrapeSearchResults(searchUrl);
@@ -51,6 +53,7 @@ export async function handleScraping(request: ProcessingRequest): Promise<Respon
     processed: totalScraped,
     skipped: totalSkipped,
     errors,
+    searchUrls,
     message: `Search complete: ${totalScraped} properties found and saved to feed`
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -98,7 +98,7 @@ export const useEnhancedScraping = () => {
                 totalSkipped: data.skipped || 0
               });
 
-              // Update session with results
+              // Update session with results including search URLs
               updateScrapingSession({
                 sessionId: session.id,
                 status: data.success ? 'completed' : 'failed',
@@ -107,7 +107,8 @@ export const useEnhancedScraping = () => {
                     scraped: data.processed || 0,
                     skipped: data.skipped || 0,
                     success: data.success,
-                    error: data.errors?.[0]
+                    error: data.errors?.[0],
+                    searchUrls: data.searchUrls || []
                   }
                 },
                 totalScraped: data.processed || 0,
