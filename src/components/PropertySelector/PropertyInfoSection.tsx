@@ -1,8 +1,7 @@
 
 import React from 'react';
 import type { Deal } from '@/types/analysis';
-import { calculateARV, calculateTotalRenovationCost } from '@/utils/arvCalculation';
-import type { RenovationSelections } from '@/types/renovation';
+import { calculateARV } from '@/utils/arvCalculation';
 
 interface PropertyInfoSectionProps {
   currentDeal: Deal | undefined;
@@ -13,12 +12,8 @@ const PropertyInfoSection = ({ currentDeal, formatCurrency }: PropertyInfoSectio
   if (!currentDeal) return null;
 
   const targetARV = calculateARV(currentDeal);
-  const renovationSelections = (currentDeal.renovation_selections as RenovationSelections) || {};
-  const totalRenovationCost = calculateTotalRenovationCost(renovationSelections);
-  
-  const estimatedProfit = targetARV > 0 && currentDeal.purchase_price
-    ? targetARV - currentDeal.purchase_price - totalRenovationCost - (targetARV * 0.1) // Assuming 10% for fees/other costs
-    : currentDeal.current_profit || 0;
+  // Consistent with OfferTab, target profit is 15% of ARV
+  const targetProfit = targetARV > 0 ? targetARV * 0.15 : 0;
 
   return (
     <div className="mt-3 pt-3 border-t border-gray-100">
@@ -41,8 +36,8 @@ const PropertyInfoSection = ({ currentDeal, formatCurrency }: PropertyInfoSectio
         )}
         <div className="bg-gray-50 p-3 rounded-lg">
           <span className="text-navy font-medium block mb-1">Target Profit:</span>
-          <p className={`font-semibold ${estimatedProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {formatCurrency(estimatedProfit)}
+          <p className={`font-semibold text-green-600`}>
+            {targetProfit > 0 ? formatCurrency(targetProfit) : 'TBD'}
           </p>
         </div>
       </div>
