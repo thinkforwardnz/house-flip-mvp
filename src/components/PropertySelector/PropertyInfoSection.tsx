@@ -15,11 +15,18 @@ const PropertyInfoSection = ({ currentDeal, formatCurrency }: PropertyInfoSectio
   const targetARV = calculateARV(currentDeal);
   const renovationSelections = (currentDeal.renovation_selections as RenovationSelections) || {};
   const totalRenovationCost = calculateTotalRenovationCost(renovationSelections);
-  const purchasePrice = currentDeal.purchase_price || 0;
 
-  // Gross Profit = ARV - Purchase Price - Renovation Costs
-  const grossProfit = (targetARV > 0 && purchasePrice > 0)
-    ? targetARV - purchasePrice - totalRenovationCost
+  // Base value is the pre-renovation value. We use the same fallback logic as
+  // calculateARV for consistency, which prioritizes market data over purchase price
+  // during early analysis.
+  const baseValueForProfit = currentDeal.market_analysis?.analysis?.estimated_arv ||
+                             currentDeal.target_sale_price ||
+                             currentDeal.purchase_price ||
+                             0;
+
+  // Estimated Gross Profit = ARV - Base Value - Renovation Costs
+  const grossProfit = (targetARV > 0 && baseValueForProfit > 0)
+    ? targetARV - baseValueForProfit - totalRenovationCost
     : 0;
 
   return (
@@ -29,10 +36,15 @@ const PropertyInfoSection = ({ currentDeal, formatCurrency }: PropertyInfoSectio
           <span className="text-navy font-medium block mb-1">Location:</span>
           <p className="text-navy-dark">{currentDeal.suburb}, {currentDeal.city}</p>
         </div>
-        {currentDeal.purchase_price && (
+        {currentDeal.purchase_price ? ( // Show purchase price if available
           <div className="bg-gray-50 p-3 rounded-lg">
             <span className="text-navy font-medium block mb-1">Purchase Price:</span>
             <p className="text-navy-dark font-semibold">{formatCurrency(currentDeal.purchase_price)}</p>
+          </div>
+        ) : ( // Otherwise show the estimated market value
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <span className="text-navy font-medium block mb-1">Market Value:</span>
+            <p className="text-navy-dark font-semibold">{baseValueForProfit > 0 ? formatCurrency(baseValueForProfit) : 'TBD'}</p>
           </div>
         )}
         {targetARV > 0 && (
@@ -42,9 +54,9 @@ const PropertyInfoSection = ({ currentDeal, formatCurrency }: PropertyInfoSectio
           </div>
         )}
         <div className="bg-gray-50 p-3 rounded-lg">
-          <span className="text-navy font-medium block mb-1">Gross Profit:</span>
+          <span className="text-navy font-medium block mb-1">Estimated Gross Profit:</span>
           <p className={`font-semibold ${grossProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {(targetARV > 0 && purchasePrice > 0) ? formatCurrency(grossProfit) : 'TBD'}
+            {(targetARV > 0 && baseValueForProfit > 0) ? formatCurrency(grossProfit) : 'TBD'}
           </p>
         </div>
       </div>
