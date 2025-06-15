@@ -172,15 +172,23 @@ export class CustomScraperClient {
         console.log(`Data type: ${typeof data}`);
         console.log(`Is array: ${Array.isArray(data)}`);
         
+        // Handle different response formats
         if (Array.isArray(data)) {
-          console.log(`✅ Scraper ${i + 1} success: Found ${data.length} properties`);
+          console.log(`✅ Scraper ${i + 1} success: Found ${data.length} properties (direct array)`);
           return {
             data: {
               properties: data
             }
           };
+        } else if (data && data.results && Array.isArray(data.results)) {
+          console.log(`✅ Scraper ${i + 1} success: Found ${data.results.length} properties (results wrapper)`);
+          return {
+            data: {
+              properties: data.results
+            }
+          };
         } else if (data && data.properties && Array.isArray(data.properties)) {
-          console.log(`✅ Scraper ${i + 1} success: Found ${data.properties.length} properties`);
+          console.log(`✅ Scraper ${i + 1} success: Found ${data.properties.length} properties (properties wrapper)`);
           return {
             data: {
               properties: data.properties
