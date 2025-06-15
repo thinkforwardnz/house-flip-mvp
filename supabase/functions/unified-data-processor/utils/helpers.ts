@@ -1,5 +1,21 @@
-
-import { ScrapingFilters } from '../../scrape-trademe/types.ts';
+// Local type definition to avoid import issues in edge functions
+interface ScrapingFilters {
+  region?: string;
+  district?: string;
+  suburb?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  minBeds?: string;
+  maxBeds?: string;
+  minBaths?: string;
+  maxBaths?: string;
+  propertyType?: string;
+  keywords?: string;
+  selectedSources?: string[];
+  searchNearbySuburbs?: boolean;
+  openHomesOnly?: boolean;
+  newHomesOnly?: boolean;
+}
 
 // Region to TradeMe URL mapping
 const regionMappings: { [key: string]: string } = {
