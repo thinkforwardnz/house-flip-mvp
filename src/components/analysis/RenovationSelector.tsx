@@ -1,12 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
 import { Wrench, Plus } from 'lucide-react';
 import type { RenovationSelections, RenovationOption } from '@/types/renovation';
 import { DEFAULT_RENOVATION_OPTIONS } from '@/types/renovation';
+import RenovationCard from './RenovationCard';
 
 interface RenovationSelectorProps {
   renovationSelections: RenovationSelections;
@@ -14,6 +10,14 @@ interface RenovationSelectorProps {
   formatCurrency: (amount: number) => string;
   baseMarketValue: number;
 }
+
+const renovationItems = [
+  { type: 'add_bedroom', title: 'Add Bedroom', icon: <Plus className="h-4 w-4 text-green-600" />, isHighValue: true },
+  { type: 'kitchen', title: 'Kitchen Renovation', icon: <Wrench className="h-4 w-4 text-blue-600" /> },
+  { type: 'bathroom', title: 'Bathroom Renovation', icon: <Wrench className="h-4 w-4 text-purple-600" /> },
+  { type: 'flooring', title: 'Flooring Replacement', icon: <Wrench className="h-4 w-4 text-orange-600" /> },
+  { type: 'painting', title: 'Interior/Exterior Painting', icon: <Wrench className="h-4 w-4 text-pink-600" /> },
+];
 
 const RenovationSelector = ({ 
   renovationSelections, 
@@ -165,80 +169,6 @@ const RenovationSelector = ({
     debouncedSave(newSelections);
   };
 
-  const getRenovationCard = (
-    type: string, 
-    title: string, 
-    icon: React.ReactNode,
-    isHighValue = false
-  ) => {
-    const option = localSelections[type];
-    const defaultOption = DEFAULT_RENOVATION_OPTIONS[type];
-    const isSelected = option?.selected || false;
-    const cost = option?.cost ?? defaultOption.cost;
-    const valueAddPercent = option?.value_add_percent ?? defaultOption.value_add_percent;
-    const valueAdd = baseMarketValue * (valueAddPercent / 100);
-
-    return (
-      <Card key={type} className={`${isSelected ? 'border-blue-200 bg-blue-50' : 'border-gray-200'} ${isHighValue ? 'border-green-200 bg-green-50' : ''} ${isUpdating ? 'opacity-75' : ''}`}>
-        <CardHeader className="pb-2 p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {icon}
-              <CardTitle className="text-xs sm:text-sm font-medium">{title}</CardTitle>
-              {isHighValue && <Plus className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />}
-            </div>
-            <Switch
-              checked={isSelected}
-              onCheckedChange={(enabled) => handleRenovationToggle(type, enabled)}
-              disabled={isUpdating}
-            />
-          </div>
-        </CardHeader>
-        
-        {isSelected && (
-          <CardContent className="pt-0 p-3 space-y-3">
-            <p className="text-xs text-gray-600">{defaultOption.description}</p>
-            
-            <div>
-              <Label htmlFor={`${type}-cost`} className="text-xs">Cost</Label>
-              <Input
-                id={`${type}-cost`}
-                type="text"
-                value={rawCostInputs[type] ?? ''}
-                onChange={(e) => handleCostChange(type, e.target.value)}
-                onFocus={() => setActivelyEditing(type)}
-                onBlur={() => handleCostBlur(type)}
-                placeholder="Enter cost"
-                className="mt-1 h-8 text-xs sm:text-sm"
-                disabled={isUpdating}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor={`${type}-value`} className="text-xs">Value add %</Label>
-              <div className="mt-2 px-2">
-                <Slider
-                  value={[valueAddPercent]}
-                  onValueChange={([value]) => handleSliderChange(type, value)}
-                  onValueCommit={([value]) => handleSliderCommit(type, value)}
-                  max={type === 'add_bedroom' ? 30 : 10}
-                  min={0}
-                  step={0.5}
-                  className="w-full"
-                  disabled={isUpdating}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>{valueAddPercent}%</span>
-                <span>+{formatCurrency(valueAdd)}</span>
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
-    );
-  };
-
   return (
     <div className="space-y-3">
       <div>
@@ -251,11 +181,26 @@ const RenovationSelector = ({
         )}
       </div>
       <div className="grid grid-cols-1 gap-2 sm:gap-3">
-        {getRenovationCard('add_bedroom', 'Add Bedroom', <Plus className="h-4 w-4 text-green-600" />, true)}
-        {getRenovationCard('kitchen', 'Kitchen Renovation', <Wrench className="h-4 w-4 text-blue-600" />)}
-        {getRenovationCard('bathroom', 'Bathroom Renovation', <Wrench className="h-4 w-4 text-purple-600" />)}
-        {getRenovationCard('flooring', 'Flooring Replacement', <Wrench className="h-4 w-4 text-orange-600" />)}
-        {getRenovationCard('painting', 'Interior/Exterior Painting', <Wrench className="h-4 w-4 text-pink-600" />)}
+        {renovationItems.map(({ type, title, icon, isHighValue }) => (
+          <RenovationCard
+            key={type}
+            type={type}
+            title={title}
+            icon={icon}
+            isHighValue={isHighValue}
+            selection={localSelections[type]}
+            rawCostInput={rawCostInputs[type] ?? ''}
+            isUpdating={isUpdating}
+            baseMarketValue={baseMarketValue}
+            formatCurrency={formatCurrency}
+            onToggle={(enabled) => handleRenovationToggle(type, enabled)}
+            onCostChange={(value) => handleCostChange(type, value)}
+            onCostBlur={() => handleCostBlur(type)}
+            onCostFocus={() => setActivelyEditing(type)}
+            onSliderChange={(value) => handleSliderChange(type, value)}
+            onSliderCommit={(value) => handleSliderCommit(type, value)}
+          />
+        ))}
       </div>
     </div>
   );
