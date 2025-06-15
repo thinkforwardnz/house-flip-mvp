@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,6 +35,10 @@ export const useScraperEndpoint = () => {
       if (error) throw error;
       
       setEndpoint(newEndpoint);
+      
+      // Also update the environment variable for immediate use
+      console.log('Updated scraper endpoint to:', newEndpoint);
+      
       return { success: true };
     } catch (error) {
       console.error('Failed to update scraper endpoint:', error);

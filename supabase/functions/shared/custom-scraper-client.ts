@@ -75,16 +75,53 @@ export class CustomScraperClient {
   private fallbackUrls: string[];
 
   constructor() {
-    this.baseUrl = Deno.env.get('CUSTOM_SCRAPER_BASE_URL') || 'https://7eeb-222-154-21-216.ngrok-free.app';
+    // Initialize with environment variable as fallback
+    this.baseUrl = Deno.env.get('CUSTOM_SCRAPER_BASE_URL') || 'https://e104-222-154-21-216.ngrok-free.app';
     this.fallbackUrls = [
-      'https://7eeb-222-154-21-216.ngrok-free.app',
-      // Add more fallback URLs if available
+      'https://e104-222-154-21-216.ngrok-free.app',
     ];
+  }
+
+  private async loadCurrentEndpoint(): Promise<string> {
+    try {
+      console.log('Loading current endpoint from database...');
+      
+      // Get the current endpoint from the get-scraper-config function
+      const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/get-scraper-config`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const endpoint = data.endpoint;
+        console.log(`Loaded endpoint from database: ${endpoint}`);
+        
+        // Update baseUrl and fallbackUrls with the current endpoint
+        this.baseUrl = endpoint;
+        this.fallbackUrls = [endpoint, ...this.fallbackUrls.filter(url => url !== endpoint)];
+        
+        return endpoint;
+      } else {
+        console.warn('Failed to load endpoint from database, using fallback');
+        return this.baseUrl;
+      }
+    } catch (error) {
+      console.error('Error loading endpoint from database:', error);
+      return this.baseUrl;
+    }
   }
 
   async scrapeSearchResults(searchUrl: string): Promise<{ data: { properties: CustomScraperProperty[] } }> {
     console.log('=== CUSTOM SCRAPER CLIENT ===');
-    console.log(`Primary scraper URL: ${this.baseUrl}`);
+    
+    // Load the current endpoint before scraping
+    await this.loadCurrentEndpoint();
+    
+    console.log(`Current scraper URL: ${this.baseUrl}`);
     console.log(`Search URL to scrape: ${searchUrl}`);
     
     // Validate the search URL first
@@ -165,6 +202,9 @@ export class CustomScraperClient {
   async scrapeProperty(propertyUrl: string): Promise<FullPropertyResponse> {
     console.log('=== SCRAPING INDIVIDUAL PROPERTY ===');
     console.log(`Property URL: ${propertyUrl}`);
+    
+    // Load the current endpoint before scraping
+    await this.loadCurrentEndpoint();
     
     try {
       const response = await fetch(`${this.baseUrl}/scrape-property-full`, {
