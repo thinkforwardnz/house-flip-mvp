@@ -65,23 +65,33 @@ const districtMappings: { [key: string]: string } = {
 };
 
 export function buildTradeeMeSearchUrl(filters: ScrapingFilters): string {
+  console.log('Building URL with filters:', JSON.stringify(filters, null, 2));
+  
   // Start with base TradeMe property URL
   let baseUrl = 'https://www.trademe.co.nz/a/property/residential/sale';
   
   // Add region if specified
   if (filters.region && regionMappings[filters.region]) {
-    baseUrl += `/${regionMappings[filters.region]}`;
+    const regionSlug = regionMappings[filters.region];
+    baseUrl += `/${regionSlug}`;
+    console.log(`Added region: ${filters.region} -> ${regionSlug}`);
     
     // Add district if specified
     if (filters.district && districtMappings[filters.district]) {
-      baseUrl += `/${districtMappings[filters.district]}`;
+      const districtSlug = districtMappings[filters.district];
+      baseUrl += `/${districtSlug}`;
+      console.log(`Added district: ${filters.district} -> ${districtSlug}`);
       
       // Add suburb if specified
-      if (filters.suburb) {
+      if (filters.suburb && filters.suburb.trim()) {
         const suburbSlug = filters.suburb.toLowerCase()
           .replace(/ /g, '-')
-          .replace(/'/g, '');
-        baseUrl += `/${suburbSlug}`;
+          .replace(/'/g, '')
+          .replace(/[^a-z0-9-]/g, '');
+        if (suburbSlug) {
+          baseUrl += `/${suburbSlug}`;
+          console.log(`Added suburb: ${filters.suburb} -> ${suburbSlug}`);
+        }
       }
     }
   }
@@ -90,49 +100,79 @@ export function buildTradeeMeSearchUrl(filters: ScrapingFilters): string {
   
   // Handle search keywords (flip-related terms) - only add if provided
   if (filters.keywords && filters.keywords.trim()) {
-    const keywords = filters.keywords.split(',').map((k: string) => k.trim());
-    if (keywords.length > 0 && keywords[0]) {
+    const keywords = filters.keywords.split(',').map((k: string) => k.trim()).filter(k => k);
+    if (keywords.length > 0) {
       params.append('search_string', keywords[0]);
+      console.log(`Added keywords: ${keywords[0]}`);
     }
   }
   
   // Handle price filters
-  if (filters.minPrice) {
+  if (filters.minPrice && filters.minPrice.trim()) {
     const minPrice = parseInt(filters.minPrice.toString().replace(/[^0-9]/g, ''));
     if (minPrice > 0) {
       params.append('price_min', minPrice.toString());
+      console.log(`Added min price: ${minPrice}`);
     }
   }
   
-  if (filters.maxPrice) {
+  if (filters.maxPrice && filters.maxPrice.trim()) {
     const maxPrice = parseInt(filters.maxPrice.toString().replace(/[^0-9]/g, ''));
     if (maxPrice > 0) {
       params.append('price_max', maxPrice.toString());
+      console.log(`Added max price: ${maxPrice}`);
     }
   }
   
   // Handle bedroom filters
-  if (filters.minBeds) {
-    params.append('bedrooms_min', filters.minBeds.toString());
+  if (filters.minBeds && filters.minBeds.trim()) {
+    const minBeds = filters.minBeds.replace('+', '');
+    if (minBeds !== 'Any' && minBeds !== 'any') {
+      params.append('bedrooms_min', minBeds);
+      console.log(`Added min beds: ${minBeds}`);
+    }
   }
   
-  if (filters.maxBeds) {
-    params.append('bedrooms_max', filters.maxBeds.toString());
+  if (filters.maxBeds && filters.maxBeds.trim()) {
+    const maxBeds = filters.maxBeds.replace('+', '');
+    if (maxBeds !== 'Any' && maxBeds !== 'any') {
+      params.append('bedrooms_max', maxBeds);
+      console.log(`Added max beds: ${maxBeds}`);
+    }
   }
   
   // Handle bathroom filters
-  if (filters.minBaths) {
-    params.append('bathrooms_min', filters.minBaths.toString());
+  if (filters.minBaths && filters.minBaths.trim()) {
+    const minBaths = filters.minBaths.replace('+', '');
+    if (minBaths !== 'Any' && minBaths !== 'any') {
+      params.append('bathrooms_min', minBaths);
+      console.log(`Added min baths: ${minBaths}`);
+    }
   }
   
-  if (filters.maxBaths) {
-    params.append('bathrooms_max', filters.maxBaths.toString());
+  if (filters.maxBaths && filters.maxBaths.trim()) {
+    const maxBaths = filters.maxBaths.replace('+', '');
+    if (maxBaths !== 'Any' && maxBaths !== 'any') {
+      params.append('bathrooms_max', maxBaths);
+      console.log(`Added max baths: ${maxBaths}`);
+    }
   }
   
+  // Build final URL
   const queryString = params.toString();
   const finalUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl;
   
   console.log('Built TradeMe URL:', finalUrl);
+  
+  // Validate URL format
+  try {
+    new URL(finalUrl);
+    console.log('URL validation: PASSED');
+  } catch (error) {
+    console.error('URL validation: FAILED', error);
+    throw new Error(`Invalid URL generated: ${finalUrl}`);
+  }
+  
   return finalUrl;
 }
 
