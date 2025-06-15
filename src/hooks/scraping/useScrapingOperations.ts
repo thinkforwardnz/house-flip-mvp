@@ -12,6 +12,7 @@ interface UseScrapingOperationsProps {
   startSession: (sessionId: string) => void;
   resetProgress: () => void;
   currentSession: string | null;
+  setIsScrapingActive: (isActive: boolean) => void;
 }
 
 export const useScrapingOperations = ({
@@ -20,6 +21,7 @@ export const useScrapingOperations = ({
   startSession,
   resetProgress,
   currentSession,
+  setIsScrapingActive,
 }: UseScrapingOperationsProps) => {
   const { toast } = useToast();
   const { createScrapingSession, updateScrapingSession } = useScrapingHistory();
@@ -135,7 +137,7 @@ export const useScrapingOperations = ({
     }
   }, [updateProgress, setProgress, updateScrapingSession, toast, queryClient]);
 
-  const startScraping = useCallback(async (
+  const startScraping = useCallback((
     filters: ScrapingFilters = {},
     sources: string[] = ['trademe']
   ) => {
@@ -156,6 +158,7 @@ export const useScrapingOperations = ({
             });
 
             await performScraping(session.id, filters, sources);
+            setIsScrapingActive(false);
           },
           onError: (error) => {
             console.error('Session creation error:', error);
@@ -172,6 +175,7 @@ export const useScrapingOperations = ({
                 errors: [error.message]
               });
             }
+            setIsScrapingActive(false);
           }
         }
       );
@@ -182,10 +186,9 @@ export const useScrapingOperations = ({
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      resetProgress();
+      setIsScrapingActive(false);
     }
-  }, [createScrapingSession, toast, performScraping, startSession, currentSession, updateScrapingSession, resetProgress]);
+  }, [createScrapingSession, toast, performScraping, startSession, currentSession, updateScrapingSession, setIsScrapingActive]);
 
   const cancelScraping = useCallback(() => {
     console.log('Cancelling search...');
@@ -209,3 +212,4 @@ export const useScrapingOperations = ({
     cancelScraping,
   };
 };
+

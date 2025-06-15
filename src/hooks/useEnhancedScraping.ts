@@ -14,6 +14,7 @@ export const useEnhancedScraping = () => {
     setProgress,
     resetProgress,
     startSession,
+    setIsScrapingActive,
   } = useScrapingProgress();
 
   const { startScraping, cancelScraping } = useScrapingOperations({
@@ -22,14 +23,15 @@ export const useEnhancedScraping = () => {
     startSession,
     resetProgress,
     currentSession,
+    setIsScrapingActive,
   });
 
-  const handleStartScraping = async (
+  const handleStartScraping = (
     filters: any = {},
     sources: string[] = ['trademe']
   ) => {
     initializeProgress(sources);
-    await startScraping(filters, sources);
+    startScraping(filters, sources);
   };
 
   return {
@@ -43,3 +45,4 @@ export const useEnhancedScraping = () => {
 
 // Export types for use in other components
 export type { SourceProgress, ScrapingFilters } from './scraping/types';
+
