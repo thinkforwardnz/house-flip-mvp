@@ -159,11 +159,13 @@ const AnalysisDashboard = () => {
                   >
                     <div className="flex flex-wrap items-start justify-between gap-y-4 mb-4">
                       <div className="w-full sm:w-auto sm:flex-grow">
-                        <div className="flex items-start justify-between sm:items-center sm:justify-start sm:gap-3">
+                        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-start sm:gap-3">
                           <h3 className="font-semibold text-navy-dark text-lg">{deal.address}</h3>
-                          <Badge className={`${status.bgColor} ${status.color} text-xs font-semibold rounded-lg`}>
-                            {status.label}
-                          </Badge>
+                          <div className="flex justify-end sm:justify-start">
+                            <Badge className={`${status.bgColor} ${status.color} text-xs font-semibold rounded-lg`}>
+                              {status.label}
+                            </Badge>
+                          </div>
                         </div>
                         <p className="text-sm text-navy mt-1 sm:mt-2">{deal.suburb}, {deal.city}</p>
                       </div>
