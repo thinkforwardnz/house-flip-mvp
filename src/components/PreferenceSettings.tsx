@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 const PreferenceSettings = () => {
   const { toast } = useToast();
   const [preferences, setPreferences] = useState({
-    defaultRegions: ['Auckland Central', 'North Shore'],
+    defaultRegions: ['Auckland', 'Wellington'],
     budgetMin: '500000',
     budgetMax: '1200000',
     currency: 'NZD',
@@ -24,9 +24,22 @@ const PreferenceSettings = () => {
   });
 
   const regions = [
-    'Auckland Central', 'North Shore', 'West Auckland', 'South Auckland',
-    'Wellington Central', 'Lower Hutt', 'Upper Hutt', 'Porirua',
-    'Christchurch Central', 'Hamilton', 'Tauranga', 'Dunedin'
+    'Wellington',
+    'Auckland',
+    'Canterbury',
+    'Bay of Plenty',
+    'Waikato',
+    'Otago',
+    'Manawatu-Wanganui',
+    'Northland',
+    'Hawke\'s Bay',
+    'Taranaki',
+    'Nelson',
+    'Marlborough',
+    'Southland',
+    'Tasman',
+    'Gisborne',
+    'West Coast'
   ];
 
   const propertyTypes = [
