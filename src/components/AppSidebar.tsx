@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useAuth } from '@/components/AuthProvider';
+import { useProfile } from '@/hooks/useProfile';
 import { 
   Home, 
   Search,
@@ -43,7 +44,21 @@ const navigationItems = [
 
 export function AppSidebar() {
   const { user, signOut } = useAuth();
+  const { profile } = useProfile();
   const location = useLocation();
+
+  const getDisplayName = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    }
+    if (profile?.first_name) {
+      return profile.first_name;
+    }
+    if (profile?.last_name) {
+      return profile.last_name;
+    }
+    return user?.email || 'User';
+  };
 
   return (
     <Sidebar className="border-r border-gray-200">
@@ -95,7 +110,7 @@ export function AppSidebar() {
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-navy-dark truncate">
-              {user?.email || 'User'}
+              {getDisplayName()}
             </p>
             <p className="text-xs text-navy">Property Investor</p>
           </div>
