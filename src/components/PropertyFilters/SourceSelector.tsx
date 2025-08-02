@@ -37,6 +37,14 @@ const SourceSelector = ({ selectedSources, onSourceChange }: SourceSelectorProps
           />
           <Label htmlFor="oneroof" className="text-sm">OneRoof</Label>
         </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="off-market"
+            checked={selectedSources.includes('off-market')}
+            onCheckedChange={(checked) => onSourceChange('off-market', checked as boolean)}
+          />
+          <Label htmlFor="off-market" className="text-sm">Off-Market</Label>
+        </div>
       </div>
     </div>
   );
