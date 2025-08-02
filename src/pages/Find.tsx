@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,6 @@ import PropertyFeed from '@/components/PropertyFeed';
 import SavedProperties from '@/components/SavedProperties';
 import ScrapingHistoryPanel from '@/components/ScrapingHistoryPanel';
 import { SearchFilters } from '@/types/filters';
-
 const Find = () => {
   const [activeTab, setActiveTab] = useState('feed');
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
@@ -25,19 +23,16 @@ const Find = () => {
     selectedSources: ['trademe'],
     searchNearbySuburbs: false,
     openHomesOnly: false,
-    newHomesOnly: false,
+    newHomesOnly: false
   });
-
   const handleSwitchToSavedTab = () => {
     setActiveTab('saved');
   };
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6">
+  return <div className="max-w-7xl mx-auto space-y-6">
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-700 mb-2">Find Properties</h1>
-        <p className="text-blue-100 text-lg">Discover potential flip opportunities with AI-powered analysis</p>
+        <p className="text-lg text-slate-700">Discover potential flip opportunities with AI-powered analysis</p>
       </div>
 
       {/* Search Filters */}
@@ -46,10 +41,7 @@ const Find = () => {
           <CardTitle className="text-navy-dark">Search Filters</CardTitle>
         </CardHeader>
         <CardContent className="p-6 pt-0">
-          <PropertySearchFilters 
-            filters={searchFilters}
-            onFiltersChange={setSearchFilters}
-          />
+          <PropertySearchFilters filters={searchFilters} onFiltersChange={setSearchFilters} />
         </CardContent>
       </Card>
 
@@ -64,10 +56,7 @@ const Find = () => {
             </TabsList>
             
             <TabsContent value="feed">
-              <PropertyFeed 
-                filters={searchFilters} 
-                onSwitchToSavedTab={handleSwitchToSavedTab}
-              />
+              <PropertyFeed filters={searchFilters} onSwitchToSavedTab={handleSwitchToSavedTab} />
             </TabsContent>
             
             <TabsContent value="saved">
@@ -80,8 +69,6 @@ const Find = () => {
           </Tabs>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default Find;
