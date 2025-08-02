@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import PropertySelector from '@/components/PropertySelector';
@@ -11,22 +10,32 @@ import ComplianceChecklist from '@/components/ComplianceChecklist';
 import AIAlerts from '@/components/AIAlerts';
 import { Hammer, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
 const RenovationManagement = () => {
-  const { selectedDeal, selectedDealId, selectDeal, isLoading } = useSelectedDeal('Reno');
+  const {
+    selectedDeal,
+    selectedDealId,
+    selectDeal,
+    isLoading
+  } = useSelectedDeal('Reno');
   const [activeTab, setActiveTab] = useState('tasks');
-
-  const tabs = [
-    { id: 'tasks', label: 'Tasks & Timeline' },
-    { id: 'tradies', label: 'Tradie Scheduler' },
-    { id: 'budget', label: 'Budget Tracker' },
-    { id: 'files', label: 'Files & Photos' },
-    { id: 'compliance', label: 'Compliance' }
-  ];
-
+  const tabs = [{
+    id: 'tasks',
+    label: 'Tasks & Timeline'
+  }, {
+    id: 'tradies',
+    label: 'Tradie Scheduler'
+  }, {
+    id: 'budget',
+    label: 'Budget Tracker'
+  }, {
+    id: 'files',
+    label: 'Files & Photos'
+  }, {
+    id: 'compliance',
+    label: 'Compliance'
+  }];
   if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto space-y-6">
+    return <div className="max-w-7xl mx-auto space-y-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="h-32 bg-gray-200 rounded mb-6"></div>
@@ -35,18 +44,11 @@ const RenovationManagement = () => {
             <div className="h-64 bg-gray-200 rounded"></div>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!selectedDeal) {
-    return (
-      <div className="max-w-7xl mx-auto space-y-6">
-        <PropertySelector 
-          currentDealId={selectedDealId}
-          onDealSelect={selectDeal}
-          currentStage="Reno"
-        />
+    return <div className="max-w-7xl mx-auto space-y-6">
+        <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Reno" />
         <Card className="bg-white shadow-lg rounded-2xl border-0">
           <CardContent className="p-12 text-center">
             <Hammer className="h-16 w-16 text-gray-300 mx-auto mb-6" />
@@ -57,33 +59,29 @@ const RenovationManagement = () => {
             </Button>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
 
   // Calculate project data from deal
   const projectData = {
     name: `${selectedDeal?.address} Renovation`,
     address: `${selectedDeal?.address}, ${selectedDeal?.suburb}, ${selectedDeal?.city}`,
-    budget: 85000, // This could be stored in deal or calculated
-    actualSpent: 72500, // This would come from renovation records
-    startDate: '2024-01-15', // This would come from deal data
+    budget: 85000,
+    // This could be stored in deal or calculated
+    actualSpent: 72500,
+    // This would come from renovation records
+    startDate: '2024-01-15',
+    // This would come from deal data
     endDate: '2024-03-30'
   };
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6">
+  return <div className="max-w-7xl mx-auto space-y-6">
       {/* Property Selector */}
-      <PropertySelector 
-        currentDealId={selectedDealId}
-        onDealSelect={selectDeal}
-        currentStage="Reno"
-      />
+      <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Reno" />
 
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-700 mb-2">{projectData.name}</h1>
-        <p className="text-blue-100 text-lg">{projectData.address}</p>
+        <p className="text-lg text-slate-700">{projectData.address}</p>
       </div>
 
       {/* AI Alerts */}
@@ -97,19 +95,9 @@ const RenovationManagement = () => {
       <Card className="bg-white shadow-lg rounded-2xl border-0">
         <CardHeader className="p-6">
           <div className="flex space-x-1 bg-gray-100 rounded-xl p-1 overflow-x-auto">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 rounded-xl font-medium text-sm transition-colors whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'bg-blue-primary text-white'
-                    : 'text-navy hover:text-navy-dark'
-                }`}
-              >
+            {tabs.map(tab => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-6 py-3 rounded-xl font-medium text-sm transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-blue-primary text-white' : 'text-navy hover:text-navy-dark'}`}>
                 {tab.label}
-              </button>
-            ))}
+              </button>)}
           </div>
         </CardHeader>
         
@@ -121,8 +109,6 @@ const RenovationManagement = () => {
           {activeTab === 'compliance' && <ComplianceChecklist />}
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default RenovationManagement;
