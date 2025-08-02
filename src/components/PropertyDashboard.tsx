@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useDeals } from '@/hooks/useDeals';
 import CreateDealDialog from '@/components/CreateDealDialog';
+import PropertyEditModal from '@/components/PropertyEditModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,9 +13,13 @@ import type { Deal } from '@/types/analysis';
 const PropertyDashboard = () => {
   const {
     deals: dealProperties,
-    isLoading: dealsLoading
+    isLoading: dealsLoading,
+    updateDeal,
+    isUpdating
   } = useDeals();
   const navigate = useNavigate();
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const getStageColor = (stage: string) => {
     switch (stage) {
       case 'Analysis':
@@ -59,8 +64,19 @@ const PropertyDashboard = () => {
     }).format(amount);
   };
   const handleDealClick = (deal: Deal) => {
-    const route = getStageRoute(deal.pipeline_stage);
-    navigate(`${route}?dealId=${deal.id}`);
+    setSelectedDeal(deal);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedDeal(null);
+  };
+
+  const handleSaveDeal = (dealId: string, updates: Partial<Deal>) => {
+    updateDeal({ id: dealId, ...updates });
+    setIsModalOpen(false);
+    setSelectedDeal(null);
   };
 
   // Calculate totals from deals
@@ -157,7 +173,22 @@ const PropertyDashboard = () => {
               <p className="text-navy mb-6">Create your first property deal to get started!</p>
               <CreateDealDialog />
             </div> : <div className="space-y-4">
-              {dealProperties.map(deal => <div key={deal.id} className="flex items-center justify-between p-6 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer group" onClick={() => handleDealClick(deal)}>
+              {dealProperties.map(deal => <div key={deal.id} className="flex items-center gap-4 p-6 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer group" onClick={() => handleDealClick(deal)}>
+                  {/* Primary Image */}
+                  <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                    {deal.photos && deal.photos.length > 0 ? (
+                      <img 
+                        src={deal.photos[0]} 
+                        alt={deal.address}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Home className="h-8 w-8 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold text-navy-dark">{deal.address}</h3>
@@ -185,6 +216,14 @@ const PropertyDashboard = () => {
             </div>}
         </CardContent>
       </Card>
+
+      <PropertyEditModal
+        deal={selectedDeal}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSave={handleSaveDeal}
+        isUpdating={isUpdating}
+      />
     </div>;
 };
 export default PropertyDashboard;
