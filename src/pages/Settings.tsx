@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,14 +8,12 @@ import PreferenceSettings from '@/components/PreferenceSettings';
 import TeamManagement from '@/components/TeamManagement';
 import ActivityLog from '@/components/ActivityLog';
 import ApiConfigurationManager from '@/components/ApiConfigurationManager';
-
 const Settings = () => {
-  return (
-    <div className="max-w-6xl mx-auto space-y-6">
+  return <div className="max-w-6xl mx-auto space-y-6">
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-700 mb-2">Settings</h1>
-        <p className="text-blue-100 text-lg">Manage your account and preferences</p>
+        <p className="text-lg text-slate-700">Manage your account and preferences</p>
       </div>
 
       {/* Settings Tabs */}
@@ -76,8 +73,6 @@ const Settings = () => {
           </Tabs>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default Settings;
