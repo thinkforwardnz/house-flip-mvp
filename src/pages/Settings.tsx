@@ -14,7 +14,7 @@ const Settings = () => {
   const { profile } = useProfile();
   const isAdmin = profile?.role === 'admin';
 
-  return <div className="max-w-6xl mx-auto space-y-6">
+  return <div className="w-[1280px] mx-auto space-y-6">
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-700 mb-2">Settings</h1>
