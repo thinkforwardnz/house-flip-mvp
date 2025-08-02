@@ -59,24 +59,14 @@ const Sold = () => {
       </div>;
   }
   return <div className="max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-700 mb-2">Deal Completed</h1>
+        <p className="text-lg text-slate-700">Review final outcomes and archive completed deals</p>
+      </div>
+
       {/* Property Selector */}
       <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Sold" />
-
-      {/* Page Header */}
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-2 text-slate-800">Deal Completed</h1>
-          <p className="text-lg text-slate-700">{selectedDeal.address}, {selectedDeal.suburb}, {selectedDeal.city}</p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={handleExportReport} className="rounded-xl bg-white border-white text-navy-dark hover:bg-gray-50">
-            Export Report
-          </Button>
-          <Button className="bg-orange-accent hover:bg-orange-600 text-white rounded-xl" onClick={handleArchiveDeal}>
-            Archive Deal
-          </Button>
-        </div>
-      </div>
 
       {/* Deal Summary */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">

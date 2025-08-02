@@ -75,14 +75,14 @@ const RenovationManagement = () => {
     endDate: '2024-03-30'
   };
   return <div className="max-w-7xl mx-auto space-y-6">
-      {/* Property Selector */}
-      <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Reno" />
-
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-700 mb-2">{projectData.name}</h1>
-        <p className="text-lg text-slate-700">{projectData.address}</p>
+        <h1 className="text-3xl font-bold text-slate-700 mb-2">Renovation Management</h1>
+        <p className="text-lg text-slate-700">Track tasks, budgets and progress for property renovations</p>
       </div>
+
+      {/* Property Selector */}
+      <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Reno" />
 
       {/* AI Alerts */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">

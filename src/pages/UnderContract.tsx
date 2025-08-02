@@ -80,14 +80,14 @@ const UnderContract = () => {
     roi: selectedDeal.purchase_price && selectedDeal.current_profit ? selectedDeal.current_profit / selectedDeal.purchase_price * 100 : 0
   };
   return <div className="max-w-7xl mx-auto space-y-6">
-      {/* Property Selector */}
-      <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Under Contract" />
-
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 text-slate-800">Under Contract</h1>
-        <p className="text-lg text-slate-800">{selectedDeal.address}, {selectedDeal.suburb}, {selectedDeal.city}</p>
+        <h1 className="text-3xl font-bold text-slate-700 mb-2">Under Contract</h1>
+        <p className="text-lg text-slate-700">Complete due diligence and prepare for settlement</p>
       </div>
+
+      {/* Property Selector */}
+      <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Under Contract" />
 
       {/* Property Summary */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">

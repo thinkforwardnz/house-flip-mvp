@@ -100,8 +100,15 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-blue flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white shadow-lg rounded-2xl border-0">
+    <div className="min-h-screen bg-gradient-blue flex flex-col justify-center p-4">
+      {/* Page Header */}
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold text-white mb-2">Welcome</h1>
+        <p className="text-lg text-blue-100">Sign in to manage your property investments</p>
+      </div>
+
+      <div className="flex items-center justify-center">
+        <Card className="w-full max-w-md bg-white shadow-lg rounded-2xl border-0">
         <CardHeader className="text-center p-6">
           <CardTitle className="text-2xl font-bold text-navy-dark">
             NZ House Flipping
@@ -253,6 +260,7 @@ const Auth = () => {
           </Tabs>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };

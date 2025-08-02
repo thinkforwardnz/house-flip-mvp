@@ -72,14 +72,14 @@ const Listed = () => {
     roi: selectedDeal?.purchase_price && selectedDeal?.current_profit ? selectedDeal.current_profit / selectedDeal.purchase_price * 100 : 0
   };
   return <div className="max-w-7xl mx-auto space-y-6">
-      {/* Property Selector */}
-      <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Listed" />
-
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-700 mb-2">Listed for Sale</h1>
-        <p className="text-lg text-slate-700">{selectedDeal?.address}, {selectedDeal?.suburb}, {selectedDeal?.city}</p>
+        <p className="text-lg text-slate-700">Manage marketing and buyer interactions for listed properties</p>
       </div>
+
+      {/* Property Selector */}
+      <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Listed" />
 
       {/* Property Summary */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">

@@ -50,14 +50,14 @@ const OfferStage = () => {
       </div>;
   }
   return <div className="max-w-7xl mx-auto space-y-6">
-      {/* Property Selector */}
-      <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Offer" />
-
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-700 mb-2">Offer Stage</h1>
-        <p className="text-lg text-slate-800">Manage offers and negotiations for {selectedDeal?.address}</p>
+        <p className="text-lg text-slate-700">Build offers and manage negotiations for properties</p>
       </div>
+
+      {/* Property Selector */}
+      <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Offer" />
 
       {/* Property Overview */}
       <Card className="bg-white shadow-lg rounded-2xl border-0">
