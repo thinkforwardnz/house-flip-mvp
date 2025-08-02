@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -12,22 +11,30 @@ import OpenHomeFeedback from '@/components/OpenHomeFeedback';
 import SalesAISummary from '@/components/SalesAISummary';
 import CampaignCalendar from '@/components/CampaignCalendar';
 import { Building, MapPin } from 'lucide-react';
-
 const Listed = () => {
   const navigate = useNavigate();
-  const { selectedDeal, selectedDealId, selectDeal, isLoading } = useSelectedDeal('Listed');
+  const {
+    selectedDeal,
+    selectedDealId,
+    selectDeal,
+    isLoading
+  } = useSelectedDeal('Listed');
   const [activeSection, setActiveSection] = useState('offers');
-
-  const sections = [
-    { id: 'offers', label: 'Buyer Offers' },
-    { id: 'feedback', label: 'Open Home Feedback' },
-    { id: 'ai-summary', label: 'AI Insights' },
-    { id: 'calendar', label: 'Campaign Calendar' }
-  ];
-
+  const sections = [{
+    id: 'offers',
+    label: 'Buyer Offers'
+  }, {
+    id: 'feedback',
+    label: 'Open Home Feedback'
+  }, {
+    id: 'ai-summary',
+    label: 'AI Insights'
+  }, {
+    id: 'calendar',
+    label: 'Campaign Calendar'
+  }];
   if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto space-y-6">
+    return <div className="max-w-7xl mx-auto space-y-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="h-32 bg-gray-200 rounded mb-6"></div>
@@ -36,18 +43,11 @@ const Listed = () => {
             <div className="h-64 bg-gray-200 rounded"></div>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!selectedDeal) {
-    return (
-      <div className="max-w-7xl mx-auto space-y-6">
-        <PropertySelector 
-          currentDealId={selectedDealId}
-          onDealSelect={selectDeal}
-          currentStage="Listed"
-        />
+    return <div className="max-w-7xl mx-auto space-y-6">
+        <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Listed" />
         <Card className="bg-white shadow-lg rounded-2xl border-0">
           <CardContent className="p-12 text-center">
             <Building className="h-16 w-16 text-gray-300 mx-auto mb-6" />
@@ -58,36 +58,27 @@ const Listed = () => {
             </Button>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
   const propertyData = {
     address: selectedDeal?.address,
     listPrice: selectedDeal?.target_sale_price || 0,
-    bedrooms: 3, // This would come from property details if available
+    bedrooms: 3,
+    // This would come from property details if available
     bathrooms: 2,
     sqft: 1200,
     aiRiskLevel: selectedDeal?.current_risk as 'Low' | 'Medium' | 'High',
     estimatedProfit: selectedDeal?.current_profit || 0,
-    roi: selectedDeal?.purchase_price && selectedDeal?.current_profit 
-      ? ((selectedDeal.current_profit / selectedDeal.purchase_price) * 100)
-      : 0
+    roi: selectedDeal?.purchase_price && selectedDeal?.current_profit ? selectedDeal.current_profit / selectedDeal.purchase_price * 100 : 0
   };
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6">
+  return <div className="max-w-7xl mx-auto space-y-6">
       {/* Property Selector */}
-      <PropertySelector 
-        currentDealId={selectedDealId}
-        onDealSelect={selectDeal}
-        currentStage="Listed"
-      />
+      <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Listed" />
 
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-700 mb-2">Listed for Sale</h1>
-        <p className="text-blue-100 text-lg">{selectedDeal?.address}, {selectedDeal?.suburb}, {selectedDeal?.city}</p>
+        <p className="text-lg text-slate-700">{selectedDeal?.address}, {selectedDeal?.suburb}, {selectedDeal?.city}</p>
       </div>
 
       {/* Property Summary */}
@@ -108,19 +99,9 @@ const Listed = () => {
       <Card className="bg-white shadow-lg rounded-2xl border-0">
         <CardHeader className="p-6">
           <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`px-6 py-3 rounded-xl font-medium text-sm transition-colors ${
-                  activeSection === section.id
-                    ? 'bg-blue-primary text-white'
-                    : 'text-navy hover:text-navy-dark'
-                }`}
-              >
+            {sections.map(section => <button key={section.id} onClick={() => setActiveSection(section.id)} className={`px-6 py-3 rounded-xl font-medium text-sm transition-colors ${activeSection === section.id ? 'bg-blue-primary text-white' : 'text-navy hover:text-navy-dark'}`}>
                 {section.label}
-              </button>
-            ))}
+              </button>)}
           </div>
         </CardHeader>
         
@@ -136,17 +117,12 @@ const Listed = () => {
       <Card className="bg-white shadow-lg rounded-2xl border-0">
         <CardContent className="p-6">
           <div className="flex justify-end">
-            <Button 
-              className="bg-green-success hover:bg-green-600 text-white font-medium rounded-xl px-8"
-              onClick={() => navigate('/sold')}
-            >
+            <Button className="bg-green-success hover:bg-green-600 text-white font-medium rounded-xl px-8" onClick={() => navigate('/sold')}>
               Mark as Sold →
             </Button>
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default Listed;
