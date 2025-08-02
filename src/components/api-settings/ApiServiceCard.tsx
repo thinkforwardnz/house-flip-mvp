@@ -22,10 +22,10 @@ const ApiServiceCard = ({ title, description, children }: ApiServiceCardProps) =
       <CardContent className="p-6 pt-0">
         <div className="space-y-6">
           {validChildren.map((child, index) => (
-            <React.Fragment key={index}>
+            <div key={index}>
               {child}
               {index < validChildren.length - 1 && <Separator className="my-6" />}
-            </React.Fragment>
+            </div>
           ))}
         </div>
       </CardContent>

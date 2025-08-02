@@ -38,10 +38,12 @@ const Settings = () => {
                 <SettingsIcon className="h-4 w-4" />
                 <span className="hidden sm:inline">Preferences</span>
               </TabsTrigger>
-              <TabsTrigger value="endpoints" className="flex items-center gap-2 rounded-xl">
-                <Globe className="h-4 w-4" />
-                <span className="hidden sm:inline">API Keys</span>
-              </TabsTrigger>
+              {isAdmin && (
+                <TabsTrigger value="endpoints" className="flex items-center gap-2 rounded-xl">
+                  <Globe className="h-4 w-4" />
+                  <span className="hidden sm:inline">API Keys</span>
+                </TabsTrigger>
+              )}
               {isAdmin && (
                 <TabsTrigger value="team" className="flex items-center gap-2 rounded-xl">
                   <Users className="h-4 w-4" />
@@ -70,9 +72,11 @@ const Settings = () => {
               <PreferenceSettings />
             </TabsContent>
 
-            <TabsContent value="endpoints">
-              <ApiConfigurationManager />
-            </TabsContent>
+            {isAdmin && (
+              <TabsContent value="endpoints">
+                <ApiConfigurationManager />
+              </TabsContent>
+            )}
 
             {isAdmin && (
               <TabsContent value="team">
