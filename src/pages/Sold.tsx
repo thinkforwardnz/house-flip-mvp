@@ -4,11 +4,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import PropertySelector from '@/components/PropertySelector';
 import { useSelectedDeal } from '@/hooks/useSelectedDeal';
+import { useArchiveDeal } from '@/hooks/mutations/useArchiveDeal';
 import FinancialSummary from '@/components/FinancialSummary';
 import SettlementChecklist from '@/components/SettlementChecklist';
 import LessonsLearned from '@/components/LessonsLearned';
 import FinalDocuments from '@/components/FinalDocuments';
-import { Trophy, MapPin } from 'lucide-react';
+import { Trophy, MapPin, Archive } from 'lucide-react';
 const Sold = () => {
   const navigate = useNavigate();
   const {
@@ -17,6 +18,8 @@ const Sold = () => {
     selectDeal,
     isLoading
   } = useSelectedDeal('Sold');
+
+  const { archiveDeal, isArchiving } = useArchiveDeal();
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NZ', {
       style: 'currency',
@@ -28,8 +31,10 @@ const Sold = () => {
     console.log('Exporting deal report for:', selectedDeal?.address);
   };
   const handleArchiveDeal = () => {
-    console.log('Archiving deal:', selectedDeal?.address);
-    navigate('/');
+    if (selectedDeal?.id) {
+      archiveDeal(selectedDeal.id);
+      navigate('/');
+    }
   };
   if (isLoading) {
     return <div className="max-w-7xl mx-auto space-y-6">
@@ -101,10 +106,25 @@ const Sold = () => {
               </p>
             </div>
           </div>
-          {selectedDeal.notes && <div className="mt-6 pt-6 border-t border-gray-100">
+          {selectedDeal.notes && (
+            <div className="mt-6 pt-6 border-t border-gray-100">
               <h4 className="font-medium text-navy-dark mb-2">Final Notes</h4>
               <p className="text-navy">{selectedDeal.notes}</p>
-            </div>}
+            </div>
+          )}
+          
+          {/* Archive Action */}
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <Button 
+              onClick={handleArchiveDeal}
+              disabled={isArchiving}
+              variant="outline"
+              className="w-full flex items-center gap-2"
+            >
+              <Archive className="h-4 w-4" />
+              {isArchiving ? 'Archiving...' : 'Archive Deal'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

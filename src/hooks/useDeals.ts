@@ -10,14 +10,14 @@ import { useCreateDeal } from './mutations/useCreateDeal';
 import { useUpdateDeal } from './mutations/useUpdateDeal';
 import { useDeleteDeal } from './mutations/useDeleteDeal';
 
-export const useDeals = () => {
+export const useDeals = (includeArchived = false) => {
   const { toast } = useToast();
 
   const { data: deals, isLoading, error: fetchError } = useQuery<Deal[], Error>({
-    queryKey: ['deals'],
+    queryKey: ['deals', includeArchived],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('deals')
           .select(`
             *,
@@ -33,8 +33,14 @@ export const useDeals = () => {
               description,
               coordinates
             )
-          `)
-          .order('created_at', { ascending: false }); // Added default ordering
+          `);
+        
+        // Filter out archived deals unless specifically requested
+        if (!includeArchived) {
+          query = query.eq('archived', false);
+        }
+        
+        const { data, error } = await query.order('created_at', { ascending: false });
         
         if (error) throw error;
         if (!data) return []; // Should not happen if no error, but good practice

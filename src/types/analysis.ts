@@ -113,6 +113,8 @@ export interface Deal {
   updated_at: string;
   user_id: string;
   team_id?: string;
+  archived?: boolean;
+  archived_at?: string;
   market_analysis?: MarketData;
   renovation_analysis?: RenovationAnalysis;
   risk_assessment?: RiskAssessment;

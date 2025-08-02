@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { useArchiveDeal } from '@/hooks/mutations/useArchiveDeal';
+import { ArrowRight, Archive, Loader2 } from 'lucide-react';
 import type { Deal } from '@/types/analysis';
 
 interface PropertyEditModalProps {
@@ -25,6 +26,7 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
   isUpdating
 }) => {
   const navigate = useNavigate();
+  const { archiveDeal, isArchiving } = useArchiveDeal();
   const [formData, setFormData] = useState({
     pipeline_stage: deal?.pipeline_stage || 'Analysis',
     notes: deal?.notes || '',
@@ -80,6 +82,13 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
     const route = getStageRoute(formData.pipeline_stage);
     navigate(`${route}?dealId=${deal.id}`);
     onClose();
+  };
+
+  const handleArchive = () => {
+    if (deal?.id) {
+      archiveDeal(deal.id);
+      onClose();
+    }
   };
 
   const handleFieldChange = (field: string, value: string | number) => {
@@ -197,8 +206,20 @@ const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
               disabled={isUpdating}
               className="flex-1"
             >
+              {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {isUpdating ? 'Saving...' : 'Done'}
             </Button>
+            {formData.pipeline_stage === 'Sold' && (
+              <Button 
+                onClick={handleArchive}
+                disabled={isArchiving}
+                variant="outline"
+                className="flex-1 text-slate-600 border-slate-300 hover:bg-slate-50"
+              >
+                {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Archive className="mr-2 h-4 w-4" />}
+                {isArchiving ? 'Archiving...' : 'Archive'}
+              </Button>
+            )}
             <Button 
               onClick={handleGoToPipeline}
               disabled={isUpdating}
