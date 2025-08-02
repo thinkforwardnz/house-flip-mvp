@@ -57,6 +57,8 @@ export const transformSupabaseDeal = (supabaseDeal: DealWithNestedProperty): Dea
     analysis_data: supabaseDeal.analysis_data,
     listing_details: supabaseDeal.listing_details,
     renovation_selections: supabaseDeal.renovation_selections,
+    archived: supabaseDeal.archived,
+    archived_at: supabaseDeal.archived_at,
 
     // The nested 'property' object
     property: transformedProperty,

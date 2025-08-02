@@ -37,6 +37,8 @@ export interface RawDealFromSupabase {
   analysis_data?: any; // JSONB
   listing_details?: any; // JSONB
   renovation_selections?: any; // JSONB
+  archived: boolean;
+  archived_at?: string | null;
 }
 
 // Represents a deal record as fetched from Supabase when joined with 'unified_properties'.
