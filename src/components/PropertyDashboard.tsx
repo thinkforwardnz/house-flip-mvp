@@ -7,19 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Home, 
-  TrendingUp, 
-  DollarSign, 
-  AlertTriangle,
-  ChevronRight
-} from 'lucide-react';
+import { Home, TrendingUp, DollarSign, AlertTriangle, ChevronRight } from 'lucide-react';
 import type { Deal } from '@/types/analysis';
-
 const PropertyDashboard = () => {
-  const { deals: dealProperties, isLoading: dealsLoading } = useDeals();
+  const {
+    deals: dealProperties,
+    isLoading: dealsLoading
+  } = useDeals();
   const navigate = useNavigate();
-
   const getStageColor = (stage: string) => {
     switch (stage) {
       case 'Analysis':
@@ -38,7 +33,6 @@ const PropertyDashboard = () => {
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
-
   const getStageRoute = (stage: string) => {
     switch (stage) {
       case 'Sold':
@@ -57,7 +51,6 @@ const PropertyDashboard = () => {
         return '/analysis';
     }
   };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NZ', {
       style: 'currency',
@@ -65,7 +58,6 @@ const PropertyDashboard = () => {
       minimumFractionDigits: 0
     }).format(amount);
   };
-
   const handleDealClick = (deal: Deal) => {
     const route = getStageRoute(deal.pipeline_stage);
     navigate(`${route}?dealId=${deal.id}`);
@@ -74,17 +66,13 @@ const PropertyDashboard = () => {
   // Calculate totals from deals
   const totalValue = dealProperties.reduce((sum, deal) => sum + (deal.purchase_price || 0), 0);
   const totalProfit = dealProperties.reduce((sum, deal) => sum + (deal.current_profit || 0), 0);
-  const highRiskCount = dealProperties.filter(deal => 
-    deal.current_risk === 'high'
-  ).length;
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6">
+  const highRiskCount = dealProperties.filter(deal => deal.current_risk === 'high').length;
+  return <div className="max-w-7xl mx-auto space-y-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">
+        <h1 className="text-3xl font-bold mb-2 text-slate-900">
           Welcome back!
         </h1>
-        <p className="text-blue-100 text-lg">
+        <p className="text-lg text-slate-700">
           Here's an overview of your property portfolio
         </p>
       </div>
@@ -155,33 +143,21 @@ const PropertyDashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 pt-0">
-          {dealsLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between p-6 border border-gray-100 rounded-2xl">
+          {dealsLoading ? <div className="space-y-4">
+              {[1, 2, 3].map(i => <div key={i} className="flex items-center justify-between p-6 border border-gray-100 rounded-2xl">
                   <div className="flex-1">
                     <Skeleton className="h-4 w-48 mb-2" />
                     <Skeleton className="h-3 w-32" />
                   </div>
                   <Skeleton className="h-6 w-20" />
-                </div>
-              ))}
-            </div>
-          ) : dealProperties.length === 0 ? (
-            <div className="text-center py-12">
+                </div>)}
+            </div> : dealProperties.length === 0 ? <div className="text-center py-12">
               <Home className="h-16 w-16 text-gray-300 mx-auto mb-6" />
               <h3 className="text-lg font-semibold text-navy-dark mb-2">No deals yet</h3>
               <p className="text-navy mb-6">Create your first property deal to get started!</p>
               <CreateDealDialog />
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {dealProperties.map((deal) => (
-                <div 
-                  key={deal.id} 
-                  className="flex items-center justify-between p-6 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer group"
-                  onClick={() => handleDealClick(deal)}
-                >
+            </div> : <div className="space-y-4">
+              {dealProperties.map(deal => <div key={deal.id} className="flex items-center justify-between p-6 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer group" onClick={() => handleDealClick(deal)}>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold text-navy-dark">{deal.address}</h3>
@@ -191,14 +167,10 @@ const PropertyDashboard = () => {
                     </div>
                     <div className="flex items-center gap-4 text-sm text-navy">
                       <span>{deal.suburb}, {deal.city}</span>
-                      {deal.purchase_price && (
-                        <span>Price: {formatCurrency(deal.purchase_price)}</span>
-                      )}
-                      {deal.current_profit && deal.current_profit > 0 && (
-                        <span className="text-green-600 font-medium">
+                      {deal.purchase_price && <span>Price: {formatCurrency(deal.purchase_price)}</span>}
+                      {deal.current_profit && deal.current_profit > 0 && <span className="text-green-600 font-medium">
                           Est. Profit: {formatCurrency(deal.current_profit)}
-                        </span>
-                      )}
+                        </span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
@@ -209,14 +181,10 @@ const PropertyDashboard = () => {
                     </div>
                     <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-primary transition-colors" />
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                </div>)}
+            </div>}
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default PropertyDashboard;
