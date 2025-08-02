@@ -3,8 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ChevronDown, Home, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ChevronDown, Home } from 'lucide-react';
 import type { Deal } from '@/types/analysis';
 
 interface PropertySelectorDesktopProps {
@@ -24,16 +23,9 @@ const PropertySelectorDesktop = ({
   getStageColor,
   formatCurrency
 }: PropertySelectorDesktopProps) => {
-  const navigate = useNavigate();
-
   return (
     <div className="hidden sm:flex flex-col gap-2 xs:gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col gap-1 xs:gap-2 sm:flex-row sm:items-center sm:gap-4 w-full">
-        <Button variant="outline" size="sm" onClick={() => navigate('/')} className="rounded-xl w-full sm:w-auto mb-1 sm:mb-0">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Dashboard
-        </Button>
-        
         <div className="flex items-center gap-2 xs:gap-3 w-full min-w-0">
           <Home className="h-5 w-5 text-blue-primary flex-shrink-0" />
           <div className="min-w-0">
