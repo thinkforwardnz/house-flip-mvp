@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,12 +12,15 @@ import AIReviewSummary from '@/components/AIReviewSummary';
 import TaskLog from '@/components/TaskLog';
 import DueDiligenceReminders from '@/components/DueDiligenceReminders';
 import { MapPin } from 'lucide-react';
-
 const UnderContract = () => {
   const navigate = useNavigate();
-  const { selectedDeal, selectedDealId, selectDeal, isLoading } = useSelectedDeal('Under Contract');
+  const {
+    selectedDeal,
+    selectedDealId,
+    selectDeal,
+    isLoading
+  } = useSelectedDeal('Under Contract');
   const [activeSection, setActiveSection] = useState('checklist');
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NZ', {
       style: 'currency',
@@ -26,17 +28,21 @@ const UnderContract = () => {
       minimumFractionDigits: 0
     }).format(amount);
   };
-
-  const sections = [
-    { id: 'checklist', label: 'Due Diligence' },
-    { id: 'budget', label: 'Budget Updates' },
-    { id: 'ai-review', label: 'AI Review' },
-    { id: 'tasks', label: 'Tasks & Notes' }
-  ];
-
+  const sections = [{
+    id: 'checklist',
+    label: 'Due Diligence'
+  }, {
+    id: 'budget',
+    label: 'Budget Updates'
+  }, {
+    id: 'ai-review',
+    label: 'AI Review'
+  }, {
+    id: 'tasks',
+    label: 'Tasks & Notes'
+  }];
   if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto space-y-6">
+    return <div className="max-w-7xl mx-auto space-y-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="h-32 bg-gray-200 rounded mb-6"></div>
@@ -45,18 +51,11 @@ const UnderContract = () => {
             <div className="h-64 bg-gray-200 rounded"></div>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!selectedDeal) {
-    return (
-      <div className="max-w-7xl mx-auto space-y-6">
-        <PropertySelector 
-          currentDealId={selectedDealId}
-          onDealSelect={selectDeal}
-          currentStage="Under Contract"
-        />
+    return <div className="max-w-7xl mx-auto space-y-6">
+        <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Under Contract" />
         <Card className="bg-white shadow-lg rounded-2xl border-0">
           <CardContent className="p-12 text-center">
             <MapPin className="h-16 w-16 text-gray-300 mx-auto mb-6" />
@@ -67,36 +66,27 @@ const UnderContract = () => {
             </Button>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
   const propertyData = {
     address: selectedDeal.address,
     listPrice: selectedDeal.purchase_price || 0,
-    bedrooms: 3, // This would come from property details if available
+    bedrooms: 3,
+    // This would come from property details if available
     bathrooms: 2,
     sqft: 1200,
     aiRiskLevel: selectedDeal.current_risk as 'Low' | 'Medium' | 'High',
     estimatedProfit: selectedDeal.current_profit || 0,
-    roi: selectedDeal.purchase_price && selectedDeal.current_profit 
-      ? ((selectedDeal.current_profit / selectedDeal.purchase_price) * 100)
-      : 0
+    roi: selectedDeal.purchase_price && selectedDeal.current_profit ? selectedDeal.current_profit / selectedDeal.purchase_price * 100 : 0
   };
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6">
+  return <div className="max-w-7xl mx-auto space-y-6">
       {/* Property Selector */}
-      <PropertySelector 
-        currentDealId={selectedDealId}
-        onDealSelect={selectDeal}
-        currentStage="Under Contract"
-      />
+      <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Under Contract" />
 
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Under Contract</h1>
-        <p className="text-blue-100 text-lg">{selectedDeal.address}, {selectedDeal.suburb}, {selectedDeal.city}</p>
+        <h1 className="text-3xl font-bold mb-2 text-slate-800">Under Contract</h1>
+        <p className="text-lg text-slate-800">{selectedDeal.address}, {selectedDeal.suburb}, {selectedDeal.city}</p>
       </div>
 
       {/* Property Summary */}
@@ -124,19 +114,9 @@ const UnderContract = () => {
       <Card className="bg-white shadow-lg rounded-2xl border-0">
         <CardHeader className="p-6">
           <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`px-6 py-3 rounded-xl font-medium text-sm transition-colors ${
-                  activeSection === section.id
-                    ? 'bg-blue-primary text-white'
-                    : 'text-navy hover:text-navy-dark'
-                }`}
-              >
+            {sections.map(section => <button key={section.id} onClick={() => setActiveSection(section.id)} className={`px-6 py-3 rounded-xl font-medium text-sm transition-colors ${activeSection === section.id ? 'bg-blue-primary text-white' : 'text-navy hover:text-navy-dark'}`}>
                 {section.label}
-              </button>
-            ))}
+              </button>)}
           </div>
         </CardHeader>
         
@@ -152,17 +132,12 @@ const UnderContract = () => {
       <Card className="bg-white shadow-lg rounded-2xl border-0">
         <CardContent className="p-6">
           <div className="flex justify-end">
-            <Button 
-              className="bg-blue-primary hover:bg-blue-secondary text-white font-medium rounded-xl px-8"
-              onClick={() => navigate('/renovation')}
-            >
+            <Button className="bg-blue-primary hover:bg-blue-secondary text-white font-medium rounded-xl px-8" onClick={() => navigate('/renovation')}>
               Move to Renovation →
             </Button>
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default UnderContract;
