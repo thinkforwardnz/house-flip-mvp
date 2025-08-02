@@ -11,7 +11,7 @@ import type { Deal } from '@/types/analysis';
 
 const ArchivedProperties = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { deals, isLoading } = useDeals();
+  const { deals, isLoading } = useDeals(true);
   const { unarchiveDeal, isUnarchiving } = useArchiveDeal();
 
   // Filter for archived deals
