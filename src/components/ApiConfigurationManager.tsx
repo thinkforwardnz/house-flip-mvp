@@ -24,11 +24,20 @@ const ApiConfigurationManager = () => {
     
     setLoadingRef(true);
     setIsLoading(true);
+    console.log('Loading API configurations...');
+    
     try {
       const { data, error } = await supabase.functions.invoke('get-scraper-config');
-      if (error) throw error;
+      console.log('API config response:', { data, error });
+      
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
       
       const loadedConfigs = { ...data };
+      console.log('Loaded configs:', loadedConfigs);
+      
       setConfigs(loadedConfigs);
       setInitialConfigs(loadedConfigs);
       
@@ -43,7 +52,7 @@ const ApiConfigurationManager = () => {
       console.error('Failed to load API configurations:', error);
       toast({
         title: "Failed to load settings",
-        description: "Could not fetch API configurations. Please try again.",
+        description: `Could not fetch API configurations: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
@@ -178,6 +187,12 @@ const ApiConfigurationManager = () => {
 
   return (
     <div className="space-y-8">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <p className="text-sm text-blue-800">
+          <strong>Note:</strong> API keys are securely stored as Supabase secrets. Values shown here are masked for security. 
+          To update API keys, use the Supabase dashboard or contact your administrator.
+        </p>
+      </div>
       {Object.entries(apiConfigStructure).map(([groupTitle, groupConfigs]) => (
         <ApiServiceCard key={groupTitle} title={groupTitle}>
           {groupConfigs.map(config => (

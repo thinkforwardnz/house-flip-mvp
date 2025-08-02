@@ -15,7 +15,7 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Query all scraper configurations
+    // Query all scraper configurations from database
     const { data, error } = await supabase
       .from('scraper_config')
       .select('config_key, config_value');
@@ -27,11 +27,34 @@ serve(async (req) => {
 
     // Convert array to object for easier frontend consumption
     const configs: Record<string, string> = {};
+    
+    // Add database configurations
     if (data) {
       data.forEach(config => {
         configs[config.config_key] = config.config_value;
       });
     }
+
+    // Add environment variables/secrets (these will be empty strings if not set)
+    const secretKeys = [
+      'openai_api_key',
+      'google_maps_api_key', 
+      'apify_api_token',
+      'linz_api_key',
+      'firecrawl_key',
+      'agentql_api_key'
+    ];
+
+    secretKeys.forEach(key => {
+      const envKey = key.toUpperCase();
+      const value = Deno.env.get(envKey);
+      if (value) {
+        // Only show first 8 characters for security, or indicate if set
+        configs[key] = value.length > 8 ? `${value.substring(0, 8)}...` : value;
+      } else {
+        configs[key] = '';
+      }
+    });
 
     return new Response(JSON.stringify(configs), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
