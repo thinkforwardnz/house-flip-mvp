@@ -208,14 +208,6 @@ const PropertyListingCard = ({
               <X className="h-3 w-3" />
             </Button>
           </div>
-          <Button 
-            variant="secondary"
-            size="sm"
-            className="w-full text-xs h-8 mt-1"
-            onClick={() => console.log('Recommend flips for property:', property.id)}
-          >
-            Recommend Flips
-          </Button>
         </div>
       </CardFooter>
     </Card>
