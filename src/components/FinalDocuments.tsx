@@ -3,7 +3,10 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Upload, FileText, Image, Download, Trash, Eye } from 'lucide-react';
+import { Upload, FileText, Image, Download, Trash, Eye, Archive } from 'lucide-react';
+import { useArchiveDeal } from '@/hooks/mutations/useArchiveDeal';
+import { useSelectedDeal } from '@/hooks/useSelectedDeal';
+import { useNavigate } from 'react-router-dom';
 
 interface Document {
   id: string;
@@ -15,6 +18,9 @@ interface Document {
 }
 
 const FinalDocuments = () => {
+  const navigate = useNavigate();
+  const { selectedDeal } = useSelectedDeal('Sold');
+  const { archiveDeal, isArchiving } = useArchiveDeal();
   const [documents] = useState<Document[]>([
     {
       id: '1',
@@ -90,6 +96,13 @@ const FinalDocuments = () => {
     };
     
     return labels[type as keyof typeof labels] || 'Other';
+  };
+
+  const handleArchiveDeal = () => {
+    if (selectedDeal?.id) {
+      archiveDeal(selectedDeal.id);
+      navigate('/');
+    }
   };
 
   return (
@@ -187,6 +200,15 @@ const FinalDocuments = () => {
               className="bg-[#FF9800] hover:bg-[#FF9800]/90 text-white"
             >
               Generate Deal Report
+            </Button>
+            <Button 
+              onClick={handleArchiveDeal}
+              disabled={isArchiving}
+              variant="outline"
+              className="border-blue-primary text-blue-primary hover:bg-blue-primary hover:text-white"
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              {isArchiving ? 'Archiving...' : 'Archive Deal'}
             </Button>
           </div>
         </div>
