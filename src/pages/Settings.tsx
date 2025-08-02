@@ -60,35 +60,35 @@ const Settings = () => {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="profile">
+            <TabsContent value="profile" className="min-h-[600px]">
               <ProfileSettings />
             </TabsContent>
 
-            <TabsContent value="notifications">
+            <TabsContent value="notifications" className="min-h-[600px]">
               <NotificationSettings />
             </TabsContent>
 
-            <TabsContent value="preferences">
+            <TabsContent value="preferences" className="min-h-[600px]">
               <PreferenceSettings />
             </TabsContent>
 
             {isAdmin && (
-              <TabsContent value="endpoints">
+              <TabsContent value="endpoints" className="min-h-[600px]">
                 <ApiConfigurationManager />
               </TabsContent>
             )}
 
             {isAdmin && (
-              <TabsContent value="team">
+              <TabsContent value="team" className="min-h-[600px]">
                 <TeamManagement />
               </TabsContent>
             )}
 
-            <TabsContent value="archive">
+            <TabsContent value="archive" className="min-h-[600px]">
               <ArchivedProperties />
             </TabsContent>
 
-            <TabsContent value="activity">
+            <TabsContent value="activity" className="min-h-[600px]">
               <ActivityLog />
             </TabsContent>
           </Tabs>
