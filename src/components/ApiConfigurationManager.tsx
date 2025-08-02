@@ -14,11 +14,15 @@ const ApiConfigurationManager = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [testStatuses, setTestStatuses] = useState<Record<string, TestStatus>>({});
+  const [loadingRef, setLoadingRef] = useState(false);
   const { toast } = useToast();
 
   const allConfigKeys = Object.values(apiConfigStructure).flat().map(c => c.id);
 
   const loadConfigs = useCallback(async () => {
+    if (loadingRef) return; // Prevent multiple simultaneous calls
+    
+    setLoadingRef(true);
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('get-scraper-config');
@@ -44,6 +48,7 @@ const ApiConfigurationManager = () => {
       });
     } finally {
       setIsLoading(false);
+      setLoadingRef(false);
     }
   }, [toast, allConfigKeys]);
 
