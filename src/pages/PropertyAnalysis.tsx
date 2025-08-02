@@ -1,4 +1,3 @@
-
 import React, { useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PropertySelector from '@/components/PropertySelector';
@@ -10,11 +9,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
 import type { Deal } from '@/types/analysis';
-
 const PropertyAnalysis = () => {
   const [searchParams] = useSearchParams();
   const dealId = searchParams.get('dealId');
-
   const {
     selectedDeal,
     selectedDealId,
@@ -29,7 +26,6 @@ const PropertyAnalysis = () => {
   // Always call useDeals once, then find the deal
   const currentDealId = dealId || selectedDealId;
   const currentDeal = deals.find(d => d.id === currentDealId);
-
   const handleSaveDealUpdates = useCallback((dealUpdates: Partial<Deal>) => {
     if (currentDeal?.id) {
       updateDeal({
@@ -38,7 +34,6 @@ const PropertyAnalysis = () => {
       });
     }
   }, [currentDeal?.id, updateDeal]);
-  
   if (isLoading) {
     return <div className="max-w-7xl mx-auto space-y-6">
         <div className="animate-pulse">
@@ -52,12 +47,11 @@ const PropertyAnalysis = () => {
         </div>
       </div>;
   }
-  
   return <div className="max-w-7xl mx-auto space-y-6">
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-700 mb-2">Property Analysis</h1>
-        <p className="text-blue-100 text-lg">
+        <p className="text-lg text-slate-700">
           {currentDealId ? 'Detailed property analysis and financial modeling' : 'AI-powered analysis dashboard'}
         </p>
       </div>
@@ -81,5 +75,4 @@ const PropertyAnalysis = () => {
         </div>}
     </div>;
 };
-
 export default PropertyAnalysis;
