@@ -175,7 +175,7 @@ const PropertyDashboard = () => {
             </div> : <div className="space-y-4">
               {dealProperties.map(deal => <div key={deal.id} className="flex items-center gap-4 p-6 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer group" onClick={() => handleDealClick(deal)}>
                   {/* Primary Image */}
-                  <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                     {deal.photos && deal.photos.length > 0 ? (
                       <img 
                         src={deal.photos[0]} 
@@ -184,7 +184,7 @@ const PropertyDashboard = () => {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Home className="h-8 w-8 text-gray-400" />
+                        <Home className="h-6 w-6 text-gray-400" />
                       </div>
                     )}
                   </div>
