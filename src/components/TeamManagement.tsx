@@ -16,65 +16,39 @@ import {
   Shield, 
   Eye,
   Edit,
-  Send
+  Send,
+  Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { format } from 'date-fns';
 
 const TeamManagement = () => {
   const { toast } = useToast();
+  const { teamMembers, isLoading, error } = useTeamMembers();
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteData, setInviteData] = useState({
     email: '',
-    role: 'viewer',
+    role: 'investor',
     message: ''
   });
 
-  const [teamMembers] = useState([
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      email: 'sarah@example.com',
-      role: 'admin',
-      status: 'active',
-      joinedAt: '2024-01-15',
-      lastActive: '2 hours ago'
-    },
-    {
-      id: 2,
-      name: 'Mike Chen',
-      email: 'mike@example.com',
-      role: 'collaborator',
-      status: 'active',
-      joinedAt: '2024-02-20',
-      lastActive: '1 day ago'
-    },
-    {
-      id: 3,
-      name: 'Emma Wilson',
-      email: 'emma@example.com',
-      role: 'viewer',
-      status: 'pending',
-      joinedAt: '2024-03-01',
-      lastActive: 'Never'
-    }
-  ]);
-
   const roleColors = {
     admin: 'bg-red-100 text-red-800',
-    collaborator: 'bg-blue-100 text-blue-800',
-    viewer: 'bg-gray-100 text-gray-800'
+    investor: 'bg-blue-100 text-blue-800',
+    team_member: 'bg-gray-100 text-gray-800'
   };
 
-  const statusColors = {
-    active: 'bg-green-100 text-green-800',
-    pending: 'bg-yellow-100 text-yellow-800',
-    inactive: 'bg-gray-100 text-gray-800'
+  const roleTitles = {
+    admin: 'Admin',
+    investor: 'Investor',
+    team_member: 'Team Member'
   };
 
   const handleSendInvite = () => {
@@ -103,9 +77,48 @@ const TeamManagement = () => {
     });
   };
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const getInitials = (firstName: string | null, lastName: string | null, email: string) => {
+    if (firstName && lastName) {
+      return `${firstName[0]}${lastName[0]}`.toUpperCase();
+    }
+    if (firstName) {
+      return firstName[0].toUpperCase();
+    }
+    if (lastName) {
+      return lastName[0].toUpperCase();
+    }
+    return email[0].toUpperCase();
   };
+
+  const getDisplayName = (firstName: string | null, lastName: string | null, email: string) => {
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
+    }
+    if (firstName) {
+      return firstName;
+    }
+    if (lastName) {
+      return lastName;
+    }
+    return email;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <span className="ml-2">Loading team members...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600">Failed to load team members</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -153,15 +166,15 @@ const TeamManagement = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="viewer">
+                      <SelectItem value="team_member">
                         <div>
-                          <div className="font-medium">Viewer</div>
+                          <div className="font-medium">Team Member</div>
                           <div className="text-sm text-gray-600">Can view deals and reports</div>
                         </div>
                       </SelectItem>
-                      <SelectItem value="collaborator">
+                      <SelectItem value="investor">
                         <div>
-                          <div className="font-medium">Collaborator</div>
+                          <div className="font-medium">Investor</div>
                           <div className="text-sm text-gray-600">Can edit deals and add comments</div>
                         </div>
                       </SelectItem>
@@ -204,18 +217,20 @@ const TeamManagement = () => {
               <div key={member.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src="/placeholder.svg" alt={member.name} />
-                    <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                    <AvatarImage src={member.avatar_url || "/placeholder.svg"} alt={getDisplayName(member.first_name, member.last_name, member.email)} />
+                    <AvatarFallback>{getInitials(member.first_name, member.last_name, member.email)}</AvatarFallback>
                   </Avatar>
                   
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium">{member.name}</h4>
-                      <Badge className={roleColors[member.role as keyof typeof roleColors]}>
-                        {member.role}
-                      </Badge>
-                      <Badge className={statusColors[member.status as keyof typeof statusColors]}>
-                        {member.status}
+                      <h4 className="font-medium">{getDisplayName(member.first_name, member.last_name, member.email)}</h4>
+                      {member.role && (
+                        <Badge className={roleColors[member.role as keyof typeof roleColors]}>
+                          {roleTitles[member.role as keyof typeof roleTitles]}
+                        </Badge>
+                      )}
+                      <Badge className="bg-green-100 text-green-800">
+                        Active
                       </Badge>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
@@ -223,8 +238,9 @@ const TeamManagement = () => {
                         <Mail className="h-3 w-3" />
                         {member.email}
                       </span>
-                      <span>Joined {member.joinedAt}</span>
-                      <span>Last active: {member.lastActive}</span>
+                      {member.created_at && (
+                        <span>Joined {format(new Date(member.created_at), 'MMM dd, yyyy')}</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -250,7 +266,7 @@ const TeamManagement = () => {
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       className="text-red-600"
-                      onClick={() => handleRemoveMember(member.name)}
+                      onClick={() => handleRemoveMember(getDisplayName(member.first_name, member.last_name, member.email))}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Remove
@@ -286,24 +302,24 @@ const TeamManagement = () => {
               </div>
               
               <div className="space-y-2">
-                <h4 className="font-medium text-blue-700">Collaborator</h4>
+                <h4 className="font-medium text-blue-700">Investor</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Edit assigned deals</li>
+                  <li>• Create and edit deals</li>
                   <li>• Add comments & notes</li>
                   <li>• Upload documents</li>
                   <li>• View team activity</li>
-                  <li>• Basic reporting</li>
+                  <li>• Access all reports</li>
                 </ul>
               </div>
               
               <div className="space-y-2">
-                <h4 className="font-medium text-gray-700">Viewer</h4>
+                <h4 className="font-medium text-gray-700">Team Member</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• View deals (read-only)</li>
-                  <li>• View basic reports</li>
-                  <li>• Access shared documents</li>
+                  <li>• View assigned deals</li>
+                  <li>• Add comments on deals</li>
+                  <li>• View shared documents</li>
                   <li>• View team activity</li>
-                  <li>• Comment on deals</li>
+                  <li>• Basic reporting access</li>
                 </ul>
               </div>
             </div>

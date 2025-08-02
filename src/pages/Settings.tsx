@@ -9,7 +9,11 @@ import TeamManagement from '@/components/TeamManagement';
 import ActivityLog from '@/components/ActivityLog';
 import ApiConfigurationManager from '@/components/ApiConfigurationManager';
 import ArchivedProperties from '@/components/ArchivedProperties';
+import { useProfile } from '@/hooks/useProfile';
 const Settings = () => {
+  const { profile } = useProfile();
+  const isAdmin = profile?.role === 'admin';
+
   return <div className="max-w-6xl mx-auto space-y-6">
       {/* Page Header */}
       <div className="mb-8">
@@ -21,7 +25,7 @@ const Settings = () => {
       <Card className="bg-white shadow-lg rounded-2xl border-0">
         <CardContent className="p-6">
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-7 mb-6 bg-gray-100 rounded-xl p-1">
+            <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'} mb-6 bg-gray-100 rounded-xl p-1`}>
               <TabsTrigger value="profile" className="flex items-center gap-2 rounded-xl">
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">Profile</span>
@@ -38,10 +42,12 @@ const Settings = () => {
                 <Globe className="h-4 w-4" />
                 <span className="hidden sm:inline">API Keys</span>
               </TabsTrigger>
-              <TabsTrigger value="team" className="flex items-center gap-2 rounded-xl">
-                <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Team</span>
-              </TabsTrigger>
+              {isAdmin && (
+                <TabsTrigger value="team" className="flex items-center gap-2 rounded-xl">
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Team</span>
+                </TabsTrigger>
+              )}
               <TabsTrigger value="archive" className="flex items-center gap-2 rounded-xl">
                 <Archive className="h-4 w-4" />
                 <span className="hidden sm:inline">Archive</span>
@@ -68,9 +74,11 @@ const Settings = () => {
               <ApiConfigurationManager />
             </TabsContent>
 
-            <TabsContent value="team">
-              <TeamManagement />
-            </TabsContent>
+            {isAdmin && (
+              <TabsContent value="team">
+                <TeamManagement />
+              </TabsContent>
+            )}
 
             <TabsContent value="archive">
               <ArchivedProperties />
