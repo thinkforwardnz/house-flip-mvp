@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Home, MapPin, Ruler, RefreshCw, Car, Wifi, TrendingUp } from 'lucide-react';
+import { Home, MapPin, Ruler, RefreshCw, Car, Wifi, TrendingUp, Bed, Bath, Square } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Deal } from '@/types/analysis';
@@ -244,6 +244,7 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
 
               <div>
                 <div className="flex items-center gap-2 mb-1">
+                  <Square className="h-4 w-4 text-gray-600 flex-shrink-0" />
                   <span className="font-medium text-navy-dark">Land Area:</span>
                 </div>
                 <span className="text-navy leading-relaxed break-words">{deal.land_area ? `${deal.land_area}m²` : 'TBD'}</span>
@@ -251,14 +252,20 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
             </div>
             
             <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
-                <span className="font-medium text-navy-dark flex-shrink-0">Bedrooms:</span>
-                <span className="text-navy break-words">{deal.bedrooms || 'TBD'}</span>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Bed className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                  <span className="font-medium text-navy-dark">Bedrooms:</span>
+                </div>
+                <span className="text-navy leading-relaxed break-words">{deal.bedrooms || 'TBD'}</span>
               </div>
               
-              <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
-                <span className="font-medium text-navy-dark flex-shrink-0">Bathrooms:</span>
-                <span className="text-navy break-words">{deal.bathrooms || 'TBD'}</span>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Bath className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                  <span className="font-medium text-navy-dark">Bathrooms:</span>
+                </div>
+                <span className="text-navy leading-relaxed break-words">{deal.bathrooms || 'TBD'}</span>
               </div>
 
               {listingDetails.parking && (
