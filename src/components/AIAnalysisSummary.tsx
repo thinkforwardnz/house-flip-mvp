@@ -168,7 +168,7 @@ const AIAnalysisSummary = ({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6 py-[30px] px-[60px]">
+      <CardContent className="space-y-6 py-[30px] px-[15px]">
         {/* Executive Summary */}
         <div className="bg-blue-50 p-4 rounded-xl my-0 mb-20">
           <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
