@@ -14,7 +14,7 @@ const Settings = () => {
   const { profile } = useProfile();
   const isAdmin = profile?.role === 'admin';
 
-  return <div className="w-[1280px] mx-auto space-y-6">
+  return <div className="w-[1280px] mx-auto space-y-6 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-700 mb-2">Settings</h1>
@@ -60,35 +60,35 @@ const Settings = () => {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="profile" className="min-h-[600px]">
+            <TabsContent value="profile" className="w-full">
               <ProfileSettings />
             </TabsContent>
 
-            <TabsContent value="notifications" className="min-h-[600px]">
+            <TabsContent value="notifications" className="w-full">
               <NotificationSettings />
             </TabsContent>
 
-            <TabsContent value="preferences" className="min-h-[600px]">
+            <TabsContent value="preferences" className="w-full">
               <PreferenceSettings />
             </TabsContent>
 
             {isAdmin && (
-              <TabsContent value="endpoints" className="min-h-[600px]">
+              <TabsContent value="endpoints" className="w-full">
                 <ApiConfigurationManager />
               </TabsContent>
             )}
 
             {isAdmin && (
-              <TabsContent value="team" className="min-h-[600px]">
+              <TabsContent value="team" className="w-full">
                 <TeamManagement />
               </TabsContent>
             )}
 
-            <TabsContent value="archive" className="min-h-[600px]">
+            <TabsContent value="archive" className="w-full">
               <ArchivedProperties />
             </TabsContent>
 
-            <TabsContent value="activity" className="min-h-[600px]">
+            <TabsContent value="activity" className="w-full">
               <ActivityLog />
             </TabsContent>
           </Tabs>
