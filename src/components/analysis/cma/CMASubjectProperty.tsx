@@ -167,118 +167,118 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
   const listingDetails = deal.listing_details || {};
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="w-full min-w-0 space-y-6">
+      <Card className="w-full min-w-0">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-navy-dark flex items-center gap-2">
-              <Home className="h-5 w-5" />
-              Subject Property Details
+          <div className="flex items-center justify-between gap-4 min-w-0">
+            <CardTitle className="text-navy-dark flex items-center gap-2 min-w-0">
+              <Home className="h-5 w-5 flex-shrink-0" />
+              <span className="truncate">Subject Property Details</span>
             </CardTitle>
             <Button
               onClick={handleAnalyzeAndEnrich}
               disabled={isAnalyzing}
               variant="outline"
               size="sm"
-              className="rounded-xl"
+              className="rounded-xl flex-shrink-0"
             >
               <TrendingUp className={`h-4 w-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
               {isAnalyzing ? 'Analyzing...' : 'Analyze & Enrich'}
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-gray-600" />
-                <span className="font-medium text-navy-dark">Address:</span>
-                <span className="text-navy">{deal.address}</span>
+        <CardContent className="w-full min-w-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full min-w-0">
+            <div className="space-y-3 min-w-0">
+              <div className="flex items-start gap-2 min-w-0">
+                <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0 mt-0.5" />
+                <span className="font-medium text-navy-dark flex-shrink-0">Address:</span>
+                <span className="text-navy break-words min-w-0">{deal.address}</span>
               </div>
               
               {listingDetails.title && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-navy-dark">Listing Title:</span>
-                  <span className="text-navy">{listingDetails.title}</span>
+                <div className="flex items-start gap-2 min-w-0">
+                  <span className="font-medium text-navy-dark flex-shrink-0">Listing Title:</span>
+                  <span className="text-navy break-words min-w-0">{listingDetails.title}</span>
                 </div>
               )}
               
               {listingDetails.type && (
-                <div className="flex items-center gap-2">
-                  <Home className="h-4 w-4 text-gray-600" />
-                  <span className="font-medium text-navy-dark">Property Type:</span>
-                  <span className="text-navy">{listingDetails.type}</span>
+                <div className="flex items-start gap-2 min-w-0">
+                  <Home className="h-4 w-4 text-gray-600 flex-shrink-0 mt-0.5" />
+                  <span className="font-medium text-navy-dark flex-shrink-0">Property Type:</span>
+                  <span className="text-navy break-words min-w-0">{listingDetails.type}</span>
                 </div>
               )}
               
               {!listingDetails.type && (
-                <div className="flex items-center gap-2">
-                  <Home className="h-4 w-4 text-gray-600" />
-                  <span className="font-medium text-navy-dark">Property Type:</span>
-                  <span className="text-navy">Residential House</span>
+                <div className="flex items-start gap-2 min-w-0">
+                  <Home className="h-4 w-4 text-gray-600 flex-shrink-0 mt-0.5" />
+                  <span className="font-medium text-navy-dark flex-shrink-0">Property Type:</span>
+                  <span className="text-navy break-words min-w-0">Residential House</span>
                 </div>
               )}
 
               {listingDetails.method && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-navy-dark">Sale Method:</span>
-                  <span className="text-navy">{listingDetails.method}</span>
+                <div className="flex items-start gap-2 min-w-0">
+                  <span className="font-medium text-navy-dark flex-shrink-0">Sale Method:</span>
+                  <span className="text-navy break-words min-w-0">{listingDetails.method}</span>
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
-                <Ruler className="h-4 w-4 text-gray-600" />
-                <span className="font-medium text-navy-dark">Floor Area:</span>
-                <span className="text-navy">{deal.floor_area ? `${deal.floor_area}m²` : 'TBD'}</span>
+              <div className="flex items-start gap-2 min-w-0">
+                <Ruler className="h-4 w-4 text-gray-600 flex-shrink-0 mt-0.5" />
+                <span className="font-medium text-navy-dark flex-shrink-0">Floor Area:</span>
+                <span className="text-navy break-words min-w-0">{deal.floor_area ? `${deal.floor_area}m²` : 'TBD'}</span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-navy-dark">Land Area:</span>
-                <span className="text-navy">{deal.land_area ? `${deal.land_area}m²` : 'TBD'}</span>
+              <div className="flex items-start gap-2 min-w-0">
+                <span className="font-medium text-navy-dark flex-shrink-0">Land Area:</span>
+                <span className="text-navy break-words min-w-0">{deal.land_area ? `${deal.land_area}m²` : 'TBD'}</span>
               </div>
             </div>
             
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-navy-dark">Bedrooms:</span>
-                <span className="text-navy">{deal.bedrooms || 'TBD'}</span>
+            <div className="space-y-3 min-w-0">
+              <div className="flex items-start gap-2 min-w-0">
+                <span className="font-medium text-navy-dark flex-shrink-0">Bedrooms:</span>
+                <span className="text-navy break-words min-w-0">{deal.bedrooms || 'TBD'}</span>
               </div>
               
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-navy-dark">Bathrooms:</span>
-                <span className="text-navy">{deal.bathrooms || 'TBD'}</span>
+              <div className="flex items-start gap-2 min-w-0">
+                <span className="font-medium text-navy-dark flex-shrink-0">Bathrooms:</span>
+                <span className="text-navy break-words min-w-0">{deal.bathrooms || 'TBD'}</span>
               </div>
 
               {listingDetails.parking && (
-                <div className="flex items-center gap-2">
-                  <Car className="h-4 w-4 text-gray-600" />
-                  <span className="font-medium text-navy-dark">Parking:</span>
-                  <span className="text-navy">{listingDetails.parking}</span>
+                <div className="flex items-start gap-2 min-w-0">
+                  <Car className="h-4 w-4 text-gray-600 flex-shrink-0 mt-0.5" />
+                  <span className="font-medium text-navy-dark flex-shrink-0">Parking:</span>
+                  <span className="text-navy break-words min-w-0">{listingDetails.parking}</span>
                 </div>
               )}
 
               {listingDetails.internet && (
-                <div className="flex items-center gap-2">
-                  <Wifi className="h-4 w-4 text-gray-600" />
-                  <span className="font-medium text-navy-dark">Internet:</span>
-                  <span className="text-navy">{listingDetails.internet}</span>
+                <div className="flex items-start gap-2 min-w-0">
+                  <Wifi className="h-4 w-4 text-gray-600 flex-shrink-0 mt-0.5" />
+                  <span className="font-medium text-navy-dark flex-shrink-0">Internet:</span>
+                  <span className="text-navy break-words min-w-0">{listingDetails.internet}</span>
                 </div>
               )}
 
               {listingDetails.date && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-navy-dark">Listed:</span>
-                  <span className="text-navy">{listingDetails.date}</span>
+                <div className="flex items-start gap-2 min-w-0">
+                  <span className="font-medium text-navy-dark flex-shrink-0">Listed:</span>
+                  <span className="text-navy break-words min-w-0">{listingDetails.date}</span>
                 </div>
               )}
             </div>
           </div>
 
           {listingDetails.other_features && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="space-y-2">
+            <div className="mt-4 pt-4 border-t border-gray-100 w-full min-w-0">
+              <div className="space-y-2 min-w-0">
                 <span className="font-medium text-navy-dark">Additional Features:</span>
-                <p className="text-navy text-sm">{listingDetails.other_features}</p>
+                <p className="text-navy text-sm break-words min-w-0">{listingDetails.other_features}</p>
               </div>
             </div>
           )}
@@ -287,14 +287,14 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
 
       {/* Property Photos */}
       {deal.photos && deal.photos.length > 0 && (
-        <Card>
+        <Card className="w-full min-w-0">
           <CardHeader>
             <CardTitle className="text-navy-dark">Property Photos</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <CardContent className="w-full min-w-0">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 w-full min-w-0">
               {deal.photos.slice(0, 6).map((photo, index) => (
-                <div key={index} className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                <div key={index} className="aspect-video bg-gray-100 rounded-lg overflow-hidden min-w-0">
                   <img 
                     src={photo} 
                     alt={`Property photo ${index + 1}`}
