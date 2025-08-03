@@ -66,15 +66,15 @@ const CMATab = ({ deal, formatCurrency, onDealUpdate }: CMATabProps) => {
         <CMAMobileTabSelector 
           activeView={activeView} 
           onViewChange={setActiveView} 
-          className="w-full"
+          className="w-full mb-4"
         />
         
         {/* Desktop tabs */}
-        <TabsList className="hidden sm:flex w-full grid-cols-4 gap-1 mb-4">
-          <TabsTrigger value="overview" className="text-sm px-3">Overview</TabsTrigger>
-          <TabsTrigger value="subject" className="text-sm px-3">Subject Property</TabsTrigger>
-          <TabsTrigger value="comparables" className="text-sm px-3">Comparables</TabsTrigger>
-          <TabsTrigger value="analysis" className="text-sm px-3">Analysis</TabsTrigger>
+        <TabsList className="hidden sm:grid w-full grid-cols-4 gap-1 mb-4 h-auto p-1">
+          <TabsTrigger value="overview" className="text-sm font-medium px-3 py-2 rounded-lg">Overview</TabsTrigger>
+          <TabsTrigger value="subject" className="text-sm font-medium px-3 py-2 rounded-lg">Subject Property</TabsTrigger>
+          <TabsTrigger value="comparables" className="text-sm font-medium px-3 py-2 rounded-lg">Comparables</TabsTrigger>
+          <TabsTrigger value="analysis" className="text-sm font-medium px-3 py-2 rounded-lg">Analysis</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
