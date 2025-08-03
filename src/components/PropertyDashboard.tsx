@@ -83,7 +83,7 @@ const PropertyDashboard = () => {
   const totalValue = dealProperties.reduce((sum, deal) => sum + (deal.purchase_price || 0), 0);
   const totalProfit = dealProperties.reduce((sum, deal) => sum + (deal.current_profit || 0), 0);
   const highRiskCount = dealProperties.filter(deal => deal.current_risk === 'high').length;
-  return <div className="max-w-7xl mx-auto space-y-6">
+  return <div className="w-[1280px] mx-auto space-y-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 text-slate-900">
           Welcome back!

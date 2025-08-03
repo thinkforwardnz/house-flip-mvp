@@ -42,7 +42,7 @@ const UnderContract = () => {
     label: 'Tasks & Notes'
   }];
   if (isLoading) {
-    return <div className="max-w-7xl mx-auto space-y-6">
+    return <div className="w-[1280px] mx-auto space-y-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="h-32 bg-gray-200 rounded mb-6"></div>
@@ -54,7 +54,7 @@ const UnderContract = () => {
       </div>;
   }
   if (!selectedDeal) {
-    return <div className="max-w-7xl mx-auto space-y-6">
+    return <div className="w-[1280px] mx-auto space-y-6">
         <PropertySelector currentDealId={selectedDealId} onDealSelect={selectDeal} currentStage="Under Contract" />
         <Card className="bg-white shadow-lg rounded-2xl border-0">
           <CardContent className="p-12 text-center">
@@ -79,7 +79,7 @@ const UnderContract = () => {
     estimatedProfit: selectedDeal.current_profit || 0,
     roi: selectedDeal.purchase_price && selectedDeal.current_profit ? selectedDeal.current_profit / selectedDeal.purchase_price * 100 : 0
   };
-  return <div className="max-w-7xl mx-auto space-y-6">
+  return <div className="w-[1280px] mx-auto space-y-6">
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-700 mb-2">Under Contract</h1>

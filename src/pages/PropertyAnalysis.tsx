@@ -47,7 +47,7 @@ const PropertyAnalysis = () => {
         </div>
       </div>;
   }
-  return <div className="max-w-7xl mx-auto space-y-6">
+  return <div className="w-[1280px] mx-auto space-y-6">
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-700 mb-2">Property Analysis</h1>
