@@ -61,7 +61,7 @@ const UnderContract = () => {
             <MapPin className="h-16 w-16 text-gray-300 mx-auto mb-6" />
             <h3 className="text-lg font-semibold text-navy-dark mb-2">No Properties Under Contract</h3>
             <p className="text-navy mb-6">There are no properties currently under contract.</p>
-            <Button onClick={() => window.location.href = '/offer'} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
+            <Button onClick={() => navigate('/offer')} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
               Go to Offers
             </Button>
           </CardContent>

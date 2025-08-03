@@ -56,7 +56,7 @@ const Sold = () => {
             <Trophy className="h-16 w-16 text-gray-300 mx-auto mb-6" />
             <h3 className="text-lg font-semibold text-navy-dark mb-2">No Completed Deals</h3>
             <p className="text-navy mb-6">You haven't completed any property deals yet.</p>
-            <Button onClick={() => window.location.href = '/find'} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
+            <Button onClick={() => navigate('/find')} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
               Find Properties
             </Button>
           </CardContent>

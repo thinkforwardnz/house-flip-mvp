@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
 import PropertySelector from '@/components/PropertySelector';
 import { useSelectedDeal } from '@/hooks/useSelectedDeal';
 import TaskKanban from '@/components/TaskKanban';
@@ -11,6 +12,7 @@ import AIAlerts from '@/components/AIAlerts';
 import { Hammer, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 const RenovationManagement = () => {
+  const navigate = useNavigate();
   const {
     selectedDeal,
     selectedDealId,
@@ -54,7 +56,7 @@ const RenovationManagement = () => {
             <Hammer className="h-16 w-16 text-gray-300 mx-auto mb-6" />
             <h3 className="text-lg font-semibold text-navy-dark mb-2">No Properties in Renovation</h3>
             <p className="text-navy mb-6">There are no properties currently in the renovation stage.</p>
-            <Button onClick={() => window.location.href = '/under-contract'} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
+            <Button onClick={() => navigate('/under-contract')} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
               Go to Under Contract
             </Button>
           </CardContent>

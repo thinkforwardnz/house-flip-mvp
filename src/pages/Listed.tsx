@@ -53,7 +53,7 @@ const Listed = () => {
             <Building className="h-16 w-16 text-gray-300 mx-auto mb-6" />
             <h3 className="text-lg font-semibold text-navy-dark mb-2">No Properties Listed</h3>
             <p className="text-navy mb-6">There are no properties currently listed for sale.</p>
-            <Button onClick={() => window.location.href = '/renovation'} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
+            <Button onClick={() => navigate('/renovation')} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
               Go to Renovation
             </Button>
           </CardContent>

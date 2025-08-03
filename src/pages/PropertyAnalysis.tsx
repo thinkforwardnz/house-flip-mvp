@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import PropertySelector from '@/components/PropertySelector';
 import { useSelectedDeal } from '@/hooks/useSelectedDeal';
 import { useDeals } from '@/hooks/useDeals';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
 import type { Deal } from '@/types/analysis';
 const PropertyAnalysis = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const dealId = searchParams.get('dealId');
   const {
@@ -65,7 +66,7 @@ const PropertyAnalysis = () => {
                 <MapPin className="h-8 w-8 sm:h-10 sm:w-10 text-gray-300 mx-auto mb-3 sm:mb-4" />
                 <h3 className="text-sm sm:text-base font-semibold text-navy-dark mb-2">Property Not Found</h3>
                 <p className="text-navy mb-3 sm:mb-4 text-xs sm:text-sm">The requested property could not be found in the analysis stage.</p>
-                <Button onClick={() => window.location.href = '/analysis'} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm">
+                <Button onClick={() => navigate('/analysis')} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm">
                   Back to Analysis Dashboard
                 </Button>
               </CardContent>

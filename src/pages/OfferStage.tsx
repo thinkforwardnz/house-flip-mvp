@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import PropertySelector from '@/components/PropertySelector';
 import { useSelectedDeal } from '@/hooks/useSelectedDeal';
 import OfferBuilder from '@/components/OfferBuilder';
@@ -9,6 +10,7 @@ import NegotiationNotes from '@/components/NegotiationNotes';
 import OfferReminders from '@/components/OfferReminders';
 import { MapPin, Handshake } from 'lucide-react';
 const OfferStage = () => {
+  const navigate = useNavigate();
   const {
     selectedDeal,
     selectedDealId,
@@ -42,7 +44,7 @@ const OfferStage = () => {
             <Handshake className="h-16 w-16 text-gray-300 mx-auto mb-6" />
             <h3 className="text-lg font-semibold text-navy-dark mb-2">No Properties in Offer Stage</h3>
             <p className="text-navy mb-6">There are no properties currently in the offer stage.</p>
-            <Button onClick={() => window.location.href = '/analysis'} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
+            <Button onClick={() => navigate('/analysis')} className="bg-blue-primary hover:bg-blue-600 text-white rounded-xl">
               Go to Analysis
             </Button>
           </CardContent>
