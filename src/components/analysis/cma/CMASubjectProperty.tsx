@@ -167,13 +167,13 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
   const listingDetails = deal.listing_details || {};
 
   return (
-    <div className="w-full max-w-full space-y-4 sm:space-y-6 overflow-hidden">
-      <Card className="w-full max-w-full overflow-hidden">
+    <div className="space-y-4 sm:space-y-6">
+      <Card>
         <CardHeader className="pb-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 max-w-full">
-            <CardTitle className="text-navy-dark flex items-center gap-2 max-w-full overflow-hidden">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <CardTitle className="text-navy-dark flex items-center gap-2">
               <Home className="h-5 w-5 flex-shrink-0" />
-              <span className="truncate min-w-0">Subject Property Details</span>
+              <span className="break-words">Subject Property Details</span>
             </CardTitle>
             <Button
               onClick={handleAnalyzeAndEnrich}
@@ -195,13 +195,13 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
                   <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0" />
                   <span className="font-medium text-navy-dark">Address:</span>
                 </div>
-                <span className="text-navy leading-relaxed">{deal.address}</span>
+                <span className="text-navy leading-relaxed break-words">{deal.address}</span>
               </div>
               
               {listingDetails.title && (
                 <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
                   <span className="font-medium text-navy-dark flex-shrink-0">Listing Title:</span>
-                  <span className="text-navy">{listingDetails.title}</span>
+                  <span className="text-navy break-words">{listingDetails.title}</span>
                 </div>
               )}
               
@@ -211,7 +211,7 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
                     <Home className="h-4 w-4 text-gray-600 flex-shrink-0" />
                     <span className="font-medium text-navy-dark">Property Type:</span>
                   </div>
-                  <span className="text-navy leading-relaxed">{listingDetails.type}</span>
+                  <span className="text-navy leading-relaxed break-words">{listingDetails.type}</span>
                 </div>
               )}
               
@@ -221,7 +221,7 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
                     <Home className="h-4 w-4 text-gray-600 flex-shrink-0" />
                     <span className="font-medium text-navy-dark">Property Type:</span>
                   </div>
-                  <span className="text-navy leading-relaxed">Residential House</span>
+                  <span className="text-navy leading-relaxed break-words">Residential House</span>
                 </div>
               )}
 
@@ -230,7 +230,7 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium text-navy-dark">Sale Method:</span>
                   </div>
-                  <span className="text-navy leading-relaxed">{listingDetails.method}</span>
+                  <span className="text-navy leading-relaxed break-words">{listingDetails.method}</span>
                 </div>
               )}
 
@@ -239,26 +239,26 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
                   <Ruler className="h-4 w-4 text-gray-600 flex-shrink-0" />
                   <span className="font-medium text-navy-dark">Floor Area:</span>
                 </div>
-                <span className="text-navy leading-relaxed">{deal.floor_area ? `${deal.floor_area}m²` : 'TBD'}</span>
+                <span className="text-navy leading-relaxed break-words">{deal.floor_area ? `${deal.floor_area}m²` : 'TBD'}</span>
               </div>
 
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium text-navy-dark">Land Area:</span>
                 </div>
-                <span className="text-navy leading-relaxed">{deal.land_area ? `${deal.land_area}m²` : 'TBD'}</span>
+                <span className="text-navy leading-relaxed break-words">{deal.land_area ? `${deal.land_area}m²` : 'TBD'}</span>
               </div>
             </div>
             
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
                 <span className="font-medium text-navy-dark flex-shrink-0">Bedrooms:</span>
-                <span className="text-navy">{deal.bedrooms || 'TBD'}</span>
+                <span className="text-navy break-words">{deal.bedrooms || 'TBD'}</span>
               </div>
               
               <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
                 <span className="font-medium text-navy-dark flex-shrink-0">Bathrooms:</span>
-                <span className="text-navy">{deal.bathrooms || 'TBD'}</span>
+                <span className="text-navy break-words">{deal.bathrooms || 'TBD'}</span>
               </div>
 
               {listingDetails.parking && (
@@ -267,7 +267,7 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
                     <Car className="h-4 w-4 text-gray-600" />
                     <span className="font-medium text-navy-dark">Parking:</span>
                   </div>
-                  <span className="text-navy pl-6 sm:pl-0">{listingDetails.parking}</span>
+                  <span className="text-navy pl-6 sm:pl-0 break-words">{listingDetails.parking}</span>
                 </div>
               )}
 
@@ -277,14 +277,14 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
                     <Wifi className="h-4 w-4 text-gray-600" />
                     <span className="font-medium text-navy-dark">Internet:</span>
                   </div>
-                  <span className="text-navy pl-6 sm:pl-0">{listingDetails.internet}</span>
+                  <span className="text-navy pl-6 sm:pl-0 break-words">{listingDetails.internet}</span>
                 </div>
               )}
 
               {listingDetails.date && (
                 <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
                   <span className="font-medium text-navy-dark flex-shrink-0">Listed:</span>
-                  <span className="text-navy">{listingDetails.date}</span>
+                  <span className="text-navy break-words">{listingDetails.date}</span>
                 </div>
               )}
             </div>
@@ -294,7 +294,7 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
             <div className="mt-4 pt-4 border-t border-gray-100">
               <div className="space-y-2">
                 <span className="font-medium text-navy-dark">Additional Features:</span>
-                <p className="text-navy text-sm">{listingDetails.other_features}</p>
+                <p className="text-navy text-sm break-words">{listingDetails.other_features}</p>
               </div>
             </div>
           )}
