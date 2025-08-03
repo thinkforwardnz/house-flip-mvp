@@ -195,7 +195,7 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
                   <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0" />
                   <span className="font-medium text-navy-dark">Address:</span>
                 </div>
-                <span className="text-navy break-all leading-relaxed block max-w-full">{deal.address}</span>
+                <span className="text-navy break-all leading-relaxed block max-w-full w-full">{deal.address}</span>
               </div>
               
               {listingDetails.title && (
