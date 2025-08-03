@@ -51,12 +51,20 @@ const Find = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-6">
               <TabsTrigger value="feed">Property Feed</TabsTrigger>
+              <TabsTrigger value="recommended">Recommended</TabsTrigger>
               <TabsTrigger value="saved">Saved Properties</TabsTrigger>
               <TabsTrigger value="history">Scraping History</TabsTrigger>
             </TabsList>
             
             <TabsContent value="feed">
               <PropertyFeed filters={searchFilters} onSwitchToSavedTab={handleSwitchToSavedTab} />
+            </TabsContent>
+            
+            <TabsContent value="recommended">
+              <div className="text-center py-12">
+                <h3 className="text-lg font-semibold text-navy-dark mb-2">AI Recommended Properties</h3>
+                <p className="text-navy text-sm">Coming soon - AI-powered property recommendations based on your preferences and flip criteria</p>
+              </div>
             </TabsContent>
             
             <TabsContent value="saved">
