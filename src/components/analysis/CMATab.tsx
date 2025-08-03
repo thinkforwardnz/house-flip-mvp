@@ -54,7 +54,7 @@ const CMATab = ({ deal, formatCurrency, onDealUpdate }: CMATabProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col space-y-2">
         <h3 className="text-lg font-semibold text-navy-dark">Comparative Market Analysis (CMA)</h3>
         <Badge className={analysis?.market_confidence ? getConfidenceColor(analysis.market_confidence) : 'bg-gray-100 text-gray-800'}>
           {analysis?.market_confidence || 0}% Confidence
