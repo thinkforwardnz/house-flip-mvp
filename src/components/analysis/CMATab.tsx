@@ -53,20 +53,20 @@ const CMATab = ({ deal, formatCurrency, onDealUpdate }: CMATabProps) => {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden px-2 sm:px-0">
-      <div className="flex flex-col space-y-2 max-w-full">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+      <div className="flex flex-col space-y-2">
         <h3 className="text-lg font-semibold text-navy-dark truncate">Comparative Market Analysis (CMA)</h3>
         <Badge className={analysis?.market_confidence ? getConfidenceColor(analysis.market_confidence) : 'bg-gray-100 text-gray-800'}>
           {analysis?.market_confidence || 0}% Confidence
         </Badge>
       </div>
 
-      <Tabs value={activeView} onValueChange={setActiveView} className="w-full max-w-full overflow-hidden">
+      <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
         {/* Mobile dropdown selector */}
         <CMAMobileTabSelector 
           activeView={activeView} 
           onViewChange={setActiveView} 
-          className="w-full min-w-0"
+          className="w-full"
         />
         
         {/* Desktop tabs */}
@@ -89,13 +89,11 @@ const CMATab = ({ deal, formatCurrency, onDealUpdate }: CMATabProps) => {
           />
         </TabsContent>
 
-        <TabsContent value="subject" className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
-          <div className="w-full max-w-full overflow-hidden">
-            <CMASubjectProperty 
-              deal={deal} 
-              onDealUpdate={onDealUpdate}
-            />
-          </div>
+        <TabsContent value="subject" className="space-y-6">
+          <CMASubjectProperty 
+            deal={deal} 
+            onDealUpdate={onDealUpdate}
+          />
         </TabsContent>
 
         <TabsContent value="comparables" className="space-y-6">
