@@ -20,7 +20,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             <SidebarTrigger className="text-navy-dark" />
           </div>
           {/* Main content area with responsive padding and vertical scroll */}
-          <div className="flex-1 flex flex-col p-2 xs:p-4 md:p-6 max-w-full">
+          <div className="flex-1 flex flex-col p-2 sm:p-4 md:p-6 max-w-full overflow-x-hidden">
             {children}
           </div>
         </SidebarInset>

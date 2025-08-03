@@ -63,13 +63,13 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
         <Card className="bg-white shadow-lg rounded-2xl border-0 w-full">
           <CardContent className="p-2 sm:p-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="flex flex-nowrap gap-1 sm:gap-2 mb-3 sm:mb-4 overflow-x-auto">
-                <TabsTrigger value="overview" className="min-w-[90px] text-xs sm:text-sm">Overview</TabsTrigger>
-                <TabsTrigger value="data" className="min-w-[90px] text-xs sm:text-sm">Data Collection</TabsTrigger>
-                <TabsTrigger value="cma" className="min-w-[90px] text-xs sm:text-sm">Market Analysis</TabsTrigger>
-                <TabsTrigger value="renovation" className="min-w-[90px] text-xs sm:text-sm">Renovation</TabsTrigger>
-                <TabsTrigger value="offer" className="min-w-[90px] text-xs sm:text-sm">Offer Calculation</TabsTrigger>
-                <TabsTrigger value="risk" className="min-w-[90px] text-xs sm:text-sm">Risk Assessment</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-6 gap-1 mb-3 sm:mb-4">
+                <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3">Overview</TabsTrigger>
+                <TabsTrigger value="data" className="text-xs sm:text-sm px-1 sm:px-2">Data</TabsTrigger>
+                <TabsTrigger value="cma" className="text-xs sm:text-sm px-1 sm:px-2">Market</TabsTrigger>
+                <TabsTrigger value="renovation" className="text-xs sm:text-sm px-1 sm:px-2">Reno</TabsTrigger>
+                <TabsTrigger value="offer" className="text-xs sm:text-sm px-1 sm:px-2">Offer</TabsTrigger>
+                <TabsTrigger value="risk" className="text-xs sm:text-sm px-1 sm:px-2">Risk</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview">
