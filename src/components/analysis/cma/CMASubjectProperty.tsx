@@ -189,13 +189,13 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
         </CardHeader>
         <CardContent className="w-full max-w-full overflow-hidden px-4 sm:px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full">
-            <div className="space-y-3 max-w-full overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 max-w-full">
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <MapPin className="h-4 w-4 text-gray-600" />
+            <div className="space-y-3 max-w-full overflow-hidden min-w-0">
+              <div className="min-w-0 overflow-hidden">
+                <div className="flex items-center gap-2 mb-1">
+                  <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0" />
                   <span className="font-medium text-navy-dark">Address:</span>
                 </div>
-                <span className="text-navy break-words leading-relaxed max-w-full pl-6 sm:pl-0">{deal.address}</span>
+                <span className="text-navy break-all leading-relaxed block max-w-full">{deal.address}</span>
               </div>
               
               {listingDetails.title && (
@@ -206,43 +206,47 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
               )}
               
               {listingDetails.type && (
-                <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 max-w-full">
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Home className="h-4 w-4 text-gray-600" />
+                <div className="min-w-0 overflow-hidden">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Home className="h-4 w-4 text-gray-600 flex-shrink-0" />
                     <span className="font-medium text-navy-dark">Property Type:</span>
                   </div>
-                  <span className="text-navy break-words max-w-full pl-6 sm:pl-0">{listingDetails.type}</span>
+                  <span className="text-navy break-words leading-relaxed block max-w-full">{listingDetails.type}</span>
                 </div>
               )}
               
               {!listingDetails.type && (
-                <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 max-w-full">
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Home className="h-4 w-4 text-gray-600" />
+                <div className="min-w-0 overflow-hidden">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Home className="h-4 w-4 text-gray-600 flex-shrink-0" />
                     <span className="font-medium text-navy-dark">Property Type:</span>
                   </div>
-                  <span className="text-navy break-words max-w-full pl-6 sm:pl-0">Residential House</span>
+                  <span className="text-navy break-words leading-relaxed block max-w-full">Residential House</span>
                 </div>
               )}
 
               {listingDetails.method && (
-                <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 max-w-full">
-                  <span className="font-medium text-navy-dark flex-shrink-0">Sale Method:</span>
-                  <span className="text-navy break-words max-w-full">{listingDetails.method}</span>
+                <div className="min-w-0 overflow-hidden">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-navy-dark">Sale Method:</span>
+                  </div>
+                  <span className="text-navy break-words leading-relaxed block max-w-full">{listingDetails.method}</span>
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 max-w-full">
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <Ruler className="h-4 w-4 text-gray-600" />
+              <div className="min-w-0 overflow-hidden">
+                <div className="flex items-center gap-2 mb-1">
+                  <Ruler className="h-4 w-4 text-gray-600 flex-shrink-0" />
                   <span className="font-medium text-navy-dark">Floor Area:</span>
                 </div>
-                <span className="text-navy break-words max-w-full pl-6 sm:pl-0">{deal.floor_area ? `${deal.floor_area}m²` : 'TBD'}</span>
+                <span className="text-navy break-words leading-relaxed block max-w-full">{deal.floor_area ? `${deal.floor_area}m²` : 'TBD'}</span>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 max-w-full">
-                <span className="font-medium text-navy-dark flex-shrink-0">Land Area:</span>
-                <span className="text-navy break-words max-w-full">{deal.land_area ? `${deal.land_area}m²` : 'TBD'}</span>
+              <div className="min-w-0 overflow-hidden">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-navy-dark">Land Area:</span>
+                </div>
+                <span className="text-navy break-words leading-relaxed block max-w-full">{deal.land_area ? `${deal.land_area}m²` : 'TBD'}</span>
               </div>
             </div>
             
