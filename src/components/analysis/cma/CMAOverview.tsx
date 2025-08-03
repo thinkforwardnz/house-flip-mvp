@@ -52,24 +52,24 @@ const CMAOverview = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <div className="text-center">
-              <p className="text-sm text-blue-700">Estimated Market Value</p>
-              <p className="text-2xl font-bold text-blue-900">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+            <div className="text-center p-2">
+              <p className="text-sm text-blue-700 mb-1">Estimated Market Value</p>
+              <p className="text-xl sm:text-2xl font-bold text-blue-900 break-words">
                 {analysis?.estimated_arv ? formatCurrency(analysis.estimated_arv) : 'TBD'}
               </p>
             </div>
-            <div className="text-center">
-              <p className="text-sm text-blue-700">Price Range</p>
-              <p className="text-lg font-bold text-blue-900">
+            <div className="text-center p-2">
+              <p className="text-sm text-blue-700 mb-1">Price Range</p>
+              <p className="text-sm sm:text-lg font-bold text-blue-900 break-words">
                 {priceRange.low > 0 ? `${formatCurrency(priceRange.low)} - ${formatCurrency(priceRange.high)}` : 'TBD'}
               </p>
             </div>
-            <div className="text-center">
-              <p className="text-sm text-blue-700">Market Trend</p>
+            <div className="text-center p-2">
+              <p className="text-sm text-blue-700 mb-1">Market Trend</p>
               <div className="flex items-center justify-center gap-2">
                 {getMarketTrendIcon()}
-                <p className="text-lg font-bold text-blue-900 capitalize">
+                <p className="text-sm sm:text-lg font-bold text-blue-900 capitalize">
                   {analysis?.market_trend || 'TBD'}
                 </p>
               </div>
@@ -79,7 +79,7 @@ const CMAOverview = ({
       </Card>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <Card>
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-2">

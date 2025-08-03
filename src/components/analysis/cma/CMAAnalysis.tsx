@@ -33,7 +33,7 @@ const CMAAnalysis = ({ deal, formatCurrency, analysis, pricePerSqm }: CMAAnalysi
         {/* Price Recommendation */}
         <div className="bg-green-50 p-4 rounded-xl">
           <h4 className="font-semibold text-green-900 mb-3">Price Recommendation</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="text-center">
               <p className="text-sm text-green-700">Conservative</p>
               <p className="text-xl font-bold text-green-900">
@@ -58,7 +58,7 @@ const CMAAnalysis = ({ deal, formatCurrency, analysis, pricePerSqm }: CMAAnalysi
         {/* Market Conditions */}
         <div>
           <h4 className="font-semibold text-navy-dark mb-3">Current Market Conditions</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-navy">Market Trend:</span>

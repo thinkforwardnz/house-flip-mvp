@@ -63,17 +63,64 @@ const CMAComparables = ({ deal, formatCurrency, comparables, pricePerSqm }: CMAC
         <CardTitle className="text-navy-dark">Comparable Sales with Adjustments</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        {/* Mobile Cards View */}
+        <div className="block sm:hidden space-y-4">
+          {comparables.slice(0, 10).map((comp, index) => {
+            const adjustments = calculateAdjustments(comp);
+            const adjustedPrice = (comp.sold_price || 0) + adjustments.total;
+            const compPricePerSqm = comp.floor_area && comp.sold_price 
+              ? comp.sold_price / comp.floor_area 
+              : 0;
+
+            return (
+              <Card key={index} className="p-4">
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-medium text-navy-dark break-words">
+                      {comp.address || `Property ${index + 1}`}
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {comp.bedrooms}br, {comp.bathrooms}ba
+                      {comp.sold_date && ` • ${new Date(comp.sold_date).toLocaleDateString()}`}
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-gray-600">Sale Price:</span>
+                      <p className="font-medium">{comp.sold_price ? formatCurrency(comp.sold_price) : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Size:</span>
+                      <p className="font-medium">{comp.floor_area || 'N/A'} m²</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">$/m²:</span>
+                      <p className="font-medium">{compPricePerSqm > 0 ? `$${Math.round(compPricePerSqm).toLocaleString()}` : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Adjusted:</span>
+                      <p className="font-bold">{formatCurrency(adjustedPrice)}</p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden sm:block overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Property</TableHead>
-                <TableHead className="text-right">Sale Price</TableHead>
-                <TableHead className="text-right">Size (m²)</TableHead>
-                <TableHead className="text-right">$/m²</TableHead>
-                <TableHead className="text-right">Size Adj.</TableHead>
-                <TableHead className="text-right">Date Adj.</TableHead>
-                <TableHead className="text-right">Adjusted Price</TableHead>
+                <TableHead className="min-w-[200px]">Property</TableHead>
+                <TableHead className="text-right min-w-[100px]">Sale Price</TableHead>
+                <TableHead className="text-right min-w-[80px]">Size (m²)</TableHead>
+                <TableHead className="text-right min-w-[80px]">$/m²</TableHead>
+                <TableHead className="text-right min-w-[80px]">Size Adj.</TableHead>
+                <TableHead className="text-right min-w-[80px]">Date Adj.</TableHead>
+                <TableHead className="text-right min-w-[120px]">Adjusted Price</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -86,9 +133,9 @@ const CMAComparables = ({ deal, formatCurrency, comparables, pricePerSqm }: CMAC
 
                 return (
                   <TableRow key={index}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-navy-dark">
+                    <TableCell className="min-w-0">
+                      <div className="min-w-0">
+                        <p className="font-medium text-navy-dark break-words">
                           {comp.address || `Property ${index + 1}`}
                         </p>
                         <p className="text-sm text-gray-600">
