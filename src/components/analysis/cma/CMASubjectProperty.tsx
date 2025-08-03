@@ -187,9 +187,9 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="w-full min-w-0">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full min-w-0">
-            <div className="space-y-3 min-w-0">
+        <CardContent className="w-full min-w-0 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full min-w-0 overflow-hidden">
+            <div className="space-y-3 min-w-0 overflow-hidden">
               <div className="flex items-start gap-2 min-w-0 flex-wrap">
                 <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0 mt-0.5" />
                 <span className="font-medium text-navy-dark flex-shrink-0">Address:</span>
@@ -238,7 +238,7 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
               </div>
             </div>
             
-            <div className="space-y-3 min-w-0">
+            <div className="space-y-3 min-w-0 overflow-hidden">
               <div className="flex items-start gap-2 min-w-0">
                 <span className="font-medium text-navy-dark flex-shrink-0">Bedrooms:</span>
                 <span className="text-navy break-words min-w-0">{deal.bedrooms || 'TBD'}</span>
