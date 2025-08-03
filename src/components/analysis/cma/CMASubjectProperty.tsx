@@ -190,10 +190,10 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
         <CardContent className="w-full min-w-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full min-w-0">
             <div className="space-y-3 min-w-0">
-              <div className="flex items-start gap-2 min-w-0">
+              <div className="flex items-start gap-2 min-w-0 flex-wrap">
                 <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0 mt-0.5" />
                 <span className="font-medium text-navy-dark flex-shrink-0">Address:</span>
-                <span className="text-navy break-words min-w-0">{deal.address}</span>
+                <span className="text-navy break-all leading-relaxed min-w-0 max-w-full">{deal.address}</span>
               </div>
               
               {listingDetails.title && (
