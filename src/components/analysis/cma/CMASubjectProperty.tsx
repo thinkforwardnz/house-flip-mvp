@@ -170,7 +170,7 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
     <div className="w-full min-w-0 space-y-6">
       <Card className="w-full min-w-0">
         <CardHeader>
-          <div className="flex items-center justify-between gap-4 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 min-w-0">
             <CardTitle className="text-navy-dark flex items-center gap-2 min-w-0">
               <Home className="h-5 w-5 flex-shrink-0" />
               <span className="truncate">Subject Property Details</span>
@@ -180,7 +180,7 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
               disabled={isAnalyzing}
               variant="outline"
               size="sm"
-              className="rounded-xl flex-shrink-0"
+              className="rounded-xl flex-shrink-0 w-full sm:w-auto"
             >
               <TrendingUp className={`h-4 w-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
               {isAnalyzing ? 'Analyzing...' : 'Analyze & Enrich'}
