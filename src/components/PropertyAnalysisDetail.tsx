@@ -42,9 +42,9 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4 w-full">
+    <div className="space-y-3 sm:space-y-4 w-full px-2 sm:px-4 max-w-full overflow-hidden">
       {/* Property Header */}
-      <div className="w-full">
+      <div className="w-full max-w-full">
         <PropertyHeader
           deal={deal}
           isAnalyzing={isAnalyzing}
@@ -60,16 +60,16 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
       {isMobile ? (
         <AnalysisMobileTabSelector tab={activeTab} onTabChange={setActiveTab} className="mb-2" />
       ) : (
-        <Card className="bg-white shadow-lg rounded-2xl border-0 w-full">
-          <CardContent className="p-2 sm:p-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-6 gap-1 mb-3 sm:mb-4">
-                <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3">Overview</TabsTrigger>
-                <TabsTrigger value="data" className="text-xs sm:text-sm px-1 sm:px-2">Data</TabsTrigger>
-                <TabsTrigger value="cma" className="text-xs sm:text-sm px-1 sm:px-2">Market</TabsTrigger>
-                <TabsTrigger value="renovation" className="text-xs sm:text-sm px-1 sm:px-2">Reno</TabsTrigger>
-                <TabsTrigger value="offer" className="text-xs sm:text-sm px-1 sm:px-2">Offer</TabsTrigger>
-                <TabsTrigger value="risk" className="text-xs sm:text-sm px-1 sm:px-2">Risk</TabsTrigger>
+        <Card className="bg-white shadow-lg rounded-2xl border-0 w-full max-w-full">
+          <CardContent className="p-2 sm:p-4 max-w-full overflow-hidden">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-full">
+              <TabsList className="grid w-full grid-cols-6 gap-1 mb-3 sm:mb-4 max-w-full">
+                <TabsTrigger value="overview" className="text-xs sm:text-sm px-1 sm:px-3 min-w-0">Overview</TabsTrigger>
+                <TabsTrigger value="data" className="text-xs sm:text-sm px-1 sm:px-2 min-w-0">Data</TabsTrigger>
+                <TabsTrigger value="cma" className="text-xs sm:text-sm px-1 sm:px-2 min-w-0">Market</TabsTrigger>
+                <TabsTrigger value="renovation" className="text-xs sm:text-sm px-1 sm:px-2 min-w-0">Reno</TabsTrigger>
+                <TabsTrigger value="offer" className="text-xs sm:text-sm px-1 sm:px-2 min-w-0">Offer</TabsTrigger>
+                <TabsTrigger value="risk" className="text-xs sm:text-sm px-1 sm:px-2 min-w-0">Risk</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview">
@@ -120,8 +120,8 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
 
       {/* Tabs content for mobile: only show active tab */}
       {isMobile && (
-        <Card className="bg-white shadow-lg rounded-2xl border-0 w-full">
-          <CardContent className="p-3 sm:p-4">
+        <Card className="bg-white shadow-lg rounded-2xl border-0 w-full max-w-full">
+          <CardContent className="p-3 sm:p-4 max-w-full overflow-hidden">
             {activeTab === "overview" && (
               <OverviewTab
                 deal={deal}
@@ -166,7 +166,7 @@ const PropertyAnalysisDetail = ({ deal, onSaveDealUpdates }: PropertyAnalysisDet
       )}
       
       {/* AI Analysis Summary */}
-      <div className="w-full">
+      <div className="w-full max-w-full">
         <AIAnalysisSummary deal={deal} />
       </div>
     </div>
