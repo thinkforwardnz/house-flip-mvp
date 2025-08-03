@@ -149,7 +149,7 @@ const AIAnalysisSummary = ({
   const dataCompleteness = getDataCompleteness();
   return <Card className="bg-white shadow-lg rounded-2xl border-0">
       <CardHeader className="pb-4">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
           <div className="p-2 bg-blue-100 rounded-lg">
             <Brain className="h-6 w-6 text-blue-600" />
           </div>
