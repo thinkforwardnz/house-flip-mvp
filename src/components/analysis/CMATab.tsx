@@ -53,7 +53,7 @@ const CMATab = ({ deal, formatCurrency, onDealUpdate }: CMATabProps) => {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0 w-full min-w-0 max-w-full overflow-hidden">
       <div className="flex flex-col space-y-2">
         <h3 className="text-lg font-semibold text-navy-dark truncate">Comparative Market Analysis (CMA)</h3>
         <Badge className={analysis?.market_confidence ? getConfidenceColor(analysis.market_confidence) : 'bg-gray-100 text-gray-800'}>
@@ -61,7 +61,7 @@ const CMATab = ({ deal, formatCurrency, onDealUpdate }: CMATabProps) => {
         </Badge>
       </div>
 
-      <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
+      <Tabs value={activeView} onValueChange={setActiveView} className="w-full min-w-0 max-w-full">
         {/* Mobile dropdown selector */}
         <CMAMobileTabSelector 
           activeView={activeView} 
@@ -69,12 +69,22 @@ const CMATab = ({ deal, formatCurrency, onDealUpdate }: CMATabProps) => {
           className="w-full mb-4"
         />
         
-        {/* Desktop tabs */}
-        <TabsList className="hidden sm:grid w-full grid-cols-4 gap-1 mb-4 h-auto p-1">
-          <TabsTrigger value="overview" className="text-sm font-medium px-3 py-2 rounded-lg">Overview</TabsTrigger>
-          <TabsTrigger value="subject" className="text-sm font-medium px-3 py-2 rounded-lg">Subject Property</TabsTrigger>
-          <TabsTrigger value="comparables" className="text-sm font-medium px-3 py-2 rounded-lg">Comparables</TabsTrigger>
-          <TabsTrigger value="analysis" className="text-sm font-medium px-3 py-2 rounded-lg">Analysis</TabsTrigger>
+        {/* Desktop tabs - Responsive design */}
+        <TabsList className="hidden sm:flex w-full mb-4 h-auto p-1 gap-1 flex-wrap">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm font-medium px-2 sm:px-3 py-2 rounded-lg flex-1 min-w-0">
+            <span className="truncate">Overview</span>
+          </TabsTrigger>
+          <TabsTrigger value="subject" className="text-xs sm:text-sm font-medium px-2 sm:px-3 py-2 rounded-lg flex-1 min-w-0">
+            <span className="truncate sm:hidden">Subject</span>
+            <span className="truncate hidden sm:inline">Subject Property</span>
+          </TabsTrigger>
+          <TabsTrigger value="comparables" className="text-xs sm:text-sm font-medium px-2 sm:px-3 py-2 rounded-lg flex-1 min-w-0">
+            <span className="truncate sm:hidden">Comps</span>
+            <span className="truncate hidden sm:inline">Comparables</span>
+          </TabsTrigger>
+          <TabsTrigger value="analysis" className="text-xs sm:text-sm font-medium px-2 sm:px-3 py-2 rounded-lg flex-1 min-w-0">
+            <span className="truncate">Analysis</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
