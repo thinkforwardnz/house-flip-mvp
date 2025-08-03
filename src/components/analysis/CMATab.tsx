@@ -6,6 +6,7 @@ import CMAOverview from './cma/CMAOverview';
 import CMASubjectProperty from './cma/CMASubjectProperty';
 import CMAComparables from './cma/CMAComparables';
 import CMAAnalysis from './cma/CMAAnalysis';
+import CMAMobileTabSelector from './CMAMobileTabSelector';
 import type { Deal } from '@/types/analysis';
 
 interface CMATabProps {
@@ -61,11 +62,18 @@ const CMATab = ({ deal, formatCurrency, onDealUpdate }: CMATabProps) => {
       </div>
 
       <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
-        <TabsList className="flex flex-nowrap gap-1 sm:gap-2 overflow-x-auto">
-          <TabsTrigger value="overview" className="min-w-[90px] text-xs sm:text-sm">Overview</TabsTrigger>
-          <TabsTrigger value="subject" className="min-w-[90px] text-xs sm:text-sm">Subject Property</TabsTrigger>
-          <TabsTrigger value="comparables" className="min-w-[90px] text-xs sm:text-sm">Comparables</TabsTrigger>
-          <TabsTrigger value="analysis" className="min-w-[90px] text-xs sm:text-sm">Analysis</TabsTrigger>
+        {/* Mobile dropdown selector */}
+        <CMAMobileTabSelector 
+          activeView={activeView} 
+          onViewChange={setActiveView} 
+        />
+        
+        {/* Desktop tabs */}
+        <TabsList className="hidden sm:flex w-full grid-cols-4 gap-1 mb-4">
+          <TabsTrigger value="overview" className="text-sm px-3">Overview</TabsTrigger>
+          <TabsTrigger value="subject" className="text-sm px-3">Subject Property</TabsTrigger>
+          <TabsTrigger value="comparables" className="text-sm px-3">Comparables</TabsTrigger>
+          <TabsTrigger value="analysis" className="text-sm px-3">Analysis</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">

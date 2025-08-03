@@ -52,7 +52,7 @@ const CMAOverview = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div className="text-center">
               <p className="text-sm text-blue-700">Estimated Market Value</p>
               <p className="text-2xl font-bold text-blue-900">
@@ -79,9 +79,9 @@ const CMAOverview = ({
       </Card>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-2">
               <Ruler className="h-4 w-4 text-gray-600" />
               <p className="text-sm text-gray-600">Price per m²</p>
@@ -93,7 +93,7 @@ const CMAOverview = ({
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="h-4 w-4 text-gray-600" />
               <p className="text-sm text-gray-600">Days on Market</p>
@@ -105,7 +105,7 @@ const CMAOverview = ({
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-2">
               <Building className="h-4 w-4 text-gray-600" />
               <p className="text-sm text-gray-600">Comparables</p>
@@ -117,7 +117,7 @@ const CMAOverview = ({
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className="h-4 w-4 text-gray-600" />
               <p className="text-sm text-gray-600">Rental Yield</p>
