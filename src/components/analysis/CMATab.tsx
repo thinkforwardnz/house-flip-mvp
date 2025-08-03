@@ -61,11 +61,12 @@ const CMATab = ({ deal, formatCurrency, onDealUpdate }: CMATabProps) => {
         </Badge>
       </div>
 
-      <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
+      <Tabs value={activeView} onValueChange={setActiveView} className="w-full min-w-0">
         {/* Mobile dropdown selector */}
         <CMAMobileTabSelector 
           activeView={activeView} 
           onViewChange={setActiveView} 
+          className="w-full min-w-0"
         />
         
         {/* Desktop tabs */}
@@ -88,11 +89,13 @@ const CMATab = ({ deal, formatCurrency, onDealUpdate }: CMATabProps) => {
           />
         </TabsContent>
 
-        <TabsContent value="subject" className="space-y-6">
-          <CMASubjectProperty 
-            deal={deal} 
-            onDealUpdate={onDealUpdate}
-          />
+        <TabsContent value="subject" className="space-y-6 w-full min-w-0">
+          <div className="w-full min-w-0">
+            <CMASubjectProperty 
+              deal={deal} 
+              onDealUpdate={onDealUpdate}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="comparables" className="space-y-6">

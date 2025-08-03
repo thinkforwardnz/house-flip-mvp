@@ -16,12 +16,12 @@ interface CMAMobileTabSelectorProps {
 }
 
 const CMAMobileTabSelector = ({ activeView, onViewChange, className }: CMAMobileTabSelectorProps) => (
-  <div className={cn("block sm:hidden w-full mb-4", className)}>
+  <div className={cn("block sm:hidden w-full min-w-0 mb-4", className)}>
     <Select value={activeView} onValueChange={onViewChange}>
-      <SelectTrigger className="w-full rounded-xl bg-input-bg border border-gray-200 text-navy-dark font-semibold text-base px-3 py-2">
+      <SelectTrigger className="w-full min-w-0 rounded-xl bg-input-bg border border-gray-200 text-navy-dark font-semibold text-base px-3 py-2">
         <SelectValue />
       </SelectTrigger>
-      <SelectContent side="bottom" className="z-50 bg-white shadow-md rounded-xl border border-gray-100">
+      <SelectContent side="bottom" className="z-50 bg-white shadow-md rounded-xl border border-gray-100 w-full min-w-0">
         <SelectGroup>
           {CMA_TABS.map(t => (
             <SelectItem 
