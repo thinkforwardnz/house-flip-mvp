@@ -36,7 +36,7 @@ const PropertyAnalysis = () => {
     }
   }, [currentDeal?.id, updateDeal]);
   if (isLoading) {
-    return <div className="max-w-7xl mx-auto space-y-6">
+    return <div className="w-[1280px] mx-auto space-y-6">
         <div className="animate-pulse">
           <div className="h-6 sm:h-8 bg-gray-200 rounded w-2/3 mb-2 sm:mb-3"></div>
           <div className="h-20 sm:h-24 bg-gray-200 rounded mb-3 sm:mb-4"></div>

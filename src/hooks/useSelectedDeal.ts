@@ -13,7 +13,10 @@ export const useSelectedDeal = (requiredStage?: string) => {
     const dealIdFromUrl = searchParams.get('dealId');
     
     if (dealIdFromUrl && deals.find(d => d.id === dealIdFromUrl)) {
-      setSelectedDealId(dealIdFromUrl);
+      // Only update if different to prevent unnecessary re-renders
+      if (selectedDealId !== dealIdFromUrl) {
+        setSelectedDealId(dealIdFromUrl);
+      }
     } else if (deals.length > 0 && !isLoading) {
       // Find first deal in required stage, or just first deal
       const filteredDeals = requiredStage 
@@ -22,11 +25,14 @@ export const useSelectedDeal = (requiredStage?: string) => {
       
       if (filteredDeals.length > 0) {
         const firstDeal = filteredDeals[0];
-        setSelectedDealId(firstDeal.id);
-        setSearchParams({ dealId: firstDeal.id });
+        // Only update if different to prevent unnecessary re-renders
+        if (selectedDealId !== firstDeal.id) {
+          setSelectedDealId(firstDeal.id);
+          setSearchParams({ dealId: firstDeal.id });
+        }
       }
     }
-  }, [deals, isLoading, searchParams, setSearchParams, requiredStage]);
+  }, [deals, isLoading, searchParams, setSearchParams, requiredStage, selectedDealId]);
 
   const selectedDeal = selectedDealId ? deals.find(d => d.id === selectedDealId) : null;
 
