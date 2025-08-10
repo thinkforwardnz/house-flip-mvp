@@ -45,12 +45,7 @@ export const useUpdateDeal = () => {
         .from('deals')
         .update(processedUpdates)
         .eq('id', id)
-        .select(`
-          *,
-          unified_properties (
-            address, suburb, city, bedrooms, bathrooms, floor_area, land_area, photos, description, coordinates
-          )
-        `)
+        .select('id')
         .single();
 
       if (error) {
@@ -65,7 +60,7 @@ export const useUpdateDeal = () => {
       }
       if (!data) throw new Error('No data returned after updating deal.');
 
-      return transformSupabaseDeal(data as DealWithNestedProperty);
+      return data as any;
     },
     onSuccess: (updatedDealData) => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });

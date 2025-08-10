@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Deal } from '@/types/analysis';
 
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -18,6 +19,7 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState('');
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const metrics = useDealMetrics(deal);
 
@@ -73,10 +75,10 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
       if (Object.keys(riskUpdates).length > 0) onUpdateDeal(riskUpdates);
 
       // Step 6: Fetch Final Data
-      setAnalysisStep('Finalizing analysis and fetching latest data...');
-      const finalDealData = await fetchFullyUpdatedDeal(deal.id);
-      onUpdateDeal(finalDealData);
-
+      setAnalysisStep('Finalizing analysis and syncing data...');
+      await fetchFullyUpdatedDeal(deal.id);
+      await queryClient.invalidateQueries({ queryKey: ['deals'] });
+      await queryClient.invalidateQueries({ queryKey: ['deal', deal.id] });
       toast({
         title: "Analysis Complete",
         description: "Property analysis has been completed successfully.",
