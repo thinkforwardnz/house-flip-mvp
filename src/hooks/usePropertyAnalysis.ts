@@ -9,6 +9,7 @@ import { useDealMetrics } from './useDealMetrics';
 // Import from new individual service files
 import { invokeMarketAnalysis } from '@/services/invokeMarketAnalysis';
 import { invokePropertyEnrichment } from '@/services/invokePropertyEnrichment';
+import { invokeConditionAnalysis } from '@/services/invokeConditionAnalysis';
 import { invokeRenovationAnalysis } from '@/services/invokeRenovationAnalysis';
 import { invokeRiskAssessment } from '@/services/invokeRiskAssessment';
 import { fetchFullyUpdatedDeal } from '@/services/fetchFullyUpdatedDeal';
@@ -45,7 +46,16 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
       });
       if (Object.keys(enrichmentUpdates).length > 0) onUpdateDeal(enrichmentUpdates);
 
-      // Step 3: Renovation Analysis
+      // Step 3: AI Vision Condition Assessment
+      setAnalysisStep('Assessing property condition (AI Vision)...');
+      const conditionUpdates = await invokeConditionAnalysis({
+        dealId: deal.id,
+        photos: deal.photos || deal.property?.photos || [],
+        description: deal.description || deal.property?.description || '',
+      });
+      if (Object.keys(conditionUpdates).length > 0) onUpdateDeal(conditionUpdates);
+
+      // Step 4: Renovation Analysis
       setAnalysisStep('Analyzing renovation requirements...');
       const renovationUpdates = await invokeRenovationAnalysis({
         dealId: deal.id,
@@ -57,12 +67,12 @@ export const usePropertyAnalysis = (deal: Deal, onUpdateDeal: (updates: Partial<
       });
       if (Object.keys(renovationUpdates).length > 0) onUpdateDeal(renovationUpdates);
       
-      // Step 4: Risk Assessment
+      // Step 5: Risk Assessment
       setAnalysisStep('Performing risk assessment...');
       const riskUpdates = await invokeRiskAssessment({ dealId: deal.id });
       if (Object.keys(riskUpdates).length > 0) onUpdateDeal(riskUpdates);
 
-      // Step 5: Fetch Final Data
+      // Step 6: Fetch Final Data
       setAnalysisStep('Finalizing analysis and fetching latest data...');
       const finalDealData = await fetchFullyUpdatedDeal(deal.id);
       onUpdateDeal(finalDealData);

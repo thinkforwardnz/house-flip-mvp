@@ -129,6 +129,50 @@ const CMAOverview = ({
         </Card>
       </div>
 
+      {/* AI Condition Assessment */}
+      {deal.market_analysis?.condition_assessment && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-navy-dark">AI Condition Assessment</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const cond = deal.market_analysis?.condition_assessment;
+              const overall = cond?.overall_condition;
+              const quickWins = cond?.quick_wins || [];
+              const redFlags = cond?.red_flags || [];
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Overall Condition</p>
+                    <p className="text-xl font-bold text-navy-dark">
+                      {overall?.label || 'TBD'} {overall?.score !== undefined ? `(${Math.round(overall.score)}/100)` : ''}
+                    </p>
+                    {overall?.confidence !== undefined && (
+                      <p className="text-xs text-gray-500 mt-1">Confidence: {Math.round((overall.confidence || 0) * 100)}%</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Quick Wins</p>
+                    <ul className="list-disc pl-5 text-sm text-navy space-y-1">
+                      {(quickWins.slice(0,3)).map((w, i) => (<li key={i}>{w}</li>))}
+                      {quickWins.length === 0 && <li>None identified</li>}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Red Flags</p>
+                    <ul className="list-disc pl-5 text-sm text-navy space-y-1">
+                      {(redFlags.slice(0,3)).map((r, i) => (<li key={i}>{r}</li>))}
+                      {redFlags.length === 0 && <li>No major issues</li>}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Market Insights */}
       {analysis?.insights && (
         <Card>

@@ -14,6 +14,7 @@ interface CMASubjectPropertyProps {
 
 const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAssessing, setIsAssessing] = useState(false);
   const { toast } = useToast();
 
   const handleAnalyzeAndEnrich = async () => {
@@ -165,26 +166,162 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
 
   // Get listing details from the database
   const listingDetails = deal.listing_details || {};
+  const condition = (deal.market_analysis as any)?.condition_assessment;
+
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <Card>
         <CardHeader className="pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <CardTitle className="text-navy-dark flex items-center gap-2">
-              <Home className="h-5 w-5 flex-shrink-0" />
-              <span className="break-words">Subject Property Details</span>
-            </CardTitle>
-            <Button
-              onClick={handleAnalyzeAndEnrich}
-              disabled={isAnalyzing}
-              variant="outline"
-              size="sm"
-              className="rounded-xl flex-shrink-0 w-full sm:w-auto"
-            >
-              <TrendingUp className={`h-4 w-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
-              {isAnalyzing ? 'Analyzing...' : 'Analyze & Enrich'}
-            </Button>
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-navy-dark flex items-center gap-2">
+                <Home className="h-5 w-5 flex-shrink-0" />
+                <span className="break-words">Subject Property Details</span>
+              </CardTitle>
+              {condition?.overall_condition && (
+                <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-navy">
+                  Condition: {condition.overall_condition.label} {condition.overall_condition.score !== undefined ? `(${Math.round(condition.overall_condition.score)}/100)` : ''}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <Button
+                onClick={handleAnalyzeAndEnrich}
+                disabled={isAnalyzing}
+                variant="outline"
+                size="sm"
+                className="rounded-xl flex-shrink-0 w-full sm:w-auto"
+              >
+                <TrendingUp className={`h-4 w-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
+                {isAnalyzing ? 'Analyzing...' : 'Analyze & Enrich'}
+              </Button>
+              <Button
+                onClick={async () => {
+                  setIsAssessing(true);
+                  try {
+                    const { data, error } = await supabase.functions.invoke('condition-analysis', {
+                      body: {
+                        dealId: deal.id,
+                        photos: deal.photos,
+                        description: deal.description,
+                      }
+                    });
+                    if (error) throw error;
+                    if (data?.success) {
+                      toast({ title: 'Condition Assessed', description: 'AI vision completed successfully.' });
+                      // Fetch updated deal
+                      const { data: updatedDealData, error: fetchError } = await supabase
+                        .from('deals')
+                        .select(`
+                          *,
+                          unified_properties (
+                            address,
+                            suburb,
+                            city,
+                            bedrooms,
+                            bathrooms,
+                            floor_area,
+                            land_area,
+                            photos,
+                            description,
+                            coordinates
+                          )
+                        `)
+                        .eq('id', deal.id)
+                        .single();
+                      if (!fetchError && updatedDealData && onDealUpdate) {
+                        const property = updatedDealData.unified_properties;
+                        const transformedDeal: Deal = {
+                          ...updatedDealData,
+                          property: property ? {
+                            address: property.address,
+                            suburb: property.suburb || '',
+                            city: property.city || 'Auckland',
+                            bedrooms: property.bedrooms || undefined,
+                            bathrooms: property.bathrooms || undefined,
+                            floor_area: property.floor_area || undefined,
+                            land_area: property.land_area || undefined,
+                            photos: property.photos || undefined,
+                            description: property.description || undefined,
+                            coordinates: property.coordinates && 
+                              typeof property.coordinates === 'object' && 
+                              property.coordinates !== null &&
+                              'x' in property.coordinates && 
+                              'y' in property.coordinates
+                              ? {
+                                  lat: (property.coordinates as any).y,
+                                  lng: (property.coordinates as any).x
+                                }
+                              : undefined,
+                          } : undefined,
+                          // Flatten for backward compatibility
+                          address: property?.address,
+                          suburb: property?.suburb || '',
+                          city: property?.city || 'Auckland',
+                          bedrooms: property?.bedrooms || undefined,
+                          bathrooms: property?.bathrooms || undefined,
+                          floor_area: property?.floor_area || undefined,
+                          land_area: property?.land_area || undefined,
+                          photos: property?.photos || undefined,
+                          description: property?.description || undefined,
+                          coordinates: property?.coordinates && 
+                            typeof property.coordinates === 'object' && 
+                            property.coordinates !== null &&
+                            'x' in property.coordinates && 
+                            'y' in property.coordinates
+                            ? {
+                                lat: (property.coordinates as any).y,
+                                lng: (property.coordinates as any).x
+                              }
+                            : undefined,
+                          market_analysis: updatedDealData.market_analysis && 
+                            typeof updatedDealData.market_analysis === 'object' && 
+                            updatedDealData.market_analysis !== null
+                            ? (updatedDealData.market_analysis as any)
+                            : undefined,
+                          renovation_analysis: updatedDealData.renovation_analysis && 
+                            typeof updatedDealData.renovation_analysis === 'object' && 
+                            updatedDealData.renovation_analysis !== null
+                            ? (updatedDealData.renovation_analysis as any)
+                            : undefined,
+                          risk_assessment: updatedDealData.risk_assessment && 
+                            typeof updatedDealData.risk_assessment === 'object' && 
+                            updatedDealData.risk_assessment !== null
+                            ? (updatedDealData.risk_assessment as any)
+                            : undefined,
+                          analysis_data: updatedDealData.analysis_data && 
+                            typeof updatedDealData.analysis_data === 'object' && 
+                            updatedDealData.analysis_data !== null
+                            ? (updatedDealData.analysis_data as any)
+                            : undefined,
+                          listing_details: updatedDealData.listing_details && 
+                            typeof updatedDealData.listing_details === 'object' && 
+                            updatedDealData.listing_details !== null
+                            ? (updatedDealData.listing_details as any)
+                            : undefined
+                        };
+                        onDealUpdate(transformedDeal);
+                      }
+                    } else {
+                      toast({ title: 'Assessment Failed', description: data?.message || 'Could not assess condition', variant: 'destructive' });
+                    }
+                  } catch (err: any) {
+                    console.error('Condition analysis error:', err);
+                    toast({ title: 'Assessment Error', description: err.message || 'Unexpected error', variant: 'destructive' });
+                  } finally {
+                    setIsAssessing(false);
+                  }
+                }}
+                disabled={isAssessing}
+                variant="outline"
+                size="sm"
+                className="rounded-xl flex-shrink-0 w-full sm:w-auto"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isAssessing ? 'animate-spin' : ''}`} />
+                {isAssessing ? 'Assessing...' : 'Assess Condition (AI)'}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-3 sm:p-4 lg:p-6">

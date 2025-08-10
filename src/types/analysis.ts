@@ -31,6 +31,36 @@ export interface MarketAnalysis {
   location_score?: number;
 }
 
+// AI Vision-based condition assessment of the property's current (as-is) state
+export interface ConditionAreaAssessment {
+  condition: 'Excellent' | 'Good' | 'Fair' | 'Poor';
+  severity: 'low' | 'medium' | 'high';
+  notes?: string[];
+}
+
+export interface ConditionAssessment {
+  overall_condition: {
+    label: 'Excellent' | 'Good' | 'Fair' | 'Poor';
+    score: number; // 0-100
+    rationale?: string;
+    confidence?: number; // 0-1
+  };
+  areas?: {
+    exterior?: ConditionAreaAssessment;
+    roof?: ConditionAreaAssessment;
+    windows?: ConditionAreaAssessment;
+    kitchen?: ConditionAreaAssessment;
+    bathrooms?: ConditionAreaAssessment;
+    flooring?: ConditionAreaAssessment;
+    paint?: ConditionAreaAssessment;
+    moisture_mold?: ConditionAreaAssessment;
+    landscaping?: ConditionAreaAssessment;
+  };
+  red_flags?: string[];
+  quick_wins?: string[];
+  photo_evidence?: { photo_index: number; note: string }[];
+}
+
 export interface RenovationRoom {
   cost: number;
   description: string;
@@ -81,6 +111,7 @@ export interface Comparable extends ComparableSale {}
 export interface MarketData {
   comparables?: ComparableSale[];
   analysis?: MarketAnalysis;
+  condition_assessment?: ConditionAssessment;
   investment_metrics?: {
     max_purchase_price?: number;
     estimated_renovation_cost?: number;
