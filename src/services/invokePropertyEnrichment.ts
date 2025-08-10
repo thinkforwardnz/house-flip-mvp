@@ -25,7 +25,7 @@ export const invokePropertyEnrichment = async (params: PropertyEnrichmentParams)
   }
   console.log('Property enrichment response:', data);
   if (data && data.data) {
-    return data.data as Partial<Deal>;
+    return { analysis_data: data.data } as Partial<Deal>;
   }
   return {};
 };
