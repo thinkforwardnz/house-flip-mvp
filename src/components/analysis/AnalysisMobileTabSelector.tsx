@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 
 const MOBILE_TABS = [
   { label: "Overview", value: "overview" },
-  { label: "Data Collection", value: "data" },
   { label: "Market Analysis", value: "cma" },
+  { label: "Data Collection", value: "data" },
   { label: "Renovation", value: "renovation" },
   { label: "Offer Calculation", value: "offer" },
   { label: "Risk Assessment", value: "risk" },
