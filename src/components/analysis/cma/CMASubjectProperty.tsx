@@ -291,94 +291,38 @@ const CMASubjectProperty = ({
               </span>
             )}
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-            <div className="space-y-3">
-              
-              
-              
-              {listingDetails.title && <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
-                  <span className="font-medium text-navy-dark flex-shrink-0">Listing Title:</span>
-                  <span className="text-navy break-words">{listingDetails.title}</span>
-                </div>}
-              
-              {listingDetails.type && <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Home className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                    <span className="font-medium text-navy-dark">Property Type:</span>
-                  </div>
-                  <span className="text-navy leading-relaxed break-words">{listingDetails.type}</span>
-                </div>}
-              
-              {!listingDetails.type && <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Home className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                    <span className="font-medium text-navy-dark">Property Type:</span>
-                  </div>
-                  <span className="text-navy leading-relaxed break-words">Residential House</span>
-                </div>}
-
-              {listingDetails.method && <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-navy-dark">Sale Method:</span>
-                  </div>
-                  <span className="text-navy leading-relaxed break-words">{listingDetails.method}</span>
-                </div>}
-
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Ruler className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                  <span className="font-medium text-navy-dark">Floor Area:</span>
-                </div>
-                <span className="text-navy leading-relaxed break-words">{deal.floor_area ? `${deal.floor_area}m²` : 'TBD'}</span>
+          <div className="mt-3 sm:mt-4">
+            <h4 className="font-medium text-navy-dark mb-2">Details</h4>
+            <dl className="rounded-xl bg-muted/40 divide-y divide-border">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                <dt className="text-muted-foreground">Property type</dt>
+                <dd className="text-foreground">{listingDetails.type || 'Residential House'}</dd>
               </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Square className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                  <span className="font-medium text-navy-dark">Land Area:</span>
+              {listingDetails.method && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                  <dt className="text-muted-foreground">Sale method</dt>
+                  <dd className="text-foreground">{listingDetails.method}</dd>
                 </div>
-                <span className="text-navy leading-relaxed break-words">{deal.land_area ? `${deal.land_area}m²` : 'TBD'}</span>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Bed className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                  <span className="font-medium text-navy-dark">Bedrooms:</span>
+              )}
+              {listingDetails.parking && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                  <dt className="text-muted-foreground">Parking</dt>
+                  <dd className="text-foreground">{listingDetails.parking}</dd>
                 </div>
-                <span className="text-navy leading-relaxed break-words">{deal.bedrooms || 'TBD'}</span>
-              </div>
-              
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Bath className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                  <span className="font-medium text-navy-dark">Bathrooms:</span>
+              )}
+              {listingDetails.internet && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                  <dt className="text-muted-foreground">Broadband in the area</dt>
+                  <dd className="text-foreground">{listingDetails.internet}</dd>
                 </div>
-                <span className="text-navy leading-relaxed break-words">{deal.bathrooms || 'TBD'}</span>
-              </div>
-
-              {listingDetails.parking && <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Car className="h-4 w-4 text-gray-600" />
-                    <span className="font-medium text-navy-dark">Parking:</span>
-                  </div>
-                  <span className="text-navy pl-6 sm:pl-0 break-words">{listingDetails.parking}</span>
-                </div>}
-
-              {listingDetails.internet && <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Wifi className="h-4 w-4 text-gray-600" />
-                    <span className="font-medium text-navy-dark">Internet:</span>
-                  </div>
-                  <span className="text-navy pl-6 sm:pl-0 break-words">{listingDetails.internet}</span>
-                </div>}
-
-              {listingDetails.date && <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
-                  <span className="font-medium text-navy-dark flex-shrink-0">Listed:</span>
-                  <span className="text-navy break-words">{listingDetails.date}</span>
-                </div>}
-            </div>
+              )}
+              {listingDetails.date && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                  <dt className="text-muted-foreground">Listed</dt>
+                  <dd className="text-foreground">{listingDetails.date}</dd>
+                </div>
+              )}
+            </dl>
           </div>
 
           {listingDetails.other_features && <div className="mt-4 pt-4 border-t border-border">
@@ -388,53 +332,6 @@ const CMASubjectProperty = ({
               </div>
             </div>}
 
-          {(listingDetails.type || listingDetails.method || listingDetails.parking || listingDetails.internet || listingDetails.date || deal.floor_area != null || deal.land_area != null) && (
-            <div className="mt-4">
-              <h4 className="font-medium text-navy-dark mb-2">Details</h4>
-              <dl className="rounded-xl bg-muted/40 divide-y divide-border">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
-                  <dt className="text-muted-foreground">Property type</dt>
-                  <dd className="text-foreground">{listingDetails.type || 'Residential House'}</dd>
-                </div>
-                {listingDetails.method && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
-                    <dt className="text-muted-foreground">Sale method</dt>
-                    <dd className="text-foreground">{listingDetails.method}</dd>
-                  </div>
-                )}
-                {typeof deal.floor_area === 'number' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
-                    <dt className="text-muted-foreground">Floor area</dt>
-                    <dd className="text-foreground">{deal.floor_area}m²</dd>
-                  </div>
-                )}
-                {typeof deal.land_area === 'number' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
-                    <dt className="text-muted-foreground">Land area</dt>
-                    <dd className="text-foreground">{deal.land_area}m²</dd>
-                  </div>
-                )}
-                {listingDetails.parking && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
-                    <dt className="text-muted-foreground">Parking</dt>
-                    <dd className="text-foreground">{listingDetails.parking}</dd>
-                  </div>
-                )}
-                {listingDetails.internet && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
-                    <dt className="text-muted-foreground">Broadband in the area</dt>
-                    <dd className="text-foreground">{listingDetails.internet}</dd>
-                  </div>
-                )}
-                {listingDetails.date && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
-                    <dt className="text-muted-foreground">Listed</dt>
-                    <dd className="text-foreground">{listingDetails.date}</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-          )}
         </CardContent>
       </Card>
 
