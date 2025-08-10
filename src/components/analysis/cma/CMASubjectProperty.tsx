@@ -177,7 +177,7 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
             <div className="flex items-center gap-3">
               <CardTitle className="text-navy-dark flex items-center gap-2">
                 <Home className="h-5 w-5 flex-shrink-0" />
-                <span className="break-words">Subject Property Details</span>
+                <span className="break-words">{deal.address || 'Subject Property'}</span>
               </CardTitle>
               {condition?.overall_condition && (
                 <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-navy">
