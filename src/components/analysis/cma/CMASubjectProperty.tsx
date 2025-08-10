@@ -327,13 +327,11 @@ const CMASubjectProperty = ({ deal, onDealUpdate }: CMASubjectPropertyProps) => 
         <CardContent className="p-3 sm:p-4 lg:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
             <div className="space-y-3">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                  <span className="font-medium text-navy-dark">Address:</span>
-                </div>
-                <span className="text-navy leading-relaxed break-words">{deal.address}</span>
+              <div className="flex items-center gap-2 mb-1">
+                <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                <span className="font-medium text-navy-dark">Address:</span>
               </div>
+              <span className="text-navy leading-relaxed break-words">{deal.address}</span>
               
               {listingDetails.title && (
                 <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
