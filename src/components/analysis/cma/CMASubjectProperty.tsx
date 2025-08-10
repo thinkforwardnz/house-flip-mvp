@@ -259,6 +259,38 @@ const CMASubjectProperty = ({
           </div>
         </CardHeader>
         <CardContent className="p-3 sm:p-4 lg:p-6">
+          <div className="mb-3 sm:mb-4 flex flex-wrap items-center gap-2 overflow-x-auto">
+            {deal.bedrooms != null && (
+              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-sm text-foreground">
+                <Bed className="h-4 w-4 text-muted-foreground" />
+                <span>{deal.bedrooms} {deal.bedrooms === 1 ? 'Bed' : 'Beds'}</span>
+              </span>
+            )}
+            {deal.bathrooms != null && (
+              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-sm text-foreground">
+                <Bath className="h-4 w-4 text-muted-foreground" />
+                <span>{deal.bathrooms} {deal.bathrooms === 1 ? 'Bath' : 'Baths'}</span>
+              </span>
+            )}
+            {deal.floor_area != null && (
+              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-sm text-foreground">
+                <Ruler className="h-4 w-4 text-muted-foreground" />
+                <span>{deal.floor_area}m² Floor</span>
+              </span>
+            )}
+            {deal.land_area != null && (
+              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-sm text-foreground">
+                <Square className="h-4 w-4 text-muted-foreground" />
+                <span>{deal.land_area}m² Land</span>
+              </span>
+            )}
+            {listingDetails.parking && (
+              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-sm text-foreground">
+                <Car className="h-4 w-4 text-muted-foreground" />
+                <span>{listingDetails.parking}</span>
+              </span>
+            )}
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
             <div className="space-y-3">
               
