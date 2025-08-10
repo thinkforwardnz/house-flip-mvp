@@ -51,10 +51,10 @@ const PropertyAnalysisDetail = ({
               <TabsList className="grid w-full grid-cols-6 gap-1 mb-3 sm:mb-4 max-w-full">
                 <TabsTrigger value="overview" className="text-xs sm:text-sm px-1 sm:px-3 min-w-0">Overview</TabsTrigger>
                 <TabsTrigger value="cma" className="text-xs sm:text-sm px-1 sm:px-2 min-w-0">Market Analysis</TabsTrigger>
-                <TabsTrigger value="data" className="text-xs sm:text-sm px-1 sm:px-2 min-w-0">Data Sources</TabsTrigger>
                 <TabsTrigger value="renovation" className="text-xs sm:text-sm px-1 sm:px-2 min-w-0">Renovation Config</TabsTrigger>
                 <TabsTrigger value="offer" className="text-xs sm:text-sm px-1 sm:px-2 min-w-0">Offer Variations</TabsTrigger>
                 <TabsTrigger value="risk" className="text-xs sm:text-sm px-1 sm:px-2 min-w-0">Risk Assessment</TabsTrigger>
+                <TabsTrigger value="data" className="text-xs sm:text-sm px-1 sm:px-2 min-w-0">Data Sources</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview">
