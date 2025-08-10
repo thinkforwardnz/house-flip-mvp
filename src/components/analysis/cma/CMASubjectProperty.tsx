@@ -381,12 +381,60 @@ const CMASubjectProperty = ({
             </div>
           </div>
 
-          {listingDetails.other_features && <div className="mt-4 pt-4 border-t border-gray-100">
+          {listingDetails.other_features && <div className="mt-4 pt-4 border-t border-border">
               <div className="space-y-2">
                 <span className="font-medium text-navy-dark">Additional Features:</span>
                 <p className="text-navy text-sm break-words">{listingDetails.other_features}</p>
               </div>
             </div>}
+
+          {(listingDetails.type || listingDetails.method || listingDetails.parking || listingDetails.internet || listingDetails.date || deal.floor_area != null || deal.land_area != null) && (
+            <div className="mt-4">
+              <h4 className="font-medium text-navy-dark mb-2">Details</h4>
+              <dl className="rounded-xl bg-muted/40 divide-y divide-border">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                  <dt className="text-muted-foreground">Property type</dt>
+                  <dd className="text-foreground">{listingDetails.type || 'Residential House'}</dd>
+                </div>
+                {listingDetails.method && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                    <dt className="text-muted-foreground">Sale method</dt>
+                    <dd className="text-foreground">{listingDetails.method}</dd>
+                  </div>
+                )}
+                {typeof deal.floor_area === 'number' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                    <dt className="text-muted-foreground">Floor area</dt>
+                    <dd className="text-foreground">{deal.floor_area}m²</dd>
+                  </div>
+                )}
+                {typeof deal.land_area === 'number' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                    <dt className="text-muted-foreground">Land area</dt>
+                    <dd className="text-foreground">{deal.land_area}m²</dd>
+                  </div>
+                )}
+                {listingDetails.parking && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                    <dt className="text-muted-foreground">Parking</dt>
+                    <dd className="text-foreground">{listingDetails.parking}</dd>
+                  </div>
+                )}
+                {listingDetails.internet && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                    <dt className="text-muted-foreground">Broadband in the area</dt>
+                    <dd className="text-foreground">{listingDetails.internet}</dd>
+                  </div>
+                )}
+                {listingDetails.date && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                    <dt className="text-muted-foreground">Listed</dt>
+                    <dd className="text-foreground">{listingDetails.date}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          )}
         </CardContent>
       </Card>
 
