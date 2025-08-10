@@ -41,6 +41,18 @@ const CMAOverview = ({
     }
   };
 
+  const displayEstimated = Number.isFinite(analysis?.estimated_arv) && (analysis!.estimated_arv as number) > 0
+    ? (analysis!.estimated_arv as number)
+    : (priceRange.median > 0 ? priceRange.median : ((deal.target_sale_price as number | undefined) || (deal.purchase_price as number | undefined)));
+
+  const displaySubjectPricePerSqm = subjectPricePerSqm > 0
+    ? subjectPricePerSqm
+    : (deal.floor_area && displayEstimated ? displayEstimated / (deal.floor_area as number) : 0);
+
+  const priceRangeText = priceRange.low > 0
+    ? `${formatCurrency(priceRange.low)} - ${formatCurrency(priceRange.high)}`
+    : (comparables.length === 0 ? 'No comps found' : 'TBD');
+
   return (
     <div className="space-y-6">
       {/* Executive Summary */}
@@ -56,13 +68,13 @@ const CMAOverview = ({
             <div className="text-center p-2">
               <p className="text-sm text-blue-700 mb-1">Estimated Market Value</p>
               <p className="text-xl sm:text-2xl font-bold text-blue-900 break-words">
-                {analysis?.estimated_arv ? formatCurrency(analysis.estimated_arv) : 'TBD'}
+                {displayEstimated && displayEstimated > 0 ? formatCurrency(displayEstimated) : 'No estimate yet'}
               </p>
             </div>
             <div className="text-center p-2">
               <p className="text-sm text-blue-700 mb-1">Price Range</p>
               <p className="text-sm sm:text-lg font-bold text-blue-900 break-words">
-                {priceRange.low > 0 ? `${formatCurrency(priceRange.low)} - ${formatCurrency(priceRange.high)}` : 'TBD'}
+                {priceRangeText}
               </p>
             </div>
             <div className="text-center p-2">
@@ -87,7 +99,7 @@ const CMAOverview = ({
               <p className="text-sm text-gray-600">Price per m²</p>
             </div>
             <p className="text-xl font-bold text-navy-dark">
-              {subjectPricePerSqm > 0 ? `$${Math.round(subjectPricePerSqm).toLocaleString()}` : 'TBD'}
+              {displaySubjectPricePerSqm > 0 ? `$${Math.round(displaySubjectPricePerSqm).toLocaleString()}` : 'TBD'}
             </p>
           </CardContent>
         </Card>
@@ -99,7 +111,7 @@ const CMAOverview = ({
               <p className="text-sm text-gray-600">Days on Market</p>
             </div>
             <p className="text-xl font-bold text-navy-dark">
-              {analysis?.avg_days_on_market || 'TBD'}
+              {analysis?.avg_days_on_market ?? 'TBD'}
             </p>
           </CardContent>
         </Card>

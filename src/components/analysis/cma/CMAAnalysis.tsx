@@ -24,6 +24,9 @@ const CMAAnalysis = ({ deal, formatCurrency, analysis, pricePerSqm }: CMAAnalysi
     }
   };
 
+  const arv = analysis?.estimated_arv as number | undefined;
+  const hasArv = typeof arv === 'number' && arv > 0;
+
   return (
     <Card>
       <CardHeader>
@@ -37,19 +40,19 @@ const CMAAnalysis = ({ deal, formatCurrency, analysis, pricePerSqm }: CMAAnalysi
             <div className="text-center">
               <p className="text-sm text-green-700">Conservative</p>
               <p className="text-xl font-bold text-green-900">
-                {analysis?.estimated_arv ? formatCurrency(analysis.estimated_arv * 0.95) : 'TBD'}
+                {hasArv ? formatCurrency((arv as number) * 0.95) : 'TBD'}
               </p>
             </div>
             <div className="text-center">
               <p className="text-sm text-green-700">Most Likely</p>
               <p className="text-2xl font-bold text-green-900">
-                {analysis?.estimated_arv ? formatCurrency(analysis.estimated_arv) : 'TBD'}
+                {hasArv ? formatCurrency(arv as number) : 'TBD'}
               </p>
             </div>
             <div className="text-center">
               <p className="text-sm text-green-700">Optimistic</p>
               <p className="text-xl font-bold text-green-900">
-                {analysis?.estimated_arv ? formatCurrency(analysis.estimated_arv * 1.05) : 'TBD'}
+                {hasArv ? formatCurrency((arv as number) * 1.05) : 'TBD'}
               </p>
             </div>
           </div>
@@ -69,7 +72,7 @@ const CMAAnalysis = ({ deal, formatCurrency, analysis, pricePerSqm }: CMAAnalysi
               </div>
               <div className="flex justify-between">
                 <span className="text-navy">Average Days on Market:</span>
-                <span className="font-medium">{analysis?.avg_days_on_market || 'TBD'} days</span>
+                <span className="font-medium">{analysis?.avg_days_on_market ?? 'TBD'} days</span>
               </div>
             </div>
             <div className="space-y-2">
