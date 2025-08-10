@@ -77,82 +77,162 @@ serve(async (req: Request): Promise<Response> => {
       floor_area: property?.floor_area as number | undefined,
     };
 
-    // 2) Try to gather simple comparable sales from unified_properties
+    // 2) Gather comparable sales first; if none, fall back to recent listings
     let comps: any[] = [];
-    try {
-      const compCity = subject.city || null;
-      const twelveMonthsAgo = new Date();
-      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-      const { data: maybeComps, error: compsError } = await supabase
-        .from('unified_properties')
-        .select('address, bedrooms, bathrooms, floor_area, land_area, property_type, sale_date, current_price, source_url, suburb, city')
-        .limit(100);
+    let usedSource: 'sales' | 'listings' | 'none' = 'none';
 
-      if (compsError) {
-        console.warn('[market-analysis] comps fetch warning', compsError);
+    // Helper to filter similarity
+    const isSimilar = (r: any) => {
+      const bedOk = subject.bedrooms == null || r.bedrooms == null || Math.abs((r.bedrooms ?? 0) - (subject.bedrooms ?? 0)) <= 1;
+      const bathOk = subject.bathrooms == null || r.bathrooms == null || Math.abs((Number(r.bathrooms ?? 0) - Number(subject.bathrooms ?? 0))) <= 1;
+      const faOk = subject.floor_area == null || r.floor_area == null || (Number(r.floor_area) >= (subject.floor_area as number) * 0.75 && Number(r.floor_area) <= (subject.floor_area as number) * 1.25);
+      return bedOk && bathOk && faOk;
+    };
+
+    try {
+      // Try SOLD comps within last 36 months
+      const thirtySixMonthsAgo = new Date();
+      thirtySixMonthsAgo.setMonth(thirtySixMonthsAgo.getMonth() - 36);
+
+      let soldQuery = supabase
+        .from('unified_properties')
+        .select('address, bedrooms, bathrooms, floor_area, land_area, property_type, sale_date, listing_date, current_price, source_url, suburb, city')
+        .not('sale_date', 'is', null)
+        .gte('sale_date', thirtySixMonthsAgo.toISOString())
+        .limit(600);
+      if (subject.city) soldQuery = soldQuery.eq('city', subject.city as string);
+      if (subject.suburb) soldQuery = soldQuery.eq('suburb', subject.suburb as string);
+
+      const { data: soldRows, error: soldErr } = await soldQuery;
+      if (soldErr) {
+        console.warn('[market-analysis] sold comps fetch warning', soldErr);
       } else {
-        comps = (maybeComps || [])
-          .filter((r) => r.sale_date && r.current_price)
-          .filter((r) => !compCity || r.city === compCity)
-          .filter((r) => {
-            const sd = new Date(r.sale_date);
-            return !isNaN(sd.getTime()) && sd >= twelveMonthsAgo;
-          })
-          .filter((r) => {
-            // Roughly similar by beds/baths (+/-1) if subject provided
-            const bedOk = subject.bedrooms == null || r.bedrooms == null || Math.abs((r.bedrooms ?? 0) - (subject.bedrooms ?? 0)) <= 1;
-            const bathOk = subject.bathrooms == null || r.bathrooms == null || Math.abs((Number(r.bathrooms ?? 0) - Number(subject.bathrooms ?? 0))) <= 1;
-            // Similar floor area (+/- 25%) if both present
-            const faOk = subject.floor_area == null || r.floor_area == null || (r.floor_area >= subject.floor_area * 0.75 && r.floor_area <= subject.floor_area * 1.25);
-            return bedOk && bathOk && faOk;
-          })
-          .slice(0, 25)
-          .map((r) => ({
+        const filtered = (soldRows || []).filter(isSimilar).slice(0, 50);
+        if (filtered.length) {
+          comps = filtered.map((r) => ({
             address: r.address,
-            sold_price: Number(r.current_price),
+            sold_price: Number(r.current_price) || undefined,
             sold_date: r.sale_date,
             bedrooms: r.bedrooms ?? undefined,
             bathrooms: r.bathrooms != null ? Number(r.bathrooms) : undefined,
             floor_area: r.floor_area != null ? Number(r.floor_area) : undefined,
             land_area: r.land_area != null ? Number(r.land_area) : undefined,
             property_type: r.property_type ?? undefined,
-            days_on_market: undefined,
+            days_on_market: (r.listing_date && r.sale_date) ? Math.max(0, Math.round((new Date(r.sale_date as string).getTime() - new Date(r.listing_date as string).getTime()) / (1000 * 60 * 60 * 24))) : undefined,
             listing_url: r.source_url ?? undefined,
           }));
+          usedSource = 'sales';
+        }
+      }
+
+      // If no SOLD comps, try LISTINGS within last 6 months
+      if (comps.length === 0) {
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        let listQuery = supabase
+          .from('unified_properties')
+          .select('address, bedrooms, bathrooms, floor_area, land_area, property_type, listing_date, current_price, source_url, suburb, city')
+          .not('listing_date', 'is', null)
+          .gte('listing_date', sixMonthsAgo.toISOString())
+          .not('current_price', 'is', null)
+          .limit(600);
+        if (subject.city) listQuery = listQuery.eq('city', subject.city as string);
+        if (subject.suburb) listQuery = listQuery.eq('suburb', subject.suburb as string);
+
+        const { data: listRows, error: listErr } = await listQuery;
+        if (listErr) {
+          console.warn('[market-analysis] listing comps fetch warning', listErr);
+        } else {
+          const filtered = (listRows || []).filter(isSimilar).slice(0, 50);
+          if (filtered.length) {
+            comps = filtered.map((r) => ({
+              address: r.address,
+              sold_price: Number(r.current_price) || undefined, // use listing price as proxy
+              sold_date: r.listing_date, // treat listing_date as reference
+              bedrooms: r.bedrooms ?? undefined,
+              bathrooms: r.bathrooms != null ? Number(r.bathrooms) : undefined,
+              floor_area: r.floor_area != null ? Number(r.floor_area) : undefined,
+              land_area: r.land_area != null ? Number(r.land_area) : undefined,
+              property_type: r.property_type ?? undefined,
+              days_on_market: undefined,
+              listing_url: r.source_url ?? undefined,
+            }));
+            usedSource = 'listings';
+          }
+        }
       }
     } catch (e) {
       console.warn('[market-analysis] comps step failed, continuing', e);
     }
 
-    // 3) Compute simple stats
-    const soldPrices = comps.map((c) => c.sold_price).filter((n) => typeof n === 'number');
-    const low = soldPrices.length ? Math.min(...soldPrices) : undefined;
-    const high = soldPrices.length ? Math.max(...soldPrices) : undefined;
-    const med = median(soldPrices) ?? undefined;
+    // 3) Compute stats
+    const prices = comps.map((c) => Number(c.sold_price)).filter((n) => Number.isFinite(n) && n > 0);
+    const low = prices.length ? Math.min(...prices) : undefined;
+    const high = prices.length ? Math.max(...prices) : undefined;
+    const med = prices.length ? (median(prices) ?? undefined) : undefined;
 
-    // Subject price per sqm (if we have a subject floor area)
-    let pricePerSqm: number | undefined = undefined;
-    if (med && subject.floor_area) {
-      pricePerSqm = med / subject.floor_area;
-    } else if (comps.length) {
-      const pps: number[] = comps
-        .map((c) => (c.sold_price && c.floor_area ? c.sold_price / c.floor_area : null))
-        .filter((v): v is number => !!v);
-      pricePerSqm = median(pps) ?? undefined;
+    // Price per sqm median from comps with floor area
+    const ppsValues: number[] = comps
+      .map((c) => (c.sold_price && c.floor_area ? Number(c.sold_price) / Number(c.floor_area) : null))
+      .filter((v): v is number => !!v && Number.isFinite(v) && v > 0);
+    const medPps = ppsValues.length ? (median(ppsValues) ?? undefined) : undefined;
+
+    // Days on market median (only for sold comps with listing_date)
+    const domValues: number[] = comps
+      .map((c) => c.days_on_market)
+      .filter((v): v is number => typeof v === 'number' && v >= 0);
+    const medDom = domValues.length ? Math.round(median(domValues) as number) : undefined;
+
+    // Confidence score based on comps count
+    const confidence = Math.max(30, Math.min(95, (comps.length || 0) * 5));
+
+    // 4) Determine estimated ARV with sensible fallbacks
+    const MIN_VALID = 10000; // avoid unrealistic tiny values
+    let estimatedFrom: 'sold_median' | 'pps_subject' | 'list_median' | 'list_pps_subject' | 'none' = 'none';
+    let estimated_arv: number | undefined = undefined;
+
+    const subjectFloor = subject.floor_area ? Number(subject.floor_area) : undefined;
+
+    if (med && med >= MIN_VALID) {
+      estimated_arv = med;
+      estimatedFrom = 'sold_median';
+    } else if (medPps && subjectFloor) {
+      const val = medPps * subjectFloor;
+      if (val >= MIN_VALID) {
+        estimated_arv = val;
+        estimatedFrom = 'pps_subject';
+      }
     }
 
-    const confidence = Math.max(30, Math.min(95, (comps.length || 1) * 5));
+    if (!estimated_arv && usedSource === 'listings') {
+      // Recompute medians explicitly named for clarity (already computed above as med/medPps)
+      if (med && med >= MIN_VALID) {
+        estimated_arv = med;
+        estimatedFrom = 'list_median';
+      } else if (medPps && subjectFloor) {
+        const val = medPps * subjectFloor;
+        if (val >= MIN_VALID) {
+          estimated_arv = val;
+          estimatedFrom = 'list_pps_subject';
+        }
+      }
+    }
 
+    // Analysis payload
     const analysis = {
-      estimated_arv: med ?? deal?.target_sale_price ?? deal?.purchase_price ?? undefined,
+      estimated_arv: estimated_arv ?? undefined,
       market_trend: 'stable' as const,
-      avg_days_on_market: 30,
-      price_per_sqm: pricePerSqm ? Math.round(pricePerSqm) : undefined,
+      avg_days_on_market: medDom ?? undefined,
+      price_per_sqm: medPps ? Math.round(medPps) : undefined,
       market_confidence: Math.round(confidence),
       rental_yield: 4.0,
-      insights: comps.length ? `Based on ${comps.length} recent sales in ${subject.city || 'the area'}.` : 'Limited local comps; used heuristic estimation.',
+      insights: comps.length
+        ? `Based on ${comps.length} ${usedSource === 'sales' ? 'recent sales' : 'recent listings'} in ${subject.city || subject.suburb || 'the area'}.` + (estimatedFrom !== 'none' ? ` Estimate derived from ${estimatedFrom.replace('_', ' ')}.` : '')
+        : 'No suitable local comps found; unable to produce a reliable estimate.',
       location_score: undefined,
-    };
+      price_range: low && high ? { low, high, median: med } : undefined,
+    } as any;
 
     // Merge with existing market_analysis to preserve condition_assessment or other fields
     const existing = (deal?.market_analysis && typeof deal.market_analysis === 'object') ? deal.market_analysis : {};
@@ -175,7 +255,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log('[market-analysis] complete', { dealId, comps: comps.length });
+    console.log('[market-analysis] complete', { dealId, comps: comps.length, usedSource, estimatedFrom });
 
     return new Response(JSON.stringify({
       success: true,

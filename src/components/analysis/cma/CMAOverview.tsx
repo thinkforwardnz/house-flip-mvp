@@ -43,7 +43,7 @@ const CMAOverview = ({
 
   const displayEstimated = Number.isFinite(analysis?.estimated_arv) && (analysis!.estimated_arv as number) > 0
     ? (analysis!.estimated_arv as number)
-    : (priceRange.median > 0 ? priceRange.median : ((deal.target_sale_price as number | undefined) || (deal.purchase_price as number | undefined)));
+    : (priceRange.median > 0 ? priceRange.median : 0);
 
   const displaySubjectPricePerSqm = subjectPricePerSqm > 0
     ? subjectPricePerSqm
